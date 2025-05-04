@@ -1,0 +1,48 @@
+name: Full Continuous Integration
+
+on:
+    push:
+    pull_request:
+        branches: [main, dev]
+
+jobs:
+    backend:
+        runs-on: ubuntu-latest
+    
+        steps:
+            # 🧱 Step 1: Checkout code
+            - name: Checkout repo
+              uses: actions/checkout@v4
+            
+            
+            # 🔧 Step 3: Install pnpm
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                version: 10
+
+            # 📦 Step 2: Set up Node.js (match your local version)
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: 23.9
+                cache: 'pnpm'
+                cache-dependency-path: backend/pnpm-lock.yaml
+                
+
+            # 📁 Step 4: Install dependencies
+            - name: Install dependencies
+              working-directory: ./backend
+              run: pnpm install
+
+            # 🛠️ Step 5: Build
+            - name: Build project
+              working-directory: ./backend
+              run: pnpm build
+
+            # ✅ Step 6: Run tests
+            - name: Run tests with Vitest
+              working-directory: ./backend
+              run: pnpm test
+
+    # TODO build frontend ci

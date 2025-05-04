@@ -1,0 +1,37 @@
+name: 💡 Feature Request
+description: Suggest a new idea or improvement for Sonex
+title: "[Feature]: "
+labels: [enhancement, beta]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What's your idea?
+      description: Clearly describe the feature you'd like to see.
+      placeholder: I want to be able to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Why is this useful?
+      description: What problem does this solve? Who benefits from it?
+      placeholder: This would help me...
+    validations:
+      required: true
+
+  - type: input
+    id: priority
+    attributes:
+      label: Priority
+      description: Optional — how important is this?
+      placeholder: Low, Medium, High
+
+  - type: checkboxes
+    id: ui-impact
+    attributes:
+      label: Does this affect the UI?
+      options:
+        - label: Yes, it requires new UI elements
+        - label: No, it's a backend-only improvement

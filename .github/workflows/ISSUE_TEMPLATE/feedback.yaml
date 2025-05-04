@@ -1,0 +1,23 @@
+name: 📝 General Feedback
+description: Share your thoughts or experiences using Sonex Beta
+title: "[Feedback]: "
+labels: [feedback, beta]
+body:
+  - type: textarea
+    id: thoughts
+    attributes:
+      label: What did you think?
+      description: Share any observations, reactions, or experiences.
+      placeholder: I found the UI intuitive because...
+
+  - type: textarea
+    id: confusing
+    attributes:
+      label: What was confusing or frustrating?
+      description: If something was unclear or hard to use, let us know.
+
+  - type: textarea
+    id: suggestions
+    attributes:
+      label: Suggestions for improvement
+      placeholder: It would be great if...

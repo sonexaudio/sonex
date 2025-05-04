@@ -1,0 +1,47 @@
+name: 🐞 Bug Report
+description: Report something that's broken or not working as expected
+title: "[Bug]: "
+labels: [bug, beta]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the issue in detail.
+      placeholder: When I clicked X, I expected Y, but instead Z happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: What should someone do to reproduce this?
+      placeholder: |
+        1. Go to...
+        2. Click on...
+        3. Observe...
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser Used
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Other
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: macOS, Windows, iOS, Android...
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console Errors (if any)
+      description: Paste any relevant errors from the browser console.
+      render: shell

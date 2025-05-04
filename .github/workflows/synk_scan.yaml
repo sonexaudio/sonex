@@ -1,0 +1,67 @@
+name: Snyk Security Scans
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # Every Monday at 8 AM UTC
+  workflow_dispatch: # manual trigger
+
+jobs:
+  scan-backend:
+    name: Scan Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: pnpm install
+
+      - name: Run Snyk Test on Backend
+        uses: snyk/actions/node@master
+        with:
+          command: test
+
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  scan-frontend:
+    name: Scan Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install
+
+      - name: Run Snyk Test on Frontend
+        uses: snyk/actions/node@master
+        with:
+          command: test
+
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
