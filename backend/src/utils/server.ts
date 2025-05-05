@@ -7,6 +7,7 @@ import morgan from "morgan";
 import session from "express-session";
 import config from "../config";
 import routes from "../routes";
+import passport from "passport";
 
 const { frontendUrl, auth } = config;
 
@@ -29,6 +30,8 @@ export default function createServer() {
 			saveUninitialized: false,
 		}),
 	);
+	app.use(passport.initialize());
+	app.use(passport.session());
 	app.use(morgan("common"));
 
 	// Create routes
