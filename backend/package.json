@@ -16,7 +16,10 @@
 	"license": "ISC",
 	"packageManager": "pnpm@10.10.0",
 	"devDependencies": {
+		"@types/cors": "^2.8.17",
 		"@types/express": "^5.0.1",
+		"@types/express-session": "^1.18.1",
+		"@types/morgan": "^1.9.9",
 		"@types/node": "^22.15.3",
 		"@vitest/coverage-v8": "^3.1.2",
 		"nodemon": "^3.1.10",
@@ -30,7 +33,11 @@
 		"cors": "^2.8.5",
 		"dotenv": "^16.5.0",
 		"express": "^5.1.0",
+		"express-session": "^1.18.1",
 		"helmet": "^8.1.0",
+		"morgan": "^1.10.0",
+		"passport": "^0.7.0",
+		"passport-local": "^1.0.0",
 		"per-env": "^1.0.2"
 	}
 }
