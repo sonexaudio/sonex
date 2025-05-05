@@ -4,7 +4,9 @@ import bcrypt from "bcryptjs";
 import { parseUserName } from "../../utils";
 import passport from "passport";
 import type { User } from "../../generated/prisma";
+import config from "../../config";
 import "../../lib/passport/local";
+import "../../lib/passport/google";
 
 const authRouter = Router();
 
@@ -71,6 +73,20 @@ authRouter.post("/login", async (req, res) => {
 		});
 	})(req, res);
 });
+
+// Handle google authentication
+authRouter.get(
+	"/google",
+	passport.authenticate("google", { scope: ["profile", "email"] }),
+);
+
+authRouter.get(
+	"/google/callback",
+	passport.authenticate("google"),
+	(req, res) => {
+		res.redirect(config.frontendUrl);
+	},
+);
 
 authRouter.get("/logout", (req, res) => {
 	req.logout((error) => {
