@@ -1,29 +1,11 @@
-import express from "express";
-import cors from "cors";
-import morgan from "morgan";
-import session from "express-session";
+import createServer from "./utils/server";
 import config from "./config";
-import routes from "./routes";
+// import type { Application } from "express";
 
-const { frontendUrl, auth, port } = config;
+const { port } = config;
 
-const app = express();
-app.use(express.json());
-app.use(
-	cors({
-		credentials: true,
-		origin: frontendUrl,
-	}),
-);
-app.use(
-	session({
-		secret: auth.sessionSecret,
-		resave: false,
-		saveUninitialized: false,
-	}),
-);
-app.use(morgan("common"));
+const app = createServer();
 
-app.use(routes);
-
-app.listen(port, () => console.log(`Server running on port ${port}`));
+app.listen(port, () => {
+	console.log(`Server listening on port ${port}`);
+});
