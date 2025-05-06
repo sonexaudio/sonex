@@ -1,7 +1,11 @@
 import { type Request, type Response, Router } from "express";
 import { prisma } from "../../lib/prisma";
 import bcrypt from "bcryptjs";
-import { parseUserName } from "../../utils";
+import {
+	createResetPasswordToken,
+	encryptResetPasswordToken,
+	parseUserName,
+} from "../../utils";
 import passport from "passport";
 import type { User } from "../../generated/prisma";
 import config from "../../config";
@@ -97,6 +101,95 @@ authRouter.get("/logout", (req, res) => {
 
 		res.status(204).send();
 	});
+});
+
+// Request to generate new token for forgotten password
+authRouter.post("/forgot-password", async (req, res) => {
+	const { email } = req.body;
+	if (!email) {
+		res.status(400).json({ error: "Email is required to update password" });
+		return;
+	}
+
+	try {
+		const user = await prisma.user.findUnique({
+			where: {
+				email,
+			},
+		});
+
+		if (!user) {
+			res.status(404).send({ error: "User with that email does not exist" });
+			return;
+		}
+
+		const { token, hashedToken, expiresAt } = createResetPasswordToken();
+		const resetTokenLink = `${config.frontendUrl}/auth/reset-password?code=${token}`;
+
+		await prisma.user.update({
+			where: {
+				id: user.id,
+			},
+			data: {
+				resetPasswordToken: hashedToken,
+				resetTokenExpiresAt: expiresAt,
+			},
+		});
+
+		res.json({ data: { resetTokenLink, expiresAt, hashedToken } });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Something went wrong" });
+	}
+});
+
+// Request to reset password given token and valid params
+authRouter.patch("/reset-password", async (req, res) => {
+	const { token } = req.query;
+	const { password } = req.body;
+
+	if (!token) {
+		res.status(400).json({ error: "Missing required token in query params" });
+		return;
+	}
+
+	try {
+		const hashedToken = encryptResetPasswordToken(token as string);
+
+		const user = await prisma.user.findFirst({
+			where: {
+				resetPasswordToken: hashedToken,
+				resetTokenExpiresAt: {
+					gt: new Date(), // expiration can not be anywhere at or less than this current moment
+				},
+			},
+		});
+
+		if (!user) {
+			res.status(404).json({ error: "Token is invalid or expired" });
+			return;
+		}
+
+		// Now the magic happens
+		const hashedPassword = await bcrypt.hash(password, 10);
+
+		await prisma.user.update({
+			where: {
+				id: user.id,
+			},
+			data: {
+				hashedPassword,
+				passwordLastChangedAt: new Date(),
+				resetPasswordToken: null,
+				resetTokenExpiresAt: null,
+			},
+		});
+
+		res.json({ data: { message: "User updated successfully!" } });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Something went wrong" });
+	}
 });
 
 export default authRouter;
