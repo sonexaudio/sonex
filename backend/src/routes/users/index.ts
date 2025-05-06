@@ -1,0 +1,91 @@
+import { Router } from "express";
+import { requireAuth } from "../../middleware/auth";
+import { prisma } from "../../lib/prisma";
+import { parseUserName, type UserDisplayName } from "../../utils";
+
+const userRouter = Router();
+
+userRouter.put("/:id", requireAuth, async (req, res) => {
+	const { id } = req.params;
+	const { name, ...userData } = req.body;
+
+	try {
+		const user = await prisma.user.findUnique({
+			where: {
+				id,
+			},
+		});
+
+		if (!user) {
+			res.status(404).json({ error: "User does not exist in database" });
+			return;
+		}
+
+		if (req.user?.id !== id) {
+			res.status(403).json({ error: "Forbidden" });
+			return;
+		}
+
+		// parse new name if provided
+		let parsedName: UserDisplayName | undefined;
+
+		if (name) {
+			parsedName = parseUserName(req.body.name);
+		}
+
+		const updated = await prisma.user.update({
+			where: { id },
+			data: {
+				...userData,
+				firstName: parsedName?.firstName || user.firstName, // could either be given name or null
+				lastName: parsedName?.lastName || user.lastName,
+			},
+		});
+
+		res.json({ data: { user: updated } });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Something went wrong" });
+	}
+});
+
+userRouter.delete("/:id", requireAuth, async (req, res) => {
+	const { id } = req.params;
+
+	try {
+		const user = await prisma.user.findUnique({
+			where: {
+				id,
+			},
+		});
+
+		if (!user) {
+			res.status(404).json({ error: "User does not exist" });
+			return;
+		}
+
+		if (req.user?.id !== id) {
+			res.status(403).json({ error: "Forbidden" });
+			return;
+		}
+
+		await prisma.user.delete({
+			where: {
+				id,
+			},
+		});
+
+		req.logOut((err) => {
+			if (err) {
+				console.error("Logout error:", err);
+				res.status(500).json({ error: "Logout failed" });
+				return;
+			}
+			res.sendStatus(204);
+		});
+	} catch (error) {
+		res.status(500).json({ error: "Something went wrong" });
+	}
+});
+
+export default userRouter;

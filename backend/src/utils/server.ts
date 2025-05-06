@@ -32,7 +32,7 @@ export default function createServer() {
 	);
 	app.use(passport.initialize());
 	app.use(passport.session());
-	app.use(morgan("common"));
+	// app.use(morgan("common"));
 
 	// Create routes
 	app.use(routes);

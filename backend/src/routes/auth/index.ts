@@ -16,12 +16,21 @@ const authRouter = Router();
 
 // Get currently authenticated user
 authRouter.get("/me", (req, res) => {
-	if (!req.isAuthenticated()) {
-		res.status(401).json({ data: null });
-		return;
-	}
+	try {
+		if (
+			!req.user ||
+			typeof req.isAuthenticated !== "function" ||
+			!req.isAuthenticated()
+		) {
+			res.status(401).json({ data: null });
+			return;
+		}
 
-	res.json({ data: { user: req.user } });
+		res.json({ data: { user: req.user } });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Something went wrong" });
+	}
 });
 
 authRouter.post("/register", async (req: Request, res: Response) => {

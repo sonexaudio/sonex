@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-type UserDisplayName = {
+export type UserDisplayName = {
 	firstName: string;
 	lastName: string;
 };
