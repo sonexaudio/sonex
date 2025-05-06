@@ -14,6 +14,16 @@ import "../../lib/passport/google";
 
 const authRouter = Router();
 
+// Get currently authenticated user
+authRouter.get("/me", (req, res) => {
+	if (!req.isAuthenticated()) {
+		res.status(401).json({ data: null });
+		return;
+	}
+
+	res.json({ data: { user: req.user } });
+});
+
 authRouter.post("/register", async (req: Request, res: Response) => {
 	const { email, name, password } = req.body;
 	try {

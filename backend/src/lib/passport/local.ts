@@ -51,10 +51,6 @@ passport.deserializeUser(async (userId, done) => {
 			where: {
 				id: userId as string,
 			},
-			select: {
-				id: true,
-				email: true,
-			},
 		});
 
 		if (!user) {
