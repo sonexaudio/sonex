@@ -6,6 +6,7 @@ npm-debug.log*
 # Node Modules
 node_modules
 **/node_modules/
+**/src/generated/prisma
 
 # Build output
 dist/
@@ -38,3 +39,19 @@ coverage/
 
 # Misc
 devnotes.md
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform.tfstate.lock.info
+.terraformrc
+terraform.rc
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+crash.log
+crash.*.log
