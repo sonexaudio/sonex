@@ -1,4 +1,7 @@
 import crypto from "node:crypto";
+import type { User } from "../generated/prisma";
+import { stripe } from "../lib/stripe";
+import { prisma } from "../lib/prisma";
 
 export type UserDisplayName = {
 	firstName: string;
@@ -44,6 +47,31 @@ export function createResetPasswordToken(): {
 
 export function encryptResetPasswordToken(token: string): string {
 	return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+export async function getOrCreateStripeCustomer(user: User): Promise<string> {
+	if (user.stripeCustomerId) return user.stripeCustomerId;
+
+	let name: string | undefined;
+
+	if (user.firstName && user.lastName) {
+		name = `${user.firstName} ${user.lastName}`;
+	}
+
+	const customer = await stripe.customers.create({
+		email: user.email,
+		name,
+		metadata: {
+			userId: user.id,
+		},
+	});
+
+	await prisma.user.update({
+		where: { id: user.id },
+		data: { stripeCustomerId: customer.id },
+	});
+
+	return customer.id;
 }
 
 // helper functions
