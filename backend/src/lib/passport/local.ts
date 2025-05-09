@@ -33,7 +33,7 @@ passport.use(
 
 				const { hashedPassword, ...userData } = existingUser;
 
-				done(null, userData);
+				done(null, userData as User);
 			} catch (error) {
 				done(error, false);
 			}
@@ -57,7 +57,7 @@ passport.deserializeUser(async (userId, done) => {
 			return done(new Error("User not found"));
 		}
 
-		done(null, user);
+		done(null, user as User);
 	} catch (error) {
 		done(error);
 	}
