@@ -50,6 +50,7 @@
 		"passport-google-oauth20": "^2.0.0",
 		"passport-local": "^1.0.0",
 		"per-env": "^1.0.2",
-		"prisma": "^6.7.0"
+		"prisma": "^6.7.0",
+		"stripe": "^18.1.0"
 	}
 }

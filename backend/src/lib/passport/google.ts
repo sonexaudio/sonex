@@ -24,7 +24,7 @@ passport.use(
 				});
 
 				if (user) {
-					return done(null, user);
+					return done(null, user as User);
 				}
 
 				const parsedName = parseUserName(profile.displayName);
@@ -39,7 +39,7 @@ passport.use(
 					},
 				});
 
-				done(null, newUser);
+				done(null, newUser as User);
 			} catch (error) {
 				done(error);
 			}
@@ -63,7 +63,7 @@ passport.deserializeUser(async (userId, done) => {
 			return done(new Error("User not found"));
 		}
 
-		done(null, user);
+		done(null, user as User);
 	} catch (error) {
 		done(error);
 	}
