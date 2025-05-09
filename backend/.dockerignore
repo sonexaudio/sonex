@@ -1,0 +1,8 @@
+__tests__/
+node_modules/
+vitest.config.ts
+.env*
+src/generated
+.dockerignore
+backend.Dockerfile
+tsconfig.tsbuildinfo
