@@ -1,0 +1,44 @@
+name: Deploy Sonex App
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AZURE_VM_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Deploy to Azure VM
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} << 'EOF'
+            set -e
+            cd /opt/sonex
+
+            echo "📦 Pulling latest code..."
+            git pull origin main
+
+            echo "🐳 Building Docker image..."
+            docker build -t sonex-app:latest .
+
+            echo "🔁 Restarting container..."
+            docker rm -f sonex-app || true
+            docker run -d --env-file .env -p 3000:3000 --name sonex-app sonex-app:latest
+
+            echo "🧹 Pruning unused Docker data..."
+            docker system prune -f
+
+            echo "✅ Deployment complete!"
+          EOF
