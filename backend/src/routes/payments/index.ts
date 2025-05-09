@@ -5,7 +5,6 @@ import type { User } from "../../generated/prisma";
 import { stripe } from "../../lib/stripe";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
-import { error } from "console";
 import type Stripe from "stripe";
 
 const paymentRouter = Router();

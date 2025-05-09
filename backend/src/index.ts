@@ -1,6 +1,5 @@
 import createServer from "./utils/server";
 import config from "./config";
-// import type { Application } from "express";
 
 const { port } = config;
 
