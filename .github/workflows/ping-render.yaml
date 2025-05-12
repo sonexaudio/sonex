@@ -15,7 +15,7 @@ jobs:
           count=0
           until [ $count -ge $max_retries ]
           do
-            curl -sSf https://api.sonexaudio.app && break || {
+            curl -sSf https://api.sonexaudio.app/health && break || {
               echo "Ping failed, retrying..."
               count=$((count+1))
               sleep 10  # Wait 10 seconds before retrying
