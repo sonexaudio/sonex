@@ -18,7 +18,11 @@ RUN pnpx prisma generate && pnpm build
 FROM node:23-alpine
 WORKDIR /app
 
-RUN npm i -g pnpm && addgroup -S sonex_admin && adduser -S sonex_admin_user -G sonex_admin
+RUN apk update && \
+    apk add --no-cache curl libcurl && \
+    npm i -g pnpm && \
+    addgroup -S sonex_admin && \
+    adduser -S sonex_admin_user -G sonex_admin
 
 USER sonex_admin_user
 
@@ -34,5 +38,8 @@ RUN chmod +x /app/entrypoint.sh
 ENV NODE_ENV=production
 
 EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=5 \
+  CMD curl -silent --fail http://localhost:3000/health || exit 1
+
 
 ENTRYPOINT [ "./entrypoint.sh" ]

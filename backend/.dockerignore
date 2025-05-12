@@ -4,7 +4,7 @@ vitest.config.ts
 .env*
 src/generated
 .dockerignore
-backend.Dockerfile
+Dockerfile
 tsconfig.tsbuildinfo
 *.log
 .git
