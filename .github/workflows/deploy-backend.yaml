@@ -1,0 +1,56 @@
+name: Deploy Backend to Render
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+jobs:
+  build-and-deploy:
+    # if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Debug Actor
+        run: echo 'GitHub Actor: ${{ github.actor }}'
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          echo "VERSION=$(jq -r .version backend/package.json)" >> $GITHUB_OUTPUT
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GCHR_TOKEN }}
+
+      - name: Build and tag Docker image
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/sonex-backend
+          docker build -t $IMAGE_NAME:${{ steps.version.outputs.VERSION }} ./backend
+          docker tag $IMAGE_NAME:${{ steps.version.outputs.VERSION }} $IMAGE_NAME:${{ github.sha }}
+          docker tag $IMAGE_NAME:${{ steps.version.outputs.VERSION }} $IMAGE_NAME:latest
+
+      - name: Push Docker images
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/sonex-backend
+          docker push $IMAGE_NAME:${{ steps.version.outputs.VERSION }}
+          docker push $IMAGE_NAME:${{ github.sha }}
+          docker push $IMAGE_NAME:latest
+
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }} \
+          -H 'Authorization: Bearer ${{ secrets.RENDER_API_KEY }}' \
+          -H 'Content-Type: application/json'
