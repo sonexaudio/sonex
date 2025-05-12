@@ -5,6 +5,7 @@
 	"main": "index.js",
 	"scripts": {
 		"build": "rimraf dist -I && tsc --build",
+		"postbuild": "cp -r src/generated dist/generated",
 		"start": "per-env",
 		"start:production": "node ./dist/index.js",
 		"start:development": "nodemon ./src/index.ts",
