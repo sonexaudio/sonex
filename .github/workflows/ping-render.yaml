@@ -1,0 +1,28 @@
+name: Ping Render App
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Runs every 6 hours (UTC)
+  workflow_dispatch:       # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Curl Ping with Retry
+        run: |
+          max_retries=5
+          count=0
+          until [ $count -ge $max_retries ]
+          do
+            curl -sSf https://your-app.onrender.com && break || {
+              echo "Ping failed, retrying..."
+              count=$((count+1))
+              sleep 10  # Wait 10 seconds before retrying
+            }
+          done
+          
+          if [ $count -ge $max_retries ]; then
+            echo "Ping failed after $max_retries retries."
+            exit 1
+          fi
