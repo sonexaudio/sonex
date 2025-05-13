@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { prisma } from "../../src/lib/prisma";
 import request, { type Agent } from "supertest";
 import createServer from "../../src/utils/server";
@@ -29,23 +29,23 @@ describe("Managing Users", () => {
 			});
 		});
 
-		afterEach(async () => {
+		afterAll(async () => {
 			await agent.get("/auth/logout");
 			try {
 				await prisma.user.deleteMany({
 					where: {
-						email: "gooduser@example.com",
+						email: {
+							in: ["gooduser@example.com", "baduser@example.com"],
+						},
 					},
 				});
-				await prisma.user.deleteMany({
-					where: {
-						email: "baduser@example.com",
-					},
-				});
+
+				await prisma.$executeRawUnsafe(`TRUNCATE TABLE "user_sessions"`);
 			} catch (error) {
 				return;
 			}
 		});
+
 		test("should only allow authenticated users to access route", async () => {
 			const res = await request(app)
 				.put(`/users/${testUser?.id}`)
@@ -118,19 +118,18 @@ describe("Managing Users", () => {
 			});
 		});
 
-		afterEach(async () => {
+		afterAll(async () => {
 			await agent.get("/auth/logout");
 			try {
 				await prisma.user.deleteMany({
 					where: {
-						email: "gooduser@example.com",
+						email: {
+							in: ["gooduser@example.com", "baduser@example.com"],
+						},
 					},
 				});
-				await prisma.user.deleteMany({
-					where: {
-						email: "baduser@example.com",
-					},
-				});
+
+				await prisma.$executeRawUnsafe(`TRUNCATE TABLE "user_sessions"`);
 			} catch (error) {
 				return;
 			}

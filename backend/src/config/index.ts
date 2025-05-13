@@ -3,6 +3,7 @@ dotenv.config();
 
 const config = {
 	port: process.env.PORT!,
+	environment: process.env.NODE_ENV || "development",
 	auth: {
 		sessionSecret: process.env.SESSION_SECRET!,
 		google: {
@@ -17,6 +18,7 @@ const config = {
 		webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
 		connectSecret: process.env.STRIPE_CONNECT_WEBHOOK_SECRET!,
 	},
+	dbUrl: process.env.DATABASE_URL!,
 };
 
 export default config;
