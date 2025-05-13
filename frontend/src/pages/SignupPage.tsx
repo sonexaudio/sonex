@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAuth } from "../hooks/useAuth";
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, Navigate } from "react-router";
 
 const signupSchema = z.object({
 	email: z
@@ -30,7 +30,7 @@ const SignupPage = () => {
 		resolver: zodResolver(signupSchema),
 	});
 
-	// if (user) return <Navigate to="/" replace />;
+	if (user) return <Navigate to="/" replace />;
 
 	return (
 		<div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { Link, Navigate, useNavigate } from "react-router";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,7 @@ const LoginSchema = z.object({
 const LoginPage = () => {
 	const { loginWithEmail, loginWithGoogle, user } = useAuth();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const [showPassword, setShowPassword] = useState(false);
 	const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -27,7 +28,7 @@ const LoginPage = () => {
 		resolver: zodResolver(LoginSchema),
 	});
 
-	// if (user) return <Navigate to="/" replace />;
+	if (user) return <Navigate to="/" replace />;
 
 	return (
 		<div>
@@ -35,6 +36,7 @@ const LoginPage = () => {
 			<p>Enter your login details to access Sonex</p>
 
 			<div className="max-w-lg">
+				{location.state.fromReset && <div>You may now login</div>}
 				<div>
 					<button
 						type="button"

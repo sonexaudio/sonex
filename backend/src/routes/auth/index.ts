@@ -143,7 +143,7 @@ authRouter.post("/forgot-password", async (req, res) => {
 		}
 
 		const { token, hashedToken, expiresAt } = createResetPasswordToken();
-		const resetTokenLink = `${config.frontendUrl}/auth/reset-password?code=${token}`;
+		const resetTokenLink = `${config.frontendUrl}/reset-password?code=${token}`;
 
 		await prisma.user.update({
 			where: {
@@ -155,6 +155,7 @@ authRouter.post("/forgot-password", async (req, res) => {
 			},
 		});
 
+		// TODO send straight to email and only return 201
 		res.json({ data: { resetTokenLink, expiresAt, hashedToken } });
 	} catch (error) {
 		console.error(error);
