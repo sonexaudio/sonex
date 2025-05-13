@@ -1,5 +1,7 @@
+import RoutesLayout from "./components/RoutesLayout";
+
 function App() {
-	return <>TODO: Build Frontend</>;
+	return <RoutesLayout />;
 }
 
 export default App;

@@ -18,8 +18,8 @@ passport.use(
 					},
 				});
 
-				if (!existingUser) {
-					return done(new Error("Incorrect email or password"), false);
+				if (!existingUser || !existingUser.hashedPassword) {
+					return done(null, false, { message: "Incorrect email or password" });
 				}
 
 				const isMatch = await bcrypt.compare(
@@ -28,7 +28,7 @@ passport.use(
 				);
 
 				if (!isMatch) {
-					return done(new Error("Incorrect email or password"), false);
+					return done(null, false, { message: "Incorrect email or password" });
 				}
 
 				const { hashedPassword, ...userData } = existingUser;
