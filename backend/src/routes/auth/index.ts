@@ -81,7 +81,7 @@ authRouter.post("/login", async (req, res) => {
 
 		if (!user) {
 			console.error(info);
-			res.status(401).json(info);
+			res.status(400).json(info);
 			return;
 		}
 

@@ -52,9 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	const loginWithEmail = async (email: string, password: string) => {
-		await api.post("/auth/login", { email, password });
-		const { data } = await api.get("/auth/me");
-		setUser(data.user);
+		try {
+			await api.post("/auth/login", { email, password });
+			const { data } = await api.get("/auth/me");
+			setUser(data.user);
+		} catch (err: any) {
+			console.error(err.response?.data);
+			throw err.response?.data;
+		}
 	};
 
 	const loginWithGoogle = async () => {
