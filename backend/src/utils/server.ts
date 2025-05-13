@@ -10,6 +10,7 @@ import routes from "../routes";
 import passport from "passport";
 import pg from "pg";
 import pgSession from "connect-pg-simple";
+import helmet from "helmet";
 
 const { frontendUrl, auth, dbUrl, environment } = config;
 
@@ -25,6 +26,14 @@ const PGSession = pgSession(session);
 export default function createServer() {
 	// instantiate express
 	const app = express();
+
+	// Set security headers
+	app.use(
+		helmet({
+			contentSecurityPolicy: false,
+			crossOriginEmbedderPolicy: false,
+		}),
+	);
 
 	// Establish middleware
 	app.use(express.json());
