@@ -70,8 +70,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		try {
 			const res = await api.post("/auth/register", data);
 			return res.data.user;
-		} catch (error) {
+		} catch (error: any) {
 			console.error(error);
+			throw error.response?.data;
 		}
 	};
 

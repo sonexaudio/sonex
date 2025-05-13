@@ -1,8 +1,7 @@
-import type React from "react";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { Link, Navigate } from "react-router";
-import z from "zod";
+import { Link, Navigate, useNavigate } from "react-router";
+import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -15,19 +14,20 @@ const LoginSchema = z.object({
 });
 
 const LoginPage = () => {
-	const { loginWithEmail, user } = useAuth();
+	const { loginWithEmail, loginWithGoogle, user } = useAuth();
+	const navigate = useNavigate();
 	const [showPassword, setShowPassword] = useState(false);
 	const [loginError, setLoginError] = useState<string | null>(null);
 
 	const {
 		register,
 		handleSubmit,
-		formState: { errors },
+		formState: { errors, isSubmitting },
 	} = useForm({
 		resolver: zodResolver(LoginSchema),
 	});
 
-	if (user) return <Navigate to="/" />;
+	// if (user) return <Navigate to="/" replace />;
 
 	return (
 		<div>
@@ -36,7 +36,13 @@ const LoginPage = () => {
 
 			<div className="max-w-lg">
 				<div>
-					<button type="button">Sign in with google</button>
+					<button
+						type="button"
+						disabled={isSubmitting}
+						onClick={loginWithGoogle}
+					>
+						Sign in with google
+					</button>
 					<div className="flex items-center gap-4">
 						<div className="size-0.5 w-full bg-black/50" />
 						<span>or</span>
@@ -48,6 +54,7 @@ const LoginPage = () => {
 						setLoginError(null);
 						try {
 							await loginWithEmail(data.email, data.password);
+							navigate("/");
 						} catch (error: any) {
 							console.error(error);
 							setLoginError(error.message);
@@ -82,7 +89,9 @@ const LoginPage = () => {
 						<Link to="/forgot-password">Forgot password</Link>
 					</div>
 
-					<button type="submit">Sign In</button>
+					<button type="submit" disabled={isSubmitting}>
+						Sign In
+					</button>
 				</form>
 
 				<p>
