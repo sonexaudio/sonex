@@ -1,7 +1,7 @@
 import { z } from "zod";
 import AuthenticationForm from "../../components/auth/AuthenticationForm";
 import { useAuth } from "../../hooks/useAuth";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import SignInWithGoogleButton from "../../components/auth/SignInWithGoogleButton";
 import DividerLine from "../../components/DividerLine";
 import { useEffect, useState } from "react";
@@ -23,6 +23,9 @@ const LoginForm = () => {
 	const { loginWithEmail } = useAuth();
 	const [loginError, setLoginError] = useState<string | null>(null);
 	const location = useLocation();
+	const navigate = useNavigate();
+
+	const redirectPath = location.state?.from || "/";
 
 	useEffect(() => {
 		if (loginError) {
@@ -38,6 +41,7 @@ const LoginForm = () => {
 		setLoginError(null);
 		try {
 			await loginWithEmail(email, password);
+			navigate(redirectPath);
 		} catch (error) {
 			const message = (error as LoginErrorParams).message;
 			setLoginError(message || "Something went wrong. Please try again.");
@@ -53,6 +57,10 @@ const LoginForm = () => {
 					type="success"
 					message="Password reset successful. You may now log in."
 				/>
+			)}
+
+			{location.state?.message && (
+				<AuthState type="error" message={location.state?.message} />
 			)}
 
 			<SignInWithGoogleButton />

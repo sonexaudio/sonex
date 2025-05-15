@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState, type ReactNode } from "react";
 
-import api from "../lib/axios";
+import api, { setSessionExpiredHandler } from "../lib/axios";
+import { useNavigate } from "react-router";
 
 type User = {
 	id: string;
@@ -26,6 +27,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [user, setUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
+	const navigate = useNavigate();
 
 	// Fetch user session on load
 	useEffect(() => {
@@ -34,6 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				const { data } = await api.get("/auth/me");
 				setUser(data.data.user);
 			} catch (error) {
+				// handle session-expired messages if backend returns them
+				if (
+					error.response?.status === 401 &&
+					error.response?.data?.message ===
+						"Session invalid. User no longer exists."
+				) {
+					console.warn("Session expired or user no longer exists.");
+				}
 				setUser(null);
 			} finally {
 				setLoading(false);
@@ -50,6 +60,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			fetchUser(); // Safe to always call
 		}
 	}, []);
+
+	useEffect(() => {
+		setSessionExpiredHandler((message) => {
+			setUser(null); // clear state
+			navigate("/login", {
+				replace: true,
+				state: { message },
+			});
+		});
+	}, [navigate]);
 
 	const loginWithEmail = async (email: string, password: string) => {
 		try {
