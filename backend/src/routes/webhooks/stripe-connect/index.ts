@@ -2,6 +2,7 @@ import express from "express";
 import type Stripe from "stripe";
 import { stripe } from "../../../lib/stripe";
 import config from "../../../config";
+import { prisma } from "../../../lib/prisma";
 
 const connectWhRouter = express.Router();
 
@@ -24,6 +25,28 @@ connectWhRouter.post(
 			return;
 		}
 
-		res.send();
+		switch (event.type) {
+			case "account.updated": {
+				const account = event.data.object;
+				const data = await prisma.user.update({
+					where: {
+						connectedAccountId: account.id,
+					},
+					data: {
+						isOnboarded: !(
+							account.capabilities?.transfers === "pending" ||
+							account.capabilities?.transfers === "inactive"
+						),
+					},
+				});
+				break;
+			}
+			default:
+				console.log("Unhandled Web Event:", event);
+		}
+
+		res.sendStatus(200);
 	},
 );
+
+export default connectWhRouter;

@@ -27,6 +27,7 @@ export default function createServer() {
 	// instantiate express
 	const app = express();
 
+	// Establish middleware
 	// Set security headers
 	app.use(
 		helmet({
@@ -35,8 +36,6 @@ export default function createServer() {
 		}),
 	);
 
-	// Establish middleware
-	app.use(express.json());
 	app.use(
 		cors({
 			credentials: true,
