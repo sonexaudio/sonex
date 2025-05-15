@@ -5,14 +5,12 @@ import AuthLayout from "../../components/AuthLayout";
 
 const LoginPage = () => {
 	return (
-		<div>
-			<AuthLayout>
-				<PageLayout>
-					<LoginHeader />
-					<LoginForm />
-				</PageLayout>
-			</AuthLayout>
-		</div>
+		<AuthLayout>
+			<PageLayout>
+				<LoginHeader />
+				<LoginForm />
+			</PageLayout>
+		</AuthLayout>
 	);
 };
 export default LoginPage;

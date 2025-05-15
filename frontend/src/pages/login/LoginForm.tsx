@@ -4,8 +4,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { Link, useLocation } from "react-router";
 import SignInWithGoogleButton from "../../components/auth/SignInWithGoogleButton";
 import DividerLine from "../../components/DividerLine";
-import { useState } from "react";
-import LoginState from "./LoginState";
+import { useEffect, useState } from "react";
+import AuthState from "../../components/auth/AuthState";
 
 const LoginSchema = z.object({
 	email: z
@@ -23,6 +23,13 @@ const LoginForm = () => {
 	const { loginWithEmail } = useAuth();
 	const [loginError, setLoginError] = useState<string | null>(null);
 	const location = useLocation();
+
+	useEffect(() => {
+		if (loginError) {
+			const clearError = setTimeout(() => setLoginError(null), 4000);
+			return () => clearTimeout(clearError);
+		}
+	}, [loginError]);
 
 	const handleSubmit = async ({
 		email,
@@ -42,7 +49,7 @@ const LoginForm = () => {
 	return (
 		<div className="max-w-md mt-4 space-y-6">
 			{returningFromReset && (
-				<LoginState
+				<AuthState
 					type="success"
 					message="Password reset successful. You may now log in."
 				/>
@@ -53,7 +60,7 @@ const LoginForm = () => {
 			<DividerLine />
 
 			<AuthenticationForm schema={LoginSchema} onSubmit={handleSubmit}>
-				{loginError && <LoginState type="error" message={loginError} />}
+				{loginError && <AuthState type="error" message={loginError} />}
 				<h3>Sign in with email and password</h3>
 				<AuthenticationForm.Input
 					name="email"

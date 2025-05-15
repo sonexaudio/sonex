@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router";
 import HomePage from "../pages/HomePage";
 import LoginPage from "../pages/login/LoginPage";
-import SignupPage from "../pages/SignupPage";
+import SignupPage from "../pages/signup/SignupPage";
 import Error404 from "../pages/error/Error404";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";

@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/google`;
 	};
 
-	const signup = async (data: Record<string, unknown>) => {
+	const signup = async (data: Record<string, string>) => {
 		try {
 			const res = await api.post("/auth/register", data);
 			return res.data.user;
