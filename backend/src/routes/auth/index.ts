@@ -48,7 +48,7 @@ authRouter.post("/register", async (req: Request, res: Response) => {
 		});
 
 		if (existingUser) {
-			res.status(409).json({ error: "Email already exists" });
+			res.status(409).json({ error: "User with that email already exists" });
 			return;
 		}
 
@@ -138,7 +138,7 @@ authRouter.post("/forgot-password", async (req, res) => {
 		});
 
 		if (!user) {
-			res.status(404).send({ error: "User with that email does not exist" });
+			res.status(404).json({ error: "User with that email does not exist" });
 			return;
 		}
 

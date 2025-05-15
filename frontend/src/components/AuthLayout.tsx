@@ -31,9 +31,9 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 		);
 	}
 
-	// if (user) {
-	// 	return <Navigate to="/" replace />;
-	// }
+	if (user) {
+		return <Navigate to="/" replace />;
+	}
 
 	return <>{children}</>;
 };

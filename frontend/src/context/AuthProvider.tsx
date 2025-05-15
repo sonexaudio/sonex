@@ -16,7 +16,7 @@ interface AuthContextType {
 	loading: boolean;
 	loginWithEmail: (email: string, password: string) => Promise<void>;
 	loginWithGoogle: () => Promise<void>;
-	signup: (data: Record<string, unknown>) => Promise<void>;
+	signup: (data: Record<string, string>) => Promise<void>;
 	logout: () => Promise<void>;
 }
 

@@ -20,8 +20,8 @@ model User {
 
   // Stripe fields
   stripeCustomerId    String?           @unique
-  stripeAccountId     String?           @unique
-  currentSubscription SubscriptionPlan?
+  connectedAccountId     String?           @unique
+  isOnboarded Boolean @default(false)
 
   // Password reset fields
   resetPasswordToken    String?   @db.VarChar(64)
@@ -35,6 +35,7 @@ model User {
   // Associations
   subscriptions Subscription[]
   transactions  Transaction[]
+  activities Activity[]
 }
 
 model Subscription {
@@ -42,7 +43,7 @@ model Subscription {
   userId               String
   stripeSubscriptionId String             @unique
   plan                 String
-  status               SubscriptionStatus @default(Active)
+  status              String @default("active")
   startDate            DateTime
   endDate              DateTime
   cancelAtPeriodEnd    Boolean            @default(false)
@@ -59,9 +60,9 @@ model Subscription {
 model Transaction {
   id            String                   @id @default(cuid())
   userId        String
-  type          TransactionType
+  type          String
   amount        Float
-  paymentMethod TransactionPaymentMethod
+  // paymentMethod TransactionPaymentMethod
 
   // Was the transaction a subscription?
   subscriptionId String?
@@ -80,29 +81,42 @@ model Transaction {
   updatedAt DateTime @updatedAt
 }
 
-enum SubscriptionStatus {
-  Active
-  Canceled
+model Activity {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id])
+  action String
+  metadata Json?
+  targetType String // payment, client, file, etc
+  targetId String? // e.g. record subscription, provide sub_id
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
-enum SubscriptionPlan {
-  SonExperience
-  SonExplorer
-  SonExsphere
-}
+// enum SubscriptionStatus {
+//   Active
+//   Canceled
+// }
 
-enum TransactionType {
-  Subscription
-  Refund
-  ClientPayment
-  Other
-}
+// enum SubscriptionPlan {
+//   SonExperience
+//   SonExplorer
+//   SonExsphere
+// }
 
-enum TransactionPaymentMethod {
-  Card // includes debit and credit
-  Cash
-  Peer // cashapp, venmo, paypal, etc.
-  Bank // square, wave, squarespace/website, bank transfer
-  Check
-  Other // any other service not mentioned/ foreign payment
-}
+// enum TransactionType {
+//   Subscription
+//   Refund
+//   ClientPayment
+//   Other
+// }
+
+// enum TransactionPaymentMethod {
+//   Card // includes debit and credit
+//   Cash
+//   Peer // cashapp, venmo, paypal, etc.
+//   Bank // square, wave, squarespace/website, bank transfer
+//   Check
+//   Other // any other service not mentioned/ foreign payment
+// }

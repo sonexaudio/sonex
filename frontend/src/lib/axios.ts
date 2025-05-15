@@ -5,6 +5,14 @@ const api = axios.create({
 	withCredentials: true,
 });
 
+let onSessionExpired: ((message: string) => void) | null = null;
+
+export const setSessionExpiredHandler = (
+	handler: (message: string) => void,
+) => {
+	onSessionExpired = handler;
+};
+
 // Using an interceptor to handle response errors
 // 401 - should redirect to login/clear current user context, etc.
 api.interceptors.response.use(
@@ -12,9 +20,15 @@ api.interceptors.response.use(
 		return res;
 	},
 	(err) => {
-		if (err.response?.status === 401) {
-			// TODO: change to actual logic
-			console.error("Unauthorized - 401", err.response?.data);
+		const message = err.response?.data?.message;
+
+		if (
+			err.response?.status === 401 &&
+			message === "Session expired or user no longer exists."
+		) {
+			if (onSessionExpired) {
+				onSessionExpired(message);
+			}
 		}
 
 		return Promise.reject(err);
