@@ -51,6 +51,11 @@ passport.deserializeUser(async (userId, done) => {
 			where: {
 				id: userId as string,
 			},
+			omit: {
+				passwordLastChangedAt: true,
+				resetPasswordToken: true,
+				resetTokenExpiresAt: true,
+			},
 		});
 
 		if (!user) {

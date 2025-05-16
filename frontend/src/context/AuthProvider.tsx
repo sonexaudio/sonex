@@ -5,10 +5,18 @@ import { useNavigate } from "react-router";
 
 type User = {
 	id: string;
+	connectedAccountId: string;
+	stripeCustomerId: string;
+	avatarUrl?: string | null;
+
 	firstName?: string;
 	lastName?: string;
 	email?: string;
 	googleId?: string;
+	isOnboarded: boolean;
+
+	createdAt: string;
+	updatedAt: string;
 };
 
 interface AuthContextType {

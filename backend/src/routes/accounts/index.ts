@@ -51,10 +51,14 @@ accountRouter.post("/account", requireAuth, async (req, res) => {
 });
 
 // account onboarding link
-// TODO: add isOnboarded flag to make sure users don't repeat onboarding
 accountRouter.post("/onboarding", requireAuth, async (req, res) => {
 	if (!req.user?.connectedAccountId) {
 		res.status(400).json({ error: "User does not have stripe account" });
+		return;
+	}
+
+	if (req.user.isOnboarded) {
+		res.json({ message: "User already onboarded" });
 		return;
 	}
 

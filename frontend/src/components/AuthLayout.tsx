@@ -31,7 +31,7 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 		);
 	}
 
-	if (user) {
+	if (isPublicAuthRoute && user && location.pathname !== "/") {
 		return <Navigate to="/" replace />;
 	}
 

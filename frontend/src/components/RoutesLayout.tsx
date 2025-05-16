@@ -7,7 +7,8 @@ import ForgotPasswordPage from "../pages/forgot-password/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/reset-password/ResetPasswordPage";
 import SuccessPage from "../pages/payments/SuccessPage";
 import DashboardLayout from "./DashboardLayout";
-import OverviewPage from "../pages/dashboard/OverviewPage";
+import OverviewPage from "../pages/dashboard/overview/OverviewPage";
+import AccountPage from "../pages/dashboard/account/AccountPage";
 
 const RoutesLayout = () => {
 	return (
@@ -19,6 +20,7 @@ const RoutesLayout = () => {
 			<Route path="reset-password" element={<ResetPasswordPage />} />
 			<Route element={<DashboardLayout />}>
 				<Route path="overview" element={<OverviewPage />} />
+				<Route path="account" element={<AccountPage/>}/>
 			</Route>
 			<Route path="payments">
 				<Route path="success" element={<SuccessPage />} />

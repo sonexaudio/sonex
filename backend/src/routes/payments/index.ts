@@ -88,13 +88,17 @@ paymentRouter.post(
 // actions here will trigger stripe webhook
 paymentRouter.post("/portal", requireAuth, async (req, res) => {
 	if (!req.user?.stripeCustomerId) {
-		res.status(400).json({ error: "" });
+		res
+			.status(400)
+			.json({
+				error: "User does not exist or is not yet an active Sonex User",
+			});
 	}
 
 	try {
 		const session = await stripe.billingPortal.sessions.create({
 			customer: req.user?.stripeCustomerId as string,
-			return_url: `${config.frontendUrl}/dashboard`,
+			return_url: `${config.frontendUrl}/account`,
 		});
 
 		res.json({ data: { portalUrl: session.url } });
