@@ -75,40 +75,30 @@ export async function getOrCreateStripeCustomer(user: User): Promise<string> {
 }
 
 export async function getOrCreateStripeAccount(user: User): Promise<string> {
-	if (user.stripeAccountId) return user.stripeAccountId;
+	if (user.connectedAccountId) return user.connectedAccountId;
 
 	const account = await stripe.accounts.create({
-		type: "standard",
 		email: user.email,
 		metadata: {
 			userId: user.id,
 			customerId: user.stripeCustomerId,
 		},
 		controller: {
-			fees: {
-				payer: "account",
-			},
 			losses: {
-				payments: "stripe",
+				payments: "application",
+			},
+			fees: {
+				payer: "application",
 			},
 			stripe_dashboard: {
-				type: "full",
-			},
-			requirement_collection: "stripe",
-		},
-		capabilities: {
-			card_payments: {
-				requested: true,
-			},
-			cashapp_payments: {
-				requested: true,
+				type: "express",
 			},
 		},
 	});
 
 	await prisma.user.update({
 		where: { id: user.id },
-		data: { stripeAccountId: account.id },
+		data: { connectedAccountId: account.id },
 	});
 
 	return account.id;

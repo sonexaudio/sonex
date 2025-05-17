@@ -1,13 +1,23 @@
 import { createContext, useEffect, useState, type ReactNode } from "react";
 
-import api from "../lib/axios";
+import api, { setSessionExpiredHandler } from "../lib/axios";
+import { useNavigate } from "react-router";
+import type { AxiosError } from "axios";
 
-type User = {
+export type User = {
 	id: string;
+	connectedAccountId: string;
+	stripeCustomerId: string;
+	avatarUrl?: string | null;
+
 	firstName?: string;
 	lastName?: string;
 	email?: string;
 	googleId?: string;
+	isOnboarded: boolean;
+
+	createdAt: string;
+	updatedAt: string;
 };
 
 interface AuthContextType {
@@ -15,9 +25,15 @@ interface AuthContextType {
 	loading: boolean;
 	loginWithEmail: (email: string, password: string) => Promise<void>;
 	loginWithGoogle: () => Promise<void>;
-	signup: (data: Record<string, unknown>) => Promise<void>;
+	unlinkGoogleAccount: () => Promise<void>;
+	signup: (data: Record<string, string>) => Promise<void>;
 	logout: () => Promise<void>;
+	refetchUser: () => Promise<void>;
 }
+
+type ErrorResponse = {
+	message: string;
+};
 
 export const AuthContext = createContext<AuthContextType | undefined>(
 	undefined,
@@ -26,20 +42,30 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [user, setUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
+	const navigate = useNavigate();
+
+	const fetchUser = async () => {
+		setLoading(true);
+		try {
+			const { data } = await api.get("/auth/me");
+			setUser(data.data.user);
+		} catch (error) {
+			const axiosError = error as AxiosError<ErrorResponse>;
+			// handle session-expired messages if backend returns them
+			if (
+				axiosError.response?.status === 401 &&
+				axiosError.response?.data?.message ===
+					"Session invalid. User no longer exists."
+			)
+				console.warn("Session expired or user no longer exists.");
+			setUser(null);
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	// Fetch user session on load
 	useEffect(() => {
-		const fetchUser = async () => {
-			try {
-				const { data } = await api.get("/auth/me");
-				setUser(data.data.user);
-			} catch (error) {
-				setUser(null);
-			} finally {
-				setLoading(false);
-			}
-		};
-
 		// Only fetch if redirected back from Google
 		if (
 			window.location.pathname === "/" &&
@@ -51,14 +77,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}
 	}, []);
 
+	useEffect(() => {
+		setSessionExpiredHandler((message) => {
+			setUser(null); // clear state
+			navigate("/login", {
+				replace: true,
+				state: { message },
+			});
+		});
+	}, [navigate]);
+
 	const loginWithEmail = async (email: string, password: string) => {
 		try {
 			await api.post("/auth/login", { email, password });
-			const { data } = await api.get("/auth/me");
-			setUser(data.user);
-		} catch (err: any) {
-			console.error(err.response?.data);
-			throw err.response?.data;
+			fetchUser();
+		} catch (err) {
+			const axiosError = err as AxiosError<ErrorResponse>;
+			console.error(axiosError.response?.data);
+			throw axiosError.response?.data;
 		}
 	};
 
@@ -66,19 +102,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/google`;
 	};
 
-	const signup = async (data: Record<string, unknown>) => {
+	const signup = async (data: Record<string, string>) => {
 		try {
 			const res = await api.post("/auth/register", data);
 			return res.data.user;
-		} catch (error: any) {
+		} catch (error) {
+			const axiosError = error as AxiosError<ErrorResponse>;
+			console.error(axiosError);
+			throw axiosError.response?.data;
+		}
+	};
+
+	const unlinkGoogleAccount = async () => {
+		try {
+			await api.put("/auth/google/unlink");
+			await fetchUser();
+		} catch (error) {
 			console.error(error);
-			throw error.response?.data;
 		}
 	};
 
 	const logout = async () => {
 		await api.get("/auth/logout");
-		setUser(null);
+		fetchUser();
+		navigate("/");
 	};
 
 	const value: AuthContextType = {
@@ -86,8 +133,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		loading,
 		loginWithEmail,
 		loginWithGoogle,
+		unlinkGoogleAccount,
 		signup,
 		logout,
+		refetchUser: fetchUser,
 	};
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

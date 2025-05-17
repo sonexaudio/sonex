@@ -1,26 +1,26 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/auth";
 import { stripe } from "../../lib/stripe";
-import { getOrCreateStripeCustomer } from "../../utils";
+import { getOrCreateStripeAccount } from "../../utils";
 import type { User } from "../../generated/prisma";
 import config from "../../config";
 
 const accountRouter = Router();
 
 accountRouter.get("/info", requireAuth, async (req, res) => {
-	if (!req.user?.stripeAccountId) {
+	if (!req.user?.connectedAccountId) {
 		res.status(400).json({ error: "User does not have account" });
 		return;
 	}
 
 	try {
-		const account = await stripe.accounts.retrieve(req.user.stripeAccountId);
+		const account = await stripe.accounts.retrieve(req.user.connectedAccountId);
 		if (!account) {
 			res.status(404).json({ error: "Could not find account" });
 			return;
 		}
 
-		if (account.id !== req.user.stripeAccountId) {
+		if (account.id !== req.user.connectedAccountId) {
 			res.status(403).json({ error: "Forbidden" });
 		}
 
@@ -42,7 +42,7 @@ accountRouter.get("/info", requireAuth, async (req, res) => {
 
 accountRouter.post("/account", requireAuth, async (req, res) => {
 	try {
-		const accountId = await getOrCreateStripeCustomer(req.user as User);
+		const accountId = await getOrCreateStripeAccount(req.user as User);
 		res.json({ data: accountId });
 	} catch (error) {
 		console.error(error);
@@ -51,14 +51,18 @@ accountRouter.post("/account", requireAuth, async (req, res) => {
 });
 
 // account onboarding link
-// TODO: add isOnboarded flag to make sure users don't repeat onboarding
 accountRouter.post("/onboarding", requireAuth, async (req, res) => {
-	if (!req.user?.stripeAccountId) {
+	if (!req.user?.connectedAccountId) {
 		res.status(400).json({ error: "User does not have stripe account" });
 		return;
 	}
 
-	const account: string = req.user.stripeAccountId;
+	if (req.user.isOnboarded) {
+		res.json({ message: "User already onboarded" });
+		return;
+	}
+
+	const account: string = req.user.connectedAccountId;
 
 	const accountLink = await stripe.accountLinks.create({
 		account,
@@ -67,5 +71,7 @@ accountRouter.post("/onboarding", requireAuth, async (req, res) => {
 		return_url: `${config.frontendUrl}/return/${account}`,
 	});
 
-	res.json({ data: accountLink });
+	res.json({ data: { accountLink: accountLink.url } });
 });
+
+export default accountRouter;

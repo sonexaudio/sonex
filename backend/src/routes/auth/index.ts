@@ -11,6 +11,7 @@ import type { User } from "../../generated/prisma";
 import config from "../../config";
 import "../../lib/passport/local";
 import "../../lib/passport/google";
+import { requireAuth } from "../../middleware/auth";
 
 const authRouter = Router();
 
@@ -48,7 +49,7 @@ authRouter.post("/register", async (req: Request, res: Response) => {
 		});
 
 		if (existingUser) {
-			res.status(409).json({ error: "Email already exists" });
+			res.status(409).json({ error: "User with that email already exists" });
 			return;
 		}
 
@@ -105,11 +106,33 @@ authRouter.get(
 
 authRouter.get(
 	"/google/callback",
-	passport.authenticate("google"),
+	passport.authenticate("google", {
+		failureRedirect: `${config.frontendUrl}/account?error=google-email-mismatch`,
+	}),
 	(req, res) => {
 		res.redirect(config.frontendUrl);
 	},
 );
+
+authRouter.put("/google/unlink", requireAuth, async (req, res) => {
+	try {
+		await prisma.user.update({
+			where: { id: req.user?.id },
+			data: {
+				googleId: null,
+			},
+		});
+
+		res
+			.status(200)
+			.json({ success: true, message: "Google account unlinked." });
+	} catch (error) {
+		console.error(error);
+		res
+			.status(500)
+			.json({ success: false, message: "Failed to unlink Google account." });
+	}
+});
 
 authRouter.get("/logout", (req, res) => {
 	req.logout((error) => {
@@ -118,7 +141,14 @@ authRouter.get("/logout", (req, res) => {
 			return;
 		}
 
-		res.status(204).send();
+		req.session.destroy((err) => {
+			if (err) {
+				res.status(500).json({ error: "Something went wrong" });
+				return;
+			}
+
+			res.status(204).send();
+		});
 	});
 });
 
@@ -138,7 +168,7 @@ authRouter.post("/forgot-password", async (req, res) => {
 		});
 
 		if (!user) {
-			res.status(404).send({ error: "User with that email does not exist" });
+			res.status(404).json({ error: "User with that email does not exist" });
 			return;
 		}
 

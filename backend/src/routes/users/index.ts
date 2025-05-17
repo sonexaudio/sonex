@@ -88,4 +88,38 @@ userRouter.delete("/:id", requireAuth, async (req, res) => {
 	}
 });
 
+userRouter.get("/:id/activities", requireAuth, async (req, res) => {
+	const { id } = req.params;
+
+	try {
+		const activities = await prisma.activity.findMany({
+			where: {
+				userId: id,
+			},
+		});
+
+		res.json({ data: { activities } });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Something went wrong" });
+	}
+});
+
+userRouter.get("/:id/transactions", requireAuth, async (req, res) => {
+	const { id } = req.params;
+
+	try {
+		const transactions = await prisma.transaction.findMany({
+			where: {
+				userId: id,
+			},
+		});
+
+		res.json({ data: { transactions } });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Something went wrong" });
+	}
+});
+
 export default userRouter;
