@@ -88,11 +88,10 @@ paymentRouter.post(
 // actions here will trigger stripe webhook
 paymentRouter.post("/portal", requireAuth, async (req, res) => {
 	if (!req.user?.stripeCustomerId) {
-		res
-			.status(400)
-			.json({
-				error: "User does not exist or is not yet an active Sonex User",
-			});
+		res.status(400).json({
+			error: "User does not exist or is not yet an active Sonex User",
+		});
+		return;
 	}
 
 	try {

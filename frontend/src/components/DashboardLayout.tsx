@@ -3,10 +3,9 @@ import { useAuth } from "../hooks/useAuth";
 
 const DashboardLayout = () => {
 	const { user, loading, logout } = useAuth();
-	// if (!loading && !user) {
-	//     return <Navigate to="/login" replace />
-	// }
+
 	if (loading) return <p>Loading...</p>;
+
 	return (
 		<>
 			<div>

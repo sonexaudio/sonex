@@ -3,7 +3,7 @@ import { createContext, useEffect, useState, type ReactNode } from "react";
 import api, { setSessionExpiredHandler } from "../lib/axios";
 import { useNavigate } from "react-router";
 
-type User = {
+export type User = {
 	id: string;
 	connectedAccountId: string;
 	stripeCustomerId: string;
@@ -24,8 +24,10 @@ interface AuthContextType {
 	loading: boolean;
 	loginWithEmail: (email: string, password: string) => Promise<void>;
 	loginWithGoogle: () => Promise<void>;
+	unlinkGoogleAccount: () => Promise<void>;
 	signup: (data: Record<string, string>) => Promise<void>;
 	logout: () => Promise<void>;
+	refetchUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(
@@ -37,27 +39,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const [loading, setLoading] = useState(true);
 	const navigate = useNavigate();
 
+	const fetchUser = async () => {
+		setLoading(true);
+		try {
+			const { data } = await api.get("/auth/me");
+			setUser(data.data.user);
+		} catch (error) {
+			// handle session-expired messages if backend returns them
+			if (
+				error.response?.status === 401 &&
+				error.response?.data?.message ===
+					"Session invalid. User no longer exists."
+			) {
+				console.warn("Session expired or user no longer exists.");
+			}
+			setUser(null);
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	// Fetch user session on load
 	useEffect(() => {
-		const fetchUser = async () => {
-			try {
-				const { data } = await api.get("/auth/me");
-				setUser(data.data.user);
-			} catch (error) {
-				// handle session-expired messages if backend returns them
-				if (
-					error.response?.status === 401 &&
-					error.response?.data?.message ===
-						"Session invalid. User no longer exists."
-				) {
-					console.warn("Session expired or user no longer exists.");
-				}
-				setUser(null);
-			} finally {
-				setLoading(false);
-			}
-		};
-
 		// Only fetch if redirected back from Google
 		if (
 			window.location.pathname === "/" &&
@@ -82,8 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const loginWithEmail = async (email: string, password: string) => {
 		try {
 			await api.post("/auth/login", { email, password });
-			const { data } = await api.get("/auth/me");
-			setUser(data.user);
+			fetchUser();
 		} catch (err: any) {
 			console.error(err.response?.data);
 			throw err.response?.data;
@@ -104,9 +106,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}
 	};
 
+	const unlinkGoogleAccount = async () => {
+		try {
+			await api.put("/auth/google/unlink");
+			await fetchUser();
+		} catch (error) {
+			console.error(error);
+		}
+	};
+
 	const logout = async () => {
 		await api.get("/auth/logout");
-		setUser(null);
+		fetchUser();
+		navigate("/");
 	};
 
 	const value: AuthContextType = {
@@ -114,8 +126,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		loading,
 		loginWithEmail,
 		loginWithGoogle,
+		unlinkGoogleAccount,
 		signup,
 		logout,
+		refetchUser: fetchUser,
 	};
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

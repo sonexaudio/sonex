@@ -1,7 +1,9 @@
 import { useAuth } from "../../hooks/useAuth";
 import { FcGoogle } from "react-icons/fc";
 
-const SignInWithGoogleButton = () => {
+const SignInWithGoogleButton = ({
+	method = "login",
+}: { method?: "login" | "connect" }) => {
 	const { loginWithGoogle } = useAuth();
 	return (
 		<button
@@ -10,7 +12,11 @@ const SignInWithGoogleButton = () => {
 			onClick={loginWithGoogle}
 		>
 			<FcGoogle className="text-xl" />
-			<span className="font-medium">Continue with Google</span>
+			<span className="font-medium">
+				{method === "login"
+					? "Continue with Google"
+					: "Connect your Google Account"}
+			</span>
 		</button>
 	);
 };

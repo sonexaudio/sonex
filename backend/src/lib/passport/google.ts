@@ -14,12 +14,35 @@ passport.use(
 			clientID: google.clientId,
 			clientSecret: google.clientSecret,
 			callbackURL: google.callbackUrl,
+			passReqToCallback: true,
 		},
-		async (_accessToken, _refreshToken, profile, done) => {
+		async (req, _accessToken, _refreshToken, profile, done) => {
+			const googleEmail = profile.emails?.[0].value;
+
+			// is there a user already logged in who wants to link Google?
+			if (req.user) {
+				if (req.user.email !== googleEmail) {
+					return done(null, false, {
+						message: "Google account email does not match your account email.",
+					});
+				}
+
+				const updatedUser = await prisma.user.update({
+					where: { id: req.user?.id },
+					data: {
+						googleId: profile.id,
+						avatarUrl: req.user?.avatarUrl || profile.photos?.[0].value,
+					},
+				});
+
+				return done(null, updatedUser as User);
+			}
+
+			// Or just find or create the user to log them in
 			try {
 				const user = await prisma.user.findUnique({
 					where: {
-						googleId: profile.id,
+						email: googleEmail,
 					},
 				});
 
@@ -35,7 +58,7 @@ passport.use(
 						firstName: parsedName?.firstName ?? null,
 						lastName: parsedName?.lastName ?? null,
 						email: profile.emails?.[0].value as string,
-						avatarUrl: profile.profileUrl ?? null,
+						avatarUrl: profile.photos?.[0].value ?? null,
 					},
 				});
 

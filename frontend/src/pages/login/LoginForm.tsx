@@ -22,6 +22,7 @@ type LoginErrorParams = {
 const LoginForm = () => {
 	const { loginWithEmail } = useAuth();
 	const [loginError, setLoginError] = useState<string | null>(null);
+	const [loggingIn, setLoggingIn] = useState(false);
 	const location = useLocation();
 	const navigate = useNavigate();
 
@@ -39,12 +40,16 @@ const LoginForm = () => {
 		password,
 	}: { email: string; password: string }) => {
 		setLoginError(null);
+		setLoggingIn(true);
 		try {
 			await loginWithEmail(email, password);
 			navigate(redirectPath);
 		} catch (error) {
 			const message = (error as LoginErrorParams).message;
+			console.error(message);
 			setLoginError(message || "Something went wrong. Please try again.");
+		} finally {
+			setLoggingIn(false);
 		}
 	};
 
