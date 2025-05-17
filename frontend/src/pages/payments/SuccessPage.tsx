@@ -4,7 +4,7 @@ import api from "../../lib/axios";
 const SuccessPage = () => {
 	const [searchParams] = useSearchParams();
 	const sessionId = searchParams.get("session_id");
-	// if (!sessionId) return <p>This page can not be shown</p>;
+	if (!sessionId) return <p>This page can not be shown</p>;
 
 	const handleStripeAccountRedirect = async () => {
 		const {

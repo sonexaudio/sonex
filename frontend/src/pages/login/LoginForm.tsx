@@ -22,7 +22,7 @@ type LoginErrorParams = {
 const LoginForm = () => {
 	const { loginWithEmail } = useAuth();
 	const [loginError, setLoginError] = useState<string | null>(null);
-	const [loggingIn, setLoggingIn] = useState(false);
+	const [_loggingIn, setLoggingIn] = useState(false);
 	const location = useLocation();
 	const navigate = useNavigate();
 

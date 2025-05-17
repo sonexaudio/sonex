@@ -2,6 +2,7 @@ import { createContext, useEffect, useState, type ReactNode } from "react";
 
 import api, { setSessionExpiredHandler } from "../lib/axios";
 import { useNavigate } from "react-router";
+import type { AxiosError } from "axios";
 
 export type User = {
 	id: string;
@@ -30,6 +31,10 @@ interface AuthContextType {
 	refetchUser: () => Promise<void>;
 }
 
+type ErrorResponse = {
+	message: string;
+};
+
 export const AuthContext = createContext<AuthContextType | undefined>(
 	undefined,
 );
@@ -45,14 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			const { data } = await api.get("/auth/me");
 			setUser(data.data.user);
 		} catch (error) {
+			const axiosError = error as AxiosError<ErrorResponse>;
 			// handle session-expired messages if backend returns them
 			if (
-				error.response?.status === 401 &&
-				error.response?.data?.message ===
+				axiosError.response?.status === 401 &&
+				axiosError.response?.data?.message ===
 					"Session invalid. User no longer exists."
-			) {
+			)
 				console.warn("Session expired or user no longer exists.");
-			}
 			setUser(null);
 		} finally {
 			setLoading(false);
@@ -86,9 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		try {
 			await api.post("/auth/login", { email, password });
 			fetchUser();
-		} catch (err: any) {
-			console.error(err.response?.data);
-			throw err.response?.data;
+		} catch (err) {
+			const axiosError = err as AxiosError<ErrorResponse>;
+			console.error(axiosError.response?.data);
+			throw axiosError.response?.data;
 		}
 	};
 
@@ -100,9 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		try {
 			const res = await api.post("/auth/register", data);
 			return res.data.user;
-		} catch (error: any) {
-			console.error(error);
-			throw error.response?.data;
+		} catch (error) {
+			const axiosError = error as AxiosError<ErrorResponse>;
+			console.error(axiosError);
+			throw axiosError.response?.data;
 		}
 	};
 

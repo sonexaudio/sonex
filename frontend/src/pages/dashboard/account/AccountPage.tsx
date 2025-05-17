@@ -18,8 +18,6 @@ const AccountPage = () => {
 		getActivities,
 		activities,
 		getTransactionHistory,
-		transactions,
-		deleteUser,
 	} = useUser();
 	const [searchParams] = useSearchParams();
 	const error = searchParams.get("error");
