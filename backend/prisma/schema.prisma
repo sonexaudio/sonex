@@ -33,9 +33,29 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Associations
+  projects Project[]
   subscriptions Subscription[]
   transactions  Transaction[]
   activities Activity[]
+}
+
+model Project {
+  id String @id @default(cuid())
+  title String
+  description String?
+  userId String
+  amount Decimal?
+  dueDate DateTime?
+  status ProjectStatus @default(Active)// active, complete, archived, private
+  paymentStatus ProjectPaymentStatus @default(Unpaid) // free, unpaid, paid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Associations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Prevent user from creating project with the same title
+  @@unique([title, userId])
 }
 
 model Subscription {
@@ -94,29 +114,15 @@ model Activity {
   @@index([userId])
 }
 
-// enum SubscriptionStatus {
-//   Active
-//   Canceled
-// }
+enum ProjectStatus {
+  Active
+  Complete
+  Archived
+  Private
+}
 
-// enum SubscriptionPlan {
-//   SonExperience
-//   SonExplorer
-//   SonExsphere
-// }
-
-// enum TransactionType {
-//   Subscription
-//   Refund
-//   ClientPayment
-//   Other
-// }
-
-// enum TransactionPaymentMethod {
-//   Card // includes debit and credit
-//   Cash
-//   Peer // cashapp, venmo, paypal, etc.
-//   Bank // square, wave, squarespace/website, bank transfer
-//   Check
-//   Other // any other service not mentioned/ foreign payment
-// }
+enum ProjectPaymentStatus {
+  Free
+  Unpaid
+  Paid
+}
