@@ -9,6 +9,8 @@ import SuccessPage from "../pages/payments/SuccessPage";
 import DashboardLayout from "./DashboardLayout";
 import OverviewPage from "../pages/dashboard/overview/OverviewPage";
 import AccountPage from "../pages/dashboard/account/AccountPage";
+import ProjectsPage from "../pages/dashboard/projects/ProjectsPage";
+import CurrentProjectPage from "../pages/dashboard/projects/[id]/CurrentProjectPage";
 
 const RoutesLayout = () => {
 	return (
@@ -20,7 +22,11 @@ const RoutesLayout = () => {
 			<Route path="reset-password" element={<ResetPasswordPage />} />
 			<Route element={<DashboardLayout />}>
 				<Route path="overview" element={<OverviewPage />} />
-				<Route path="account" element={<AccountPage/>}/>
+				<Route path="projects">
+					<Route index element={<ProjectsPage />} />
+					<Route path=":id" element={<CurrentProjectPage />} />
+				</Route>
+				<Route path="account" element={<AccountPage />} />
 			</Route>
 			<Route path="payments">
 				<Route path="success" element={<SuccessPage />} />
