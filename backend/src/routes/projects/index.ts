@@ -92,4 +92,23 @@ projectRouter.put("/:id", requireAuth, async (req, res) => {
 	res.json({ data: { updatedProject } });
 });
 
+projectRouter.delete("/:id", requireAuth, async (req, res) => {
+	const { id } = req.params;
+	const existingProject = await prisma.project.findUnique({
+		where: { id },
+	});
+
+	if (!existingProject) {
+		res.status(404).json({ error: "Project does not exist" });
+		return;
+	}
+
+	if (existingProject.userId !== req.user?.id) {
+		res.status(403).json({ error: "Forbidden" });
+		return;
+	}
+
+	res.sendStatus(204)
+})
+
 export default projectRouter;

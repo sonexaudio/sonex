@@ -1,4 +1,4 @@
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import api from "../lib/axios";
 
 const GET_ALL_PROJECTS = "getAllProjects";
@@ -36,14 +36,54 @@ function projectReducer(state, action: ProjectReducerAction) {
 			};
 		}
 
+		case UPDATE_PROJECT: {
+			return {
+				...state,
+				allProjects: state.allProjects.map((project) =>
+					project.id === payload.data.project.id
+						? payload.data.project
+						: project
+				),
+				currentProject: payload.data.project,
+			}
+		}
+
+		case DELETE_PROJECT:
+			return {
+				...state,
+				allProjects: state.allProjects.filter(
+					(project) => project.id !== payload.data.project.id
+				),
+				currentProject:
+					state.currentProject?.id === payload.data.project.id
+						? {}
+						: state.currentProject,
+			};
+
 		default:
 			return state;
 	}
 }
 
 export default function useProjects() {
-	const [state, dispatch] = useReducer(projectReducer, initialProjects);
+	const [state, dispatchBase] = useReducer(projectReducer, initialProjects);
 	const [loading, setLoading] = useState(true);
+
+	const devtools = useRef(
+		typeof window !== "undefined" &&
+			window.__REDUX_DEVTOOLS_EXTENSION__?.connect({
+				name: "ProjectsReducer",
+			})
+	);
+
+	useEffect(() => {
+		devtools.current?.init(initialProjects);
+	}, []);
+
+	const dispatch = (action: ProjectReducerAction) => {
+		dispatchBase(action);
+		devtools.current?.send(action, state);
+	};
 
 	const getAllProjects = async () => {
 		setLoading(true);
@@ -73,5 +113,47 @@ export default function useProjects() {
 		}
 	};
 
-	return { state, getAllProjects, getSingleProject, loading };
+	const createProject = async (projectData: any) => {
+		setLoading(true);
+		try {
+			const { data } = await api.post("/projects", projectData);
+			dispatch({ type: CREATE_PROJECT, payload: data });
+		} catch (error) {
+			console.error(error);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const updateProject = async (id: string, projectData: any) => {
+		setLoading(true);
+		try {
+			const { data } = await api.patch(`/projects/${id}`, projectData);
+			dispatch({ type: UPDATE_PROJECT, payload: data });
+		} catch (error) {
+			console.error(error);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const deleteProject = async (id: string) => {
+		setLoading(true);
+		try {
+			const { data } = await api.delete(`/projects/${id}`);
+			dispatch({ type: DELETE_PROJECT, payload: data });
+		} catch (error) {
+			console.error(error);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	return { state,
+		loading,
+		getAllProjects,
+		getSingleProject,
+		createProject,
+		updateProject,
+		deleteProject, };
 }
