@@ -12,11 +12,14 @@ import config from "../../config";
 import "../../lib/passport/local";
 import "../../lib/passport/google";
 import { requireAuth } from "../../middleware/auth";
+import { errorResponse, successResponse } from "../../utils/responses";
+import { validate } from "../../middleware/validate";
+import { SignupSchema, LoginSchema } from "../../schemas/user";
 
 const authRouter = Router();
 
 // Get currently authenticated user
-authRouter.get("/me", (req, res) => {
+authRouter.get("/me", (req, res, next) => {
 	try {
 		if (
 			!req.user ||
@@ -27,14 +30,13 @@ authRouter.get("/me", (req, res) => {
 			return;
 		}
 
-		res.json({ data: { user: req.user } });
+		successResponse(res, req.user);
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
-authRouter.post("/register", async (req: Request, res: Response) => {
+authRouter.post("/register", validate(SignupSchema), async (req, res, next) => {
 	const { email, name, password } = req.body;
 	try {
 		if (!email || !name || !password) {
@@ -49,7 +51,7 @@ authRouter.post("/register", async (req: Request, res: Response) => {
 		});
 
 		if (existingUser) {
-			res.status(409).json({ error: "User with that email already exists" });
+			errorResponse(res, 409, "User with that email already exists");
 			return;
 		}
 
@@ -65,35 +67,31 @@ authRouter.post("/register", async (req: Request, res: Response) => {
 			},
 		});
 
-		res.status(201).json({ error: null, data: newUser });
+		successResponse(res, newUser, null, 201);
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", validate(LoginSchema), async (req, res, next) => {
 	passport.authenticate("local", (err: unknown, user: User, info: unknown) => {
 		if (err) {
-			console.error(err);
-			res.status(500).json({ error: "Something went wrong" });
+			next(err);
 			return;
 		}
 
 		if (!user) {
-			console.error(info);
-			res.status(400).json(info);
+			errorResponse(res, 400, info as string);
 			return;
 		}
 
 		req.login(user, (err) => {
 			if (err) {
-				console.error(err);
-				res.status(500).json({ error: "Something went wrong" });
+				next(err);
 				return;
 			}
 
-			res.status(200).json({ data: { user } });
+			successResponse(res, user, null);
 		});
 	})(req, res);
 });

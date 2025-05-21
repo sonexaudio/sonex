@@ -47,8 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const fetchUser = async () => {
 		setLoading(true);
 		try {
-			const { data } = await api.get("/auth/me");
-			setUser(data.data.user);
+			const {
+				data: { data },
+			} = await api.get("/auth/me");
+			setUser(data);
 		} catch (error) {
 			const axiosError = error as AxiosError<ErrorResponse>;
 			// handle session-expired messages if backend returns them

@@ -7,6 +7,7 @@ import projectRoutes from "./projects";
 import stripeWebhook from "./webhooks/stripe";
 import stripeConnectWebhook from "./webhooks/stripe-connect";
 import { checkUserStillExists } from "../middleware/auth";
+import { errorHandler } from "../middleware/errorHandler";
 
 const router = express.Router();
 
@@ -24,5 +25,7 @@ router.use("/projects", projectRoutes);
 router.get("/health", (_, res) => {
 	res.sendStatus(200);
 });
+
+router.use(errorHandler);
 
 export default router;
