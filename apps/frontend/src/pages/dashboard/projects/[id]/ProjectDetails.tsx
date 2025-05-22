@@ -1,4 +1,4 @@
-import type { ProjectWithUserInfo } from "../../../../hooks/useProjects";
+import type { ProjectWithUserInfo } from "../../../../types/projects";
 
 const ProjectDetails = ({ project }: { project: ProjectWithUserInfo }) => {
 	return (

@@ -1,4 +1,4 @@
-import type { ProjectWithUserInfo } from "../../../../hooks/useProjects";
+import type { ProjectWithUserInfo } from "../../../../types/projects";
 
 const ProjectActions = ({
 	isOwner,

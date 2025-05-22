@@ -1,8 +1,8 @@
-import useProjects from "../../../hooks/useProjects";
+// import useProjects from "../../../hooks/useProjects";
 
 // Here for safe keeping
 const NewProjectForm = () => {
-	const { createProject } = useProjects();
+	// const { createProject } = useProjects();
 	return (
 		<form className="flex flex-col gap-8">
 			<h3>Create New Project</h3>

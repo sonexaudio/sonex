@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			// handle session-expired messages if backend returns them
 			if (
 				axiosError.response?.status === 401 &&
-				axiosError.response?.data?.error ===
+				axiosError.response?.data?.message ===
 					"Session invalid. User no longer exists."
 			)
 				console.warn("Session expired or user no longer exists.");
@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			fetchUser();
 		} catch (err) {
 			const axiosError = err as AxiosError<ErrorResponse>;
-			throw axiosError.response?.data.error;
+			throw axiosError.response?.data?.message;
 		}
 	};
 
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			return res.data.user;
 		} catch (error) {
 			const axiosError = error as AxiosError<ErrorResponse>;
-			throw axiosError.response?.data.error;
+			throw axiosError.response?.data.message;
 		}
 	};
 

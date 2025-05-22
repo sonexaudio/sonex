@@ -1,4 +1,4 @@
-import type { ProjectWithUserInfo } from "../../../../hooks/useProjects";
+import type { ProjectWithUserInfo } from "../../../../types/projects";
 
 const ProjectHeader = ({
 	project,
@@ -6,9 +6,9 @@ const ProjectHeader = ({
 }: { project: ProjectWithUserInfo; isOwner: boolean }) => {
 	return (
 		<div>
-			<h1>{project.title}</h1>
-			<p>{project.dueDate ? `Due ${project.dueDate}` : "No due date"}</p>
-			{!isOwner && <p>Created by {project.user.firstName}</p>}
+			<h1>{project?.title}</h1>
+			<p>{project?.dueDate ? `Due ${project?.dueDate}` : "No due date"}</p>
+			{!isOwner && <p>Created by {project?.user?.firstName}</p>}
 		</div>
 	);
 };

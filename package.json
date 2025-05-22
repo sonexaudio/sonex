@@ -5,8 +5,8 @@
 	"workspaces": ["apps/*", "packages/*"],
 	"scripts": {
 		"dev": "pnpm -r --parallel dev",
-		"start": "echo 'Production mode run seperately for individual apps'",
-		"build": "echo 'Build individual apps with their own scripts"
+		"start": "echo 'Production mode run separately for individual apps'",
+		"build": "pnpm -r --parallel build"
 	},
 
 	"author": "Isaiah Vickers",

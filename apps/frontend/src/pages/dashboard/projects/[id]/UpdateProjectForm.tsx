@@ -1,4 +1,4 @@
-import type { ProjectWithUserInfo } from "../../../../hooks/useProjects";
+import type { ProjectWithUserInfo } from "../../../../types/projects";
 
 const UpdateProjectForm = ({ project }: { project: ProjectWithUserInfo }) => {
 	return (
@@ -15,7 +15,14 @@ const UpdateProjectForm = ({ project }: { project: ProjectWithUserInfo }) => {
 					value={project.description || ""}
 				></textarea>
 				<input type="number" value={project.amount || 0} />
-				<input type="date" value={project.dueDate || ""} />
+				<input
+					type="date"
+					value={
+						project.dueDate
+							? new Date(project.dueDate).toDateString()
+							: undefined
+					}
+				/>
 				<select name="status" id="" defaultValue={project.status}>
 					<option value="Active">Active</option>
 					<option value="Complete">Complete</option>
