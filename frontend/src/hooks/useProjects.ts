@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useReducer, useState } from "react";
 import api from "../lib/axios";
 import type { User } from "./useUser";
 
@@ -8,13 +8,18 @@ const CREATE_PROJECT = "createProject";
 const UPDATE_PROJECT = "updateProject";
 const DELETE_PROJECT = "deleteProject";
 
+type ProjectState = {
+	allProjects: Project[];
+	currentProject: Project | ProjectWithUserInfo | null;
+};
+
 export interface Project {
 	id: string;
 	title: string;
 	description?: string | null;
 	userId: string;
 	amount?: number | null;
-	dueDate?: string | null;
+	dueDate?: string | Date | null;
 	status?: string;
 	paymentStatus?: string;
 	createdAt?: string | Date | undefined;
@@ -25,56 +30,68 @@ export interface ProjectWithUserInfo extends Project {
 	user: Pick<User, "id" | "firstName" | "email">;
 }
 
-const initialProjects = {
+const initialProjects: ProjectState = {
 	allProjects: [],
-	currentProject: {},
+	currentProject: null,
 };
 
-type ProjectReducerAction = {
-	type: string;
-	payload: any;
-};
+type ProjectReducerAction =
+	| {
+			type: typeof GET_ALL_PROJECTS;
+			payload: { projects: Project[] };
+	  }
+	| {
+			type: typeof GET_SINGLE_PROJECT;
+			payload: { project: ProjectWithUserInfo };
+	  }
+	| {
+			type: typeof CREATE_PROJECT;
+			payload: { project: Project };
+	  }
+	| {
+			type: typeof UPDATE_PROJECT;
+			payload: { project: Project };
+	  }
+	| {
+			type: typeof DELETE_PROJECT;
+			payload: { id: string };
+	  };
 
-function projectReducer(state, action: ProjectReducerAction) {
-	const { payload } = action;
+function projectReducer(state: ProjectState, action: ProjectReducerAction) {
 	switch (action.type) {
-		case GET_ALL_PROJECTS: {
-			return { ...state, allProjects: [...payload.data.projects] };
-		}
+		case GET_ALL_PROJECTS:
+			return { ...state, allProjects: [...action.payload.projects] };
 
-		case GET_SINGLE_PROJECT: {
-			return { ...state, currentProject: { ...payload.data.project } };
-		}
+		case GET_SINGLE_PROJECT:
+			return { ...state, currentProject: { ...action.payload.project } };
 
-		case CREATE_PROJECT: {
+		case CREATE_PROJECT:
 			return {
 				...state,
-				allProjects: [payload.data.project, ...allProjects],
-				currentProject: payload.data.project,
+				allProjects: [action.payload.project, ...state.allProjects],
+				currentProject: action.payload.project,
 			};
-		}
 
-		case UPDATE_PROJECT: {
+		case UPDATE_PROJECT:
 			return {
 				...state,
 				allProjects: state.allProjects.map((project) =>
-					project.id === payload.data.project.id
-						? payload.data.project
+					project.id === action.payload.project.id
+						? action.payload.project
 						: project,
 				),
-				currentProject: payload.data.project,
+				currentProject: action.payload.project,
 			};
-		}
 
 		case DELETE_PROJECT:
 			return {
 				...state,
 				allProjects: state.allProjects.filter(
-					(project) => project.id !== payload.data.project.id,
+					(project) => project.id !== action.payload.id,
 				),
 				currentProject:
-					state.currentProject?.id === payload.data.project.id
-						? {}
+					state.currentProject?.id === action.payload.id
+						? null
 						: state.currentProject,
 			};
 
@@ -90,9 +107,15 @@ export default function useProjects() {
 	const getAllProjects = async () => {
 		setLoading(true);
 		try {
-			const { data } = await api.get("/projects");
+			const {
+				data: { data },
+			} = await api.get("/projects");
+
 			if (data) {
-				dispatch({ type: GET_ALL_PROJECTS, payload: data });
+				dispatch({
+					type: GET_ALL_PROJECTS,
+					payload: data,
+				});
 			}
 		} catch (error) {
 			console.error(error);
@@ -104,7 +127,9 @@ export default function useProjects() {
 	const getSingleProject = async (id: string) => {
 		setLoading(true);
 		try {
-			const { data } = await api.get(`/projects/${id}`);
+			const {
+				data: { data },
+			} = await api.get(`/projects/${id}`);
 			if (data) {
 				dispatch({ type: GET_SINGLE_PROJECT, payload: data });
 			}
@@ -115,10 +140,12 @@ export default function useProjects() {
 		}
 	};
 
-	const createProject = async (projectData: any) => {
+	const createProject = async (projectData: Partial<Project>) => {
 		setLoading(true);
 		try {
-			const { data } = await api.post("/projects", projectData);
+			const {
+				data: { data },
+			} = await api.post("/projects", projectData);
 			dispatch({ type: CREATE_PROJECT, payload: data });
 		} catch (error) {
 			console.error(error);
@@ -127,10 +154,12 @@ export default function useProjects() {
 		}
 	};
 
-	const updateProject = async (id: string, projectData: any) => {
+	const updateProject = async (id: string, projectData: Partial<Project>) => {
 		setLoading(true);
 		try {
-			const { data } = await api.patch(`/projects/${id}`, projectData);
+			const {
+				data: { data },
+			} = await api.put(`/projects/${id}`, projectData);
 			dispatch({ type: UPDATE_PROJECT, payload: data });
 		} catch (error) {
 			console.error(error);
@@ -142,8 +171,8 @@ export default function useProjects() {
 	const deleteProject = async (id: string) => {
 		setLoading(true);
 		try {
-			const { data } = await api.delete(`/projects/${id}`);
-			dispatch({ type: DELETE_PROJECT, payload: data });
+			await api.delete(`/projects/${id}`);
+			dispatch({ type: DELETE_PROJECT, payload: { id } });
 		} catch (error) {
 			console.error(error);
 		} finally {

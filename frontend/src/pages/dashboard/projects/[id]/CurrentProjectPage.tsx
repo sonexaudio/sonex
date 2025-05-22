@@ -21,8 +21,8 @@ const CurrentProjectPage = () => {
 		getSingleProject(id as string);
 	}, [id]);
 
-	const project: ProjectWithUserInfo = state.currentProject;
-	const isOwner = !!currentUser && currentUser.id === project.userId;
+	const project = state.currentProject;
+	const isOwner = !!currentUser && currentUser.id === project?.userId;
 
 	if (loading) return <p>Loading...</p>;
 
