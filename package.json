@@ -4,8 +4,8 @@
 	"version": "1.0.0",
 	"workspaces": ["apps/*", "packages/*"],
 	"scripts": {
-		"dev": "echo 'Run dev in apps/frontend'",
-		"start": "echo 'Run start in apps/backend'",
+		"dev": "pnpm -r --parallel dev",
+		"start": "echo 'Production mode run seperately for individual apps'",
 		"build": "echo 'Build individual apps with their own scripts"
 	},
 

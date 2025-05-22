@@ -1,3 +1,0 @@
-# Sonex Frontend
-
-To be documented...
