@@ -57,6 +57,15 @@ projectRouter.get("/:id", requireAuth, async (req, res) => {
 	const { id } = req.params;
 	const existingProject = await prisma.project.findUnique({
 		where: { id },
+		include: {
+			user: {
+				select: {
+					id: true,
+					firstName: true,
+					email: true,
+				},
+			},
+		},
 	});
 
 	if (!existingProject) {
@@ -108,7 +117,7 @@ projectRouter.delete("/:id", requireAuth, async (req, res) => {
 		return;
 	}
 
-	res.sendStatus(204)
-})
+	res.sendStatus(204);
+});
 
 export default projectRouter;

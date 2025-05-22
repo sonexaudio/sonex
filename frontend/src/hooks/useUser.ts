@@ -2,6 +2,19 @@ import { useState } from "react";
 import api from "../lib/axios";
 import { useAuth } from "./useAuth";
 
+export type User = {
+	id: string;
+	firstName: string;
+	lastName: string;
+	email: string;
+	googleId: string;
+	avatarUrl?: string | null;
+	stripeCustomerId?: string | null;
+	isOnboarded?: boolean;
+	createdAt?: string;
+	updatedAt?: string;
+};
+
 export default function useUser() {
 	const { user, loading, refetchUser } = useAuth();
 	const [activities, setActivities] = useState([]);
