@@ -1,0 +1,15 @@
+{
+	"name": "sonex",
+	"private": true,
+	"version": "1.0.0",
+	"workspaces": ["apps/*", "packages/*"],
+	"scripts": {
+		"dev": "echo 'Run dev in apps/frontend'",
+		"start": "echo 'Run start in apps/backend'",
+		"build": "echo 'Build individual apps with their own scripts"
+	},
+
+	"author": "Isaiah Vickers",
+	"license": "UNLICENSED",
+	"packageManager": "pnpm@10.9.0"
+}

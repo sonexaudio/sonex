@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@schemas/*": ["packages/schemas/*"]
+		},
+		"moduleResolution": "node",
+		"target": "ES2020",
+		"lib": ["ESNext", "DOM"],
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"strict": true
+	},
+	"include": ["packages", "apps"]
+}
