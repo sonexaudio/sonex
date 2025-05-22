@@ -1,4 +1,3 @@
-import { z } from "zod";
 import AuthenticationForm from "../../components/auth/AuthenticationForm";
 import AuthState from "../../components/auth/AuthState";
 import SignInWithGoogleButton from "../../components/auth/SignInWithGoogleButton";
@@ -6,21 +5,11 @@ import DividerLine from "../../components/DividerLine";
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { SignupSchema } from "@sonex/schemas/user";
 
 type SignupErrorParams = {
 	error: string;
 };
-
-const signupSchema = z.object({
-	email: z
-		.string()
-		.min(1, { message: "Email is required" })
-		.email({ message: "Not a valid email" }),
-	password: z
-		.string()
-		.min(8, { message: "Password must be at least 8 characters" }),
-	name: z.string().min(1, { message: "Full name is required" }),
-});
 
 const SignupForm = () => {
 	const { signup } = useAuth();
@@ -54,7 +43,7 @@ const SignupForm = () => {
 		<div className="max-w-md mt-4 space-y-6">
 			<SignInWithGoogleButton />
 			<DividerLine />
-			<AuthenticationForm schema={signupSchema} onSubmit={handleSubmit}>
+			<AuthenticationForm schema={SignupSchema} onSubmit={handleSubmit}>
 				{signupError && <AuthState type="error" message={signupError} />}
 				{submitSuccessful && (
 					<AuthState

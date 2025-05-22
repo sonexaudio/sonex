@@ -1,4 +1,3 @@
-import { z } from "zod";
 import type { User } from "../users";
 
 export const GET_ALL_PROJECTS = "getAllProjects";
@@ -7,33 +6,18 @@ export const CREATE_PROJECT = "createProject";
 export const UPDATE_PROJECT = "updateProject";
 export const DELETE_PROJECT = "deleteProject";
 
-const ProjectSchema = z.object({
-	id: z.string(),
-	title: z.string(),
-	description: z.string().nullable().optional(),
-	userId: z.string(),
-	amount: z.number().nullable().optional(),
-	dueDate: z.union([z.string(), z.date()]).nullable().optional(),
-	status: z.string().optional(),
-	paymentStatus: z.string().optional(),
-	createdAt: z.union([z.string(), z.date()]).optional(),
-	updatedAt: z.union([z.string(), z.date()]).optional(),
-});
-
-type Project = z.infer<typeof ProjectSchema>;
-
-// export interface Project {
-// 	id: string;
-// 	title: string;
-// 	description?: string | null;
-// 	userId: string;
-// 	amount?: number | null;
-// 	dueDate?: string | Date | null;
-// 	status?: string;
-// 	paymentStatus?: string;
-// 	createdAt?: string | Date | undefined;
-// 	updatedAt?: string | Date | undefined;
-// }
+export interface Project {
+	id: string;
+	title: string;
+	description?: string | null;
+	userId: string;
+	amount?: number | null;
+	dueDate?: string | Date | null;
+	status?: string;
+	paymentStatus?: string;
+	createdAt?: string | Date | undefined;
+	updatedAt?: string | Date | undefined;
+}
 
 export interface ProjectWithUserInfo extends Project {
 	user: Pick<User, "id" | "firstName" | "email">;

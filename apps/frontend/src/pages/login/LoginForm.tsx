@@ -1,4 +1,3 @@
-import { z } from "zod";
 import AuthenticationForm from "../../components/auth/AuthenticationForm";
 import { useAuth } from "../../hooks/useAuth";
 import { Link, useLocation, useNavigate } from "react-router";
@@ -6,18 +5,8 @@ import SignInWithGoogleButton from "../../components/auth/SignInWithGoogleButton
 import DividerLine from "../../components/DividerLine";
 import { useEffect, useState } from "react";
 import AuthState from "../../components/auth/AuthState";
-
-const LoginSchema = z.object({
-	email: z
-		.string()
-		.min(1, { message: "Email is required" })
-		.email({ message: "Not a valid email" }),
-	password: z.string().min(1, { message: "Password is required" }),
-});
-
-type LoginErrorParams = {
-	message: string;
-};
+import { LoginSchema } from "@sonex/schemas/user";
+import type { ErrorResponse } from "../../context/AuthProvider";
 
 const LoginForm = () => {
 	const { loginWithEmail } = useAuth();
@@ -45,8 +34,8 @@ const LoginForm = () => {
 			await loginWithEmail(email, password);
 			navigate(redirectPath);
 		} catch (error) {
-			const message = (error as LoginErrorParams).message;
-			console.error(message);
+			console.error(error);
+			const message = (error as ErrorResponse).message;
 			setLoginError(message || "Something went wrong. Please try again.");
 		} finally {
 			setLoggingIn(false);

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router";
 import type { AxiosError } from "axios";
 import type { AuthContextType, User } from "../types/users";
 
-type ErrorResponse = {
+export type ErrorResponse = {
 	message: string;
 };
 
@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			// handle session-expired messages if backend returns them
 			if (
 				axiosError.response?.status === 401 &&
-				axiosError.response?.data?.message ===
+				axiosError.response?.data?.error ===
 					"Session invalid. User no longer exists."
 			)
 				console.warn("Session expired or user no longer exists.");
@@ -69,8 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			fetchUser();
 		} catch (err) {
 			const axiosError = err as AxiosError<ErrorResponse>;
-			console.error(axiosError.response?.data);
-			throw axiosError.response?.data;
+			throw axiosError.response?.data.error;
 		}
 	};
 
@@ -84,8 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			return res.data.user;
 		} catch (error) {
 			const axiosError = error as AxiosError<ErrorResponse>;
-			console.error(axiosError);
-			throw axiosError.response?.data;
+			throw axiosError.response?.data.error;
 		}
 	};
 
