@@ -3,7 +3,8 @@ import { requireAuth } from "../../middleware/auth";
 import { prisma } from "../../lib/prisma";
 import { Prisma } from "../../generated/prisma";
 import { validate } from "../../middleware/validate";
-import { ProjectSchema } from "../../schemas/project";
+// import { ProjectSchema } from "../../schemas/project";
+import { ProjectSchema } from "@sonex/schemas/project";
 
 const projectRouter = Router();
 
