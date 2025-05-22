@@ -1,26 +1,14 @@
 import { useState } from "react";
 import api from "../lib/axios";
 import { useAuth } from "./useAuth";
-
-export type User = {
-	id: string;
-	firstName: string;
-	lastName: string;
-	email: string;
-	googleId: string;
-	avatarUrl?: string | null;
-	stripeCustomerId?: string | null;
-	isOnboarded?: boolean;
-	createdAt?: string;
-	updatedAt?: string;
-};
+import type { User } from "../types/users";
 
 export default function useUser() {
 	const { user, loading, refetchUser } = useAuth();
 	const [activities, setActivities] = useState([]);
 	const [transactions, setTransactions] = useState([]);
 
-	const updateUserInfo = async (userData: Record<string, unknown>) => {
+	const updateUserInfo = async (userData: User) => {
 		const { firstName, lastName, ...rest } = userData;
 
 		let name: string | undefined;

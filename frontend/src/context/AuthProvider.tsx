@@ -3,33 +3,7 @@ import { createContext, useEffect, useState, type ReactNode } from "react";
 import api, { setSessionExpiredHandler } from "../lib/axios";
 import { useNavigate } from "react-router";
 import type { AxiosError } from "axios";
-
-export type User = {
-	id: string;
-	connectedAccountId: string;
-	stripeCustomerId: string;
-	avatarUrl?: string | null;
-
-	firstName?: string;
-	lastName?: string;
-	email?: string;
-	googleId?: string;
-	isOnboarded: boolean;
-
-	createdAt: string;
-	updatedAt: string;
-};
-
-interface AuthContextType {
-	user: User | null;
-	loading: boolean;
-	loginWithEmail: (email: string, password: string) => Promise<void>;
-	loginWithGoogle: () => Promise<void>;
-	unlinkGoogleAccount: () => Promise<void>;
-	signup: (data: Record<string, string>) => Promise<void>;
-	logout: () => Promise<void>;
-	refetchUser: () => Promise<void>;
-}
+import type { AuthContextType, User } from "../types/users";
 
 type ErrorResponse = {
 	message: string;

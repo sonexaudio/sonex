@@ -1,61 +1,20 @@
 import { useReducer, useState } from "react";
 import api from "../lib/axios";
-import type { User } from "./useUser";
-
-const GET_ALL_PROJECTS = "getAllProjects";
-const GET_SINGLE_PROJECT = "getSingleProject";
-const CREATE_PROJECT = "createProject";
-const UPDATE_PROJECT = "updateProject";
-const DELETE_PROJECT = "deleteProject";
-
-type ProjectState = {
-	allProjects: Project[];
-	currentProject: Project | ProjectWithUserInfo | null;
-};
-
-export interface Project {
-	id: string;
-	title: string;
-	description?: string | null;
-	userId: string;
-	amount?: number | null;
-	dueDate?: string | Date | null;
-	status?: string;
-	paymentStatus?: string;
-	createdAt?: string | Date | undefined;
-	updatedAt?: string | Date | undefined;
-}
-
-export interface ProjectWithUserInfo extends Project {
-	user: Pick<User, "id" | "firstName" | "email">;
-}
+import {
+	CREATE_PROJECT,
+	DELETE_PROJECT,
+	GET_ALL_PROJECTS,
+	GET_SINGLE_PROJECT,
+	UPDATE_PROJECT,
+	type Project,
+	type ProjectReducerAction,
+	type ProjectState,
+} from "../types/projects";
 
 const initialProjects: ProjectState = {
 	allProjects: [],
 	currentProject: null,
 };
-
-type ProjectReducerAction =
-	| {
-			type: typeof GET_ALL_PROJECTS;
-			payload: { projects: Project[] };
-	  }
-	| {
-			type: typeof GET_SINGLE_PROJECT;
-			payload: { project: ProjectWithUserInfo };
-	  }
-	| {
-			type: typeof CREATE_PROJECT;
-			payload: { project: Project };
-	  }
-	| {
-			type: typeof UPDATE_PROJECT;
-			payload: { project: Project };
-	  }
-	| {
-			type: typeof DELETE_PROJECT;
-			payload: { id: string };
-	  };
 
 function projectReducer(state: ProjectState, action: ProjectReducerAction) {
 	switch (action.type) {
