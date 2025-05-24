@@ -25,7 +25,7 @@ const UpdateProjectForm = ({ project }: { project: ProjectWithUserInfo }) => {
 			<h3 className="text-lg font-bold">Project Update</h3>
 			<form
 				onSubmit={handleSubmit((data) => updateProject(project.id, data))}
-				className="flex flex-col gap-8 max-w-md"
+				className="flex flex-col gap-8"
 			>
 				<div>
 					<input type="text" {...register("title")} />

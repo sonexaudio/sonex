@@ -10,6 +10,9 @@ import ProjectHeader from "./ProjectHeader";
 import UpdateProjectForm from "./UpdateProjectForm";
 import ProjectDangerZone from "./ProjectDangerZone";
 import type { ProjectWithUserInfo } from "../../../../types/projects";
+import FileUploader from "../../../../components/files/FileUploader";
+import FileUploadView from "../../../../components/files/FileUploadView";
+import FileUploadProvider from "../../../../context/FileUploadProvider";
 
 const CurrentProjectPage = () => {
 	const { currentUser } = useUser();
@@ -32,8 +35,18 @@ const CurrentProjectPage = () => {
 					<ProjectHeader isOwner={isOwner} project={project} />
 					<ProjectActions isOwner={isOwner} project={project} />
 					<ProjectDetails project={project} />
-					<UpdateProjectForm project={project} />
-					<ProjectDangerZone />
+					<div className="flex gap-8 w-full">
+						<UpdateProjectForm project={project} />
+						<FileUploadProvider>
+							<div>
+								<FileUploader />
+								<FileUploadView />
+							</div>
+						</FileUploadProvider>
+					</div>
+					<div className="my-8">
+						<ProjectDangerZone />
+					</div>
 				</div>
 			</PageLayout>
 		</AuthLayout>
