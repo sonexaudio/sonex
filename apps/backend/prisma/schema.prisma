@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String  @id @default(cuid())
+  firstName      String?
+  lastName       String?
+  email          String  @unique
+  hashedPassword String?
+  googleId       String? @unique
+  avatarUrl      String?
+
+  // Stripe fields
+  stripeCustomerId    String?           @unique
+  connectedAccountId     String?           @unique
+  isOnboarded Boolean @default(false)
+
+  // Password reset fields
+  resetPasswordToken    String?   @db.VarChar(64)
+  resetTokenExpiresAt   DateTime?
+  passwordLastChangedAt DateTime?
+
+  // Database Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Associations
+  projects Project[]
+  subscriptions Subscription[]
+  transactions  Transaction[]
+  activities Activity[]
+}
+
+model Project {
+  id String @id @default(cuid())
+  title String
+  description String?
+  userId String
+  amount Decimal?
+  dueDate DateTime?
+  status ProjectStatus @default(Active)// active, complete, archived, private
+  paymentStatus ProjectPaymentStatus @default(Unpaid) // free, unpaid, paid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Associations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Prevent user from creating project with the same title
+  @@unique([title, userId])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String
+  stripeSubscriptionId String             @unique
+  plan                 String
+  status              String @default("active")
+  startDate            DateTime
+  endDate              DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+
+  // Associations
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  // DB Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id            String                   @id @default(cuid())
+  userId        String
+  type          String
+  amount        Float
+  // paymentMethod TransactionPaymentMethod
+
+  // Was the transaction a subscription?
+  subscriptionId String?
+  stripeChargeId String?
+
+  // Was the item a refund?
+  refundedAt DateTime?
+  refundReason String?
+
+  // Associations
+  user         User          @relation(fields: [userId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  // DB Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Activity {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id])
+  action String
+  metadata Json?
+  targetType String // payment, client, file, etc
+  targetId String? // e.g. record subscription, provide sub_id
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum ProjectStatus {
+  Active
+  Complete
+  Archived
+  Private
+}
+
+enum ProjectPaymentStatus {
+  Free
+  Unpaid
+  Paid
+}

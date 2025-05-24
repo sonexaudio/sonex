@@ -1,0 +1,9 @@
+{
+	"name": "@sonex/schemas",
+	"version": "1.0.0",
+	"main": "index.ts",
+	"packageManager": "pnpm@10.9.0",
+	"dependencies": {
+		"zod": "^3.25.21"
+	}
+}

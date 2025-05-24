@@ -1,0 +1,15 @@
+name: Sonex Audio Database
+services:
+  postgres_database:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=sonex_dev
+      - POSTGRES_USER=sonex
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - sonex_data:/var/lib/postgresql/data
+    
+volumes:
+  sonex_data:

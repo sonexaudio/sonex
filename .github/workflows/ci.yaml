@@ -1,7 +1,6 @@
 name: Full Continuous Integration
 
 on:
-  push:
   pull_request:
     branches: [main, dev]
 
@@ -52,7 +51,7 @@ jobs:
           cache-dependency-path: backend/pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: pnpm install
 
       - name: Set up environment variables
@@ -62,7 +61,7 @@ jobs:
         
 
       - name: Generate Prisma Client
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: pnpx prisma generate
 
       - name: Wait for PostgreSQL to be ready
@@ -78,13 +77,13 @@ jobs:
 
 
       - name: Migrate database
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: pnpx prisma migrate deploy
 
       - name: Build project
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: pnpm build
 
       - name: Run tests
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: pnpm test

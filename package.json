@@ -1,0 +1,15 @@
+{
+	"name": "sonex",
+	"private": true,
+	"version": "1.0.0",
+	"workspaces": ["apps/*", "packages/*"],
+	"scripts": {
+		"dev": "pnpm -r --parallel dev",
+		"start": "echo 'Production mode run separately for individual apps'",
+		"build": "pnpm -r --parallel build"
+	},
+
+	"author": "Isaiah Vickers",
+	"license": "UNLICENSED",
+	"packageManager": "pnpm@10.9.0"
+}
