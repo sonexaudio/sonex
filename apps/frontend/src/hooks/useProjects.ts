@@ -106,8 +106,10 @@ export default function useProjects() {
 				data: { data },
 			} = await api.post("/projects", projectData);
 			dispatch({ type: CREATE_PROJECT, payload: data });
+			getAllProjects();
 		} catch (error) {
-			console.error(error);
+			// console.error(error);
+			throw error.response.data.error;
 		} finally {
 			setLoading(false);
 		}

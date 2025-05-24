@@ -8,7 +8,13 @@ const ProjectActions = ({
 		return (
 			<div>
 				<button>Edit Project</button>
-				<button>Mark as complete</button>
+				{project.status === "Complete" ? (
+					<button>Mark as incomplete</button>
+				) : project.status === "Archived" ? (
+					<button>Unarchive Project</button>
+				) : (
+					<button>Mark as complete</button>
+				)}
 			</div>
 		);
 	}

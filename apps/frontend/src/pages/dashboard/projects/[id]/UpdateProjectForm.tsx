@@ -1,40 +1,68 @@
+import { useForm } from "react-hook-form";
 import type { ProjectWithUserInfo } from "../../../../types/projects";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ProjectSchema } from "@sonex/schemas/project";
+import useProjects from "../../../../hooks/useProjects";
 
 const UpdateProjectForm = ({ project }: { project: ProjectWithUserInfo }) => {
+	const { updateProject } = useProjects();
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm({
+		resolver: zodResolver(ProjectSchema),
+		defaultValues: {
+			title: project.title,
+			description: project.description || "",
+			amount: project.amount || 0,
+			paymentStatus: project.paymentStatus as "Free" | "Unpaid" | "Paid",
+			status: project.status as "Active" | "Complete" | "Archived" | "Private",
+		},
+	});
 	return (
 		<div>
-			<h1>Project Update</h1>
+			<h3 className="text-lg font-bold">Project Update</h3>
 			<form
-				onSubmit={(e) => e.preventDefault()}
+				onSubmit={handleSubmit((data) => updateProject(project.id, data))}
 				className="flex flex-col gap-8 max-w-md"
 			>
-				<input type="text" value={project.title} />
-				<textarea
-					name="description"
-					id=""
-					value={project.description || ""}
-				></textarea>
-				<input type="number" value={project.amount || 0} />
-				<input
-					type="date"
-					value={
-						project.dueDate
-							? new Date(project.dueDate).toDateString()
-							: undefined
-					}
-				/>
-				<select name="status" id="" defaultValue={project.status}>
+				<div>
+					<input type="text" {...register("title")} />
+					{errors.title && (
+						<p className="text-sm text-red-600">{errors.title.message}</p>
+					)}
+				</div>
+				<div>
+					<textarea {...register("description")} />
+					{errors.description && (
+						<p className="text-sm text-red-600">{errors.description.message}</p>
+					)}
+				</div>
+				<div>
+					<input
+						type="number"
+						{...register("amount", { valueAsNumber: true })}
+					/>
+					{errors.amount && (
+						<p className="text-sm text-red-600">{errors.amount.message}</p>
+					)}
+				</div>
+				<select {...register("status")}>
 					<option value="Active">Active</option>
 					<option value="Complete">Complete</option>
 					<option value="Archived">Archived</option>
 					<option value="Private">Private</option>
 				</select>
-				<select name="paymentStatus" id="" defaultValue={project.paymentStatus}>
+				<select
+					{...register("paymentStatus")}
+					defaultValue={project.paymentStatus}
+				>
 					<option value="Free"> Free</option>
 					<option value="Unpaid">Unpaid</option>
 					<option value="Paid">Paid</option>
 				</select>
-				<button>Update Project</button>
+				<button type="submit">Update Project</button>
 			</form>
 		</div>
 	);

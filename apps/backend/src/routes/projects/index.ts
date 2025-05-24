@@ -130,6 +130,10 @@ projectRouter.delete("/:id", requireAuth, async (req, res) => {
 		return;
 	}
 
+	await prisma.project.delete({
+		where: { id },
+	});
+
 	res.sendStatus(204);
 });
 
