@@ -1,2 +1,52 @@
 /* TODO Add Global Styles */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&family=Space+Grotesk:wght@300..700&display=swap');
 @import "tailwindcss";
+
+
+@theme {
+    --color-background: var(--bg);
+    --color-foreground: var(--text);
+    --color-main: var(--main);
+    --color-accent-primary: var(--accent-primary);
+    --color-accent-secondary: var(--accent-secondary);
+    --font-title: var(--title);
+    --font-body: var(--body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    @apply font-semibold font-title leading-7
+}
+
+p,
+a,
+span {
+    @apply font-body
+}
+
+:root {
+    --bg: #E8E9EA;
+    --text: #101828;
+    --main: #FCCC15;
+    --accent-primary: #2563EB;
+    --accent-secondary: #a21caf;
+    --title: "Inter", sans-serif;
+    --body: "Rubik", sans-serif;
+}
+
+.dark {
+    --bg: #0f0f1a;
+    --text: #f2f2f3;
+    --main: #FCCC15;
+    --accent-primary: #60a5fa;
+    --accent-secondary: #e879f9;
+    --title: "Space Grotesk", sans-serif;
+    --body: "Rubik", sans-serif;
+}
