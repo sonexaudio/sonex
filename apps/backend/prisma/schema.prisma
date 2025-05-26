@@ -1,6 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -19,9 +19,9 @@ model User {
   avatarUrl      String?
 
   // Stripe fields
-  stripeCustomerId    String?           @unique
-  connectedAccountId     String?           @unique
-  isOnboarded Boolean @default(false)
+  stripeCustomerId   String? @unique
+  connectedAccountId String? @unique
+  isOnboarded        Boolean @default(false)
 
   // Password reset fields
   resetPasswordToken    String?   @db.VarChar(64)
@@ -33,40 +33,56 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Associations
-  projects Project[]
+  projects      Project[]
   subscriptions Subscription[]
   transactions  Transaction[]
-  activities Activity[]
+  activities    Activity[]
 }
 
 model Project {
-  id String @id @default(cuid())
-  title String
-  description String?
-  userId String
-  amount Decimal?
-  dueDate DateTime?
-  status ProjectStatus @default(Active)// active, complete, archived, private
+  id            String               @id @default(cuid())
+  title         String
+  description   String?
+  userId        String
+  amount        Decimal?
+  dueDate       DateTime?
+  status        ProjectStatus        @default(Active) // active, complete, archived, private
   paymentStatus ProjectPaymentStatus @default(Unpaid) // free, unpaid, paid
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   // Associations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files File[]
 
   // Prevent user from creating project with the same title
   @@unique([title, userId])
 }
 
+model File {
+  id        String   @id @default(cuid())
+  name      String
+  size      Int
+  mimeType  String
+  path      String
+  createdAt DateTime @default(now())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  uploaderId   String
+  uploaderType UploaderType @default(USER)
+}
+
 model Subscription {
-  id                   String             @id @default(cuid())
+  id                   String   @id @default(cuid())
   userId               String
-  stripeSubscriptionId String             @unique
+  stripeSubscriptionId String   @unique
   plan                 String
-  status              String @default("active")
+  status               String   @default("active")
   startDate            DateTime
   endDate              DateTime
-  cancelAtPeriodEnd    Boolean            @default(false)
+  cancelAtPeriodEnd    Boolean  @default(false)
 
   // Associations
   user         User          @relation(fields: [userId], references: [id])
@@ -78,10 +94,10 @@ model Subscription {
 }
 
 model Transaction {
-  id            String                   @id @default(cuid())
-  userId        String
-  type          String
-  amount        Float
+  id     String @id @default(cuid())
+  userId String
+  type   String
+  amount Float
   // paymentMethod TransactionPaymentMethod
 
   // Was the transaction a subscription?
@@ -89,7 +105,7 @@ model Transaction {
   stripeChargeId String?
 
   // Was the item a refund?
-  refundedAt DateTime?
+  refundedAt   DateTime?
   refundReason String?
 
   // Associations
@@ -102,16 +118,21 @@ model Transaction {
 }
 
 model Activity {
-  id String @id @default(cuid())
-  userId String
-  user User @relation(fields: [userId], references: [id])
-  action String
-  metadata Json?
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String
+  metadata   Json?
   targetType String // payment, client, file, etc
-  targetId String? // e.g. record subscription, provide sub_id
-  createdAt DateTime @default(now())
+  targetId   String? // e.g. record subscription, provide sub_id
+  createdAt  DateTime @default(now())
 
   @@index([userId])
+}
+
+enum UploaderType {
+  USER
+  CLIENT
 }
 
 enum ProjectStatus {

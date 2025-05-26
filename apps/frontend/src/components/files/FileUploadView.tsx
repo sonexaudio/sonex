@@ -1,77 +1,51 @@
 import { useFileUpload } from "../../hooks/useFileUpload";
+import FileUploadActionButton from "./FileUploadActionButton";
 
 const FileUploadView = () => {
-	const {
-		clearFiles,
-		filesToUpload,
-		rejectFiles,
-		isUploading,
-		uploadFiles,
-		removeFile,
-	} = useFileUpload();
-
-	if (filesToUpload.length === 0 && rejectFiles.length === 0)
-		return <p>No files to upload.</p>;
-
-	// console.log("I HAVE THESE TO UPLOAD", filesToUpload);
-
+	const { filesToUpload, uploading, removeFile, retryFile } = useFileUpload();
 	return (
 		<div>
-			{!isUploading && (filesToUpload.length > 0 || rejectFiles.length > 0) && (
-				<div>
-					<button type="button" onClick={uploadFiles}>
-						Upload File{filesToUpload.length > 1 && "s"}
-					</button>
-					<button type="button" onClick={clearFiles}>
-						Clear All Files
-					</button>
-				</div>
-			)}
-			<div className="mt-4">
-				<h4 className="font-semibold">Accepted Files</h4>
-				<ul className="text-sm space-y-1">
-					{filesToUpload.map((file) => (
-						<li key={file.id}>
-							<p>{file.name}</p>
-							<p>{(file.size / 1024 / 1024).toFixed(2)}Mb</p>
-							<p>{file.status}</p>
-
-							{file.status !== "uploading" && (
-								<button onClick={() => removeFile(file)}>X</button>
-							)}
-
-							{file.status === "uploading" && (
-								<div className="space-y-2">
-									<div className="h-2.5 w-full rounded-full bg-gray-200">
-										<div
-											className="h-2.5 rounded-full bg-blue-600 transition-all duration-300"
-											style={{ width: `${file.progress}%` }}
-										/>
-									</div>
-									<p className="text-sm text-gray-600">
-										{file.progress}% uploaded
-									</p>
-								</div>
-							)}
-						</li>
-					))}
-				</ul>
+			<h2>Files to be uploaded</h2>
+			<div className="flex gap-4 my-4">
+				<FileUploadActionButton method="upload" />
+				<FileUploadActionButton method="clear" />
 			</div>
+			<ul>
+				{filesToUpload.map(
+					({ file, id, previewUrl, progress, status, error }) => (
+						<li key={id}>
+							<div className="flex gap-4">
+								<span>{file.name}</span>
+								<span>{status}</span>
+								<span>{(file.size / 1024 / 1024).toFixed(2)}MB</span>
+								<span onClick={() => removeFile(id)}>X</span>
+								{(error || status === "failed") && (
+									<button type="button" onClick={() => retryFile(id)}>
+										Retry
+									</button>
+								)}
+							</div>
+							<div>
+								{file.type.includes("audio/") && (
+									<audio src={previewUrl} controls />
+								)}
 
-			<div className="mt-4">
-				<h4 className="text-red-500 font-semibold">Rejected Files</h4>
-				<ul className="text-sm text-red-600 space-y-1">
-					{rejectFiles.map((file) => (
-						<li key={file.id}>
-							{file.name} — {file.error}
-							{file.status !== "uploading" && (
-								<button onClick={() => removeFile(file)}>X</button>
+								{file.type.includes("image/") && (
+									<img src={previewUrl} alt="" />
+								)}
+							</div>
+
+							{uploading && status === "uploading" && (
+								<progress max={100} value={progress} />
 							)}
+
+							{error && <p>{error}</p>}
 						</li>
-					))}
-				</ul>
-			</div>
+					),
+				)}
+			</ul>
 		</div>
 	);
 };
+
 export default FileUploadView;
