@@ -1,0 +1,6 @@
+{
+    "extends": ["../../biome.json"],
+    "files": {
+        "ignore": ["node_modules/**/*", "*.json", "*.log", "dist/**/*"]
+    }
+}
