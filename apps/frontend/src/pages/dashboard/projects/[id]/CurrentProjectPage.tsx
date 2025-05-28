@@ -10,9 +10,9 @@ import ProjectHeader from "./ProjectHeader";
 import UpdateProjectForm from "./UpdateProjectForm";
 import ProjectDangerZone from "./ProjectDangerZone";
 import type { ProjectWithUserInfo } from "../../../../types/projects";
+import FileDropzone from "../../../../components/files/FileDropzone";
 import { FileUploadProvider } from "../../../../context/FileUploadProvider";
-import FileUploader from "../../../../components/files/FileUploader";
-import FileUploadView from "../../../../components/files/FileUploadView";
+import FileUploadViewer from "../../../../components/files/FileUploadViewer";
 
 const CurrentProjectPage = () => {
 	const { currentUser } = useUser();
@@ -37,22 +37,17 @@ const CurrentProjectPage = () => {
 					<ProjectDetails project={project} />
 					<div className="flex gap-8 w-full">
 						<UpdateProjectForm project={project} />
-						<FileUploadProvider
-							meta={{
-								projectId: id as string,
-								uploaderId: currentUser?.id as string, // for now
-								uploaderType: isOwner ? "USER" : "CLIENT",
-							}}
-						>
-							<div>
-								<FileUploader />
-								<FileUploadView />
-							</div>
+						<FileUploadProvider projectId={id as string} uploaderId={currentUser?.id as string} uploaderType="USER" >
+							<section className="border border-red-600 rounded-md size-full p-8 space-y-8">
+
+								<FileDropzone />
+								<FileUploadViewer />
+							</section>
 						</FileUploadProvider>
 					</div>
-					<div className="my-8">
-						<ProjectDangerZone />
-					</div>
+				</div>
+				<div className="my-8">
+					<ProjectDangerZone />
 				</div>
 			</PageLayout>
 		</AuthLayout>

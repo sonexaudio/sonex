@@ -1,168 +1,112 @@
-import type { AxiosError } from "axios";
-import { createContext, useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode, createContext } from "react";
 import api from "../lib/axios";
 
-type UploadFile = {
-	id: string;
-	file: File;
-	previewUrl: string;
-	status: "pending" | "uploading" | "uploaded" | "failed";
-	progress: number;
-	error?: string;
+
+export type SonexUploadFile = {
+    file: File;
+    id: string;
+    progress: number;
+    uploadStatus: "idle" | "uploading" | "completed" | "failed";
 };
 
-type FileUploadMeta = {
-	projectId: string;
-	uploaderId: string;
-	uploaderType?: "USER" | "CLIENT";
+export type FileUploadState = {
+    filesToUpload: SonexUploadFile[];
 };
 
-type FileUploadContextType = {
-	uploading: boolean;
-	filesToUpload: UploadFile[];
-	addFiles: (input: FileList | File[]) => void;
-	removeFile: (id: string) => void;
-	clearFiles: () => void;
-	setFileStatus: (
-		id: string,
-		status: UploadFile["status"],
-		error?: string,
-	) => void;
-	setFileProgress: (id: string, progress: number) => void;
-	uploadFile: (fileId: string) => Promise<void>;
-	uploadAll: () => Promise<void>;
-	retryFile: (id: string) => Promise<void>;
+export type FileUploadActions = {
+    addFiles: (acceptedFiles: File[]) => void;
+    removeFile: (id: string) => void;
+    clearUploadQueue: () => void;
+    updateUploadStatus: (id: string, status: SonexUploadFile["uploadStatus"]) => void;
+    updateUploadProgress: (id: string, progress: number) => void;
+    upload: () => Promise<void>;
+
 };
 
-export const FileUploadContext = createContext<
-	FileUploadContextType | undefined
->(undefined);
+export type FileUploadContextType = FileUploadState & FileUploadActions;
 
-export const FileUploadProvider = ({
-	children,
-	meta,
-}: { children: ReactNode; meta: FileUploadMeta }) => {
-	const [filesToUpload, setFilesToUpload] = useState<UploadFile[]>([]);
-	const [uploading, setUploading] = useState(false);
+export const FileUploadContext = createContext<FileUploadContextType | null>(null);
 
-	// clean up any object urls that were created
-	useEffect(() => {
-		return () => {
-			filesToUpload.forEach((file) => URL.revokeObjectURL(file.previewUrl));
-		};
-	}, [filesToUpload]);
+export const FileUploadProvider = ({ children, projectId, uploaderId, uploaderType }: { children: ReactNode; projectId: string, uploaderId: string; uploaderType?: "USER" | "CLIENT"; }) => {
 
-	// functions
-	function addFiles(input: FileList | File[]) {
-		const addedFiles = Array.from(input).map((file) => ({
-			id: crypto.randomUUID(),
-			file,
-			previewUrl: URL.createObjectURL(file),
-			status: "pending" as const,
-			progress: 0,
-		}));
+    if (!projectId || !uploaderId || !uploaderType) throw new Error("ProjectId, UploaderId, and/or UploaderType missing");
 
-		setFilesToUpload((prev) => [...prev, ...addedFiles]);
-	}
+    const [filesToUpload, setFilesToUpload] = useState<SonexUploadFile[]>([]);
 
-	function removeFile(id: string) {
-		setFilesToUpload((prev) => prev.filter((file) => file.id !== id));
-	}
 
-	function clearFiles() {
-		setFilesToUpload([]);
-	}
+    function addFiles(acceptedFiles: File[]) {
+        // TODO: Abstract this hunk of code... I don't wanna see it like this lol
+        const nonDuplicateNewFiles: SonexUploadFile[] = acceptedFiles.filter(droppedFile => {
+            // for each file dropped, check through each file in the queue,
+            // to make sure the file doesn't exist
+            const isDuplicate = filesToUpload.some(alreadyAddedFile => alreadyAddedFile.file.name === droppedFile.name);
 
-	// Returns new copy of state with chosen file status updated
-	function setFileStatus(
-		id: string,
-		status: UploadFile["status"],
-		error?: string,
-	) {
-		setFilesToUpload((prev) =>
-			prev.map((file) => (file.id === id ? { ...file, status, error } : file)),
-		);
-	}
+            // provides the file to the filter if it's not a duplicate
+            return !isDuplicate;
+        })
+            // then convert the non-dupes into a sonex upload file
+            .map(file => ({
+                file,
+                id: `${file.name}${file.size}`,
+                uploadStatus: "idle",
+                progress: 0
+            }));
 
-	function setFileProgress(id: string, progress: number) {
-		setFilesToUpload((prev) =>
-			prev.map((file) => (file.id === id ? { ...file, progress } : file)),
-		);
-	}
+        setFilesToUpload(prevFiles => [...prevFiles, ...nonDuplicateNewFiles]);
+    }
 
-	// Helper function to help uploadAll function
-	async function uploadFile(fileId: string) {
-		const file = filesToUpload.find((f) => f.id === fileId);
-		console.log(file);
+    function updateUploadStatus(id: string, status: SonexUploadFile["uploadStatus"]) {
+        setFilesToUpload(filesToUpload.map(file => file.id === id ? { ...file, status } : file));
+    }
 
-		if (!file || !meta) return;
+    function updateUploadProgress(id: string, progress: number) {
+        setFilesToUpload(filesToUpload.map(file => file.id === id ? { ...file, progress } : file));
+    }
 
-		const fd = new FormData();
-		fd.append("files", file.file);
-		fd.append("projectId", meta.projectId);
-		fd.append("uploaderId", meta.uploaderId);
-		fd.append("uploaderType", meta.uploaderType || "USER");
+    function clearUploadQueue() {
+        setFilesToUpload([]);
+    }
 
-		for (const value of fd.values()) {
-			console.log(value);
-		}
+    function removeFile(id: string) {
+        setFilesToUpload(filesToUpload.filter(f => f.id !== id));
+    }
 
-		try {
-			setFileStatus(file.id, "uploading");
-			await api.post("/files/upload", fd, {
-				onUploadProgress: (event) => {
-					const percentCompleted = Math.round(
-						(event.loaded * 100) / (event.total || 1),
-					);
-					setFileProgress(file.id, percentCompleted);
-				},
-			});
+    async function upload() {
+        const uploadPromises = filesToUpload.map(async (file) => {
+            if (file.uploadStatus === "idle") {
+                updateUploadStatus(file.id, "uploading");
+                const fd = new FormData();
+                fd.append("files", file.file);
+                fd.append("projectId", projectId);
+                fd.append("uploaderId", uploaderId);
+                fd.append("uploaderType", uploaderType || "USER");
 
-			setFileStatus(file.id, "uploaded");
-			setFileProgress(file.id, 100);
-		} catch (error) {
-			console.log(error);
-			setFileStatus(
-				file.id,
-				"failed",
-				((error as AxiosError).response?.data?.error?.message as string) ||
-					"Upload failed",
-			);
-		}
-	}
+                return api.post("/files/upload", fd, {
+                    headers: {
+                        "Content-Type": "multipart/form-data"
+                    },
+                    onUploadProgress: (event) => {
+                        if (event.lengthComputable && event.total) {
+                            const percentCompleted = Math.round((event.loaded / event.total) * 100);
+                            updateUploadProgress(file.id, percentCompleted);
+                        }
+                    }
+                }).then(() => {
+                    updateUploadStatus(file.id, "completed");
+                    updateUploadProgress(file.id, 100);
+                }).catch((error) => {
+                    console.error(error);
+                    updateUploadStatus(file.id, "failed");
+                });
+            }
 
-	async function uploadAll() {
-		setUploading(true);
-		const uploads = filesToUpload
-			.filter((f) => f.status === "pending" || f.status === "failed")
-			.map((f) => uploadFile(f.id));
+            return Promise.resolve();
+        });
 
-		await Promise.allSettled(uploads);
-		setUploading(false);
-	}
+        await Promise.all(uploadPromises);
+    }
 
-	async function retryFile(id: string) {
-		setUploading(true);
-		await uploadFile(id);
-		setUploading(false);
-	}
-
-	return (
-		<FileUploadContext.Provider
-			value={{
-				filesToUpload,
-				uploading,
-				addFiles,
-				removeFile,
-				clearFiles,
-				setFileStatus,
-				setFileProgress,
-				uploadFile,
-				uploadAll,
-				retryFile,
-			}}
-		>
-			{children}
-		</FileUploadContext.Provider>
-	);
+    return (<FileUploadContext.Provider value={{ filesToUpload, addFiles, removeFile, clearUploadQueue, upload, updateUploadProgress, updateUploadStatus }}>
+        {children}
+    </FileUploadContext.Provider>);
 };
