@@ -26,6 +26,7 @@
 		"@types/express": "^5.0.2",
 		"@types/express-session": "^1.18.1",
 		"@types/morgan": "^1.9.9",
+		"@types/multer": "^1.4.12",
 		"@types/node": "^22.15.18",
 		"@types/passport": "^1.0.17",
 		"@types/passport-google-oauth20": "^2.0.16",
@@ -42,6 +43,7 @@
 	},
 	"dependencies": {
 		"@prisma/client": "^6.8.2",
+		"@sonex/schemas": "workspace:*",
 		"bcryptjs": "^3.0.2",
 		"connect-pg-simple": "^10.0.0",
 		"cors": "^2.8.5",
@@ -50,6 +52,7 @@
 		"express-session": "^1.18.1",
 		"helmet": "^8.1.0",
 		"morgan": "^1.10.0",
+		"multer": "^2.0.0",
 		"passport": "^0.7.0",
 		"passport-google-oauth20": "^2.0.0",
 		"passport-local": "^1.0.0",
@@ -58,7 +61,6 @@
 		"prisma": "^6.8.2",
 		"stripe": "^18.1.0",
 		"winston": "^3.17.0",
-		"zod": "^3.25.7",
-		"@sonex/schemas": "workspace:*"
+		"zod": "^3.25.7"
 	}
 }
