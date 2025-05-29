@@ -62,5 +62,8 @@
 		"stripe": "^18.1.0",
 		"winston": "^3.17.0",
 		"zod": "^3.25.7"
+	},
+	"prisma": {
+		"seed": "ts-node prisma/seed.ts"
 	}
 }
