@@ -37,19 +37,20 @@ model User {
   subscriptions Subscription[]
   transactions  Transaction[]
   activities    Activity[]
-  clients Client[]
+  clients       Client[]
 }
 
 model Client {
-  id String @id @default(cuid())
-  name String?
-  email String
+  id        String   @id @default(cuid())
+  name      String?
+  email     String
   projectId String
-  addedBy String
+  addedBy   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-
-  projectManager User @relation(fields: [addedBy], references: [id], onDelete: Cascade)
-  project Project @relation(fields: [projectId], references: [id])
+  projectManager User    @relation(fields: [addedBy], references: [id], onDelete: Cascade)
+  project        Project @relation(fields: [projectId], references: [id])
 
   // Make sure same client is not added again to user
   // However, same client can be added to multiple users
@@ -69,8 +70,8 @@ model Project {
   updatedAt     DateTime             @updatedAt
 
   // Associations
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  files File[]
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files   File[]
   clients Client[]
 
   // Prevent user from creating project with the same title

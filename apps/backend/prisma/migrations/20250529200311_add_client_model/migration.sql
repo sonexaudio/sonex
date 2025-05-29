@@ -38,6 +38,8 @@ CREATE TABLE "Client" (
     "email" TEXT NOT NULL,
     "projectId" TEXT NOT NULL,
     "addedBy" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Client_pkey" PRIMARY KEY ("id")
 );
