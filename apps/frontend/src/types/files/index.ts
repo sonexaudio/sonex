@@ -30,34 +30,41 @@ export type FileUploadContextValues = {
 export const GET_ALL_FILES = "getFiles";
 export const GET_CURRENT_FILE = "getCurrentFile";
 export const ADD_FILE = "addFile";
-export const UPDATE_FILE = "updateFile";
+export const DELETE_ALL_FILES = "deleteAllFiles";
 export const DELETE_FILE = "deleteFile";
 
-export interface FileMetadata {
+export interface SonexFile {
 	id: string;
+	name: string;
+	size: number;
+	mimeType: string;
+	path: string;
+	createdAt: Date | string;
+	projectId: string;
+	uploaderId: string;
+	uploaderType: "USER" | "CLIENT"
 }
 
 export type FileState = {
-	allFiles: FileMetadata[];
-	currentFile: FileMetadata | null;
+	allFiles: SonexFile[];
+	currentFile: SonexFile | null;
 };
 
 export type FileReducerAction =
 	| {
 			type: typeof GET_ALL_FILES;
-			payload: { files: FileMetadata[] };
+			payload: { files: SonexFile[] };
 	  }
 	| {
 			type: typeof GET_CURRENT_FILE;
-			payload: { file: FileMetadata };
+			payload: { file: SonexFile };
 	  }
 	| {
 			type: typeof ADD_FILE;
-			payload: { file: FileMetadata };
+			payload: { file: SonexFile };
 	  }
 	| {
-			type: typeof UPDATE_FILE;
-			payload: { file: FileMetadata };
+			type: typeof DELETE_ALL_FILES;
 	  }
 	| {
 			type: typeof DELETE_FILE;

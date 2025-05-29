@@ -81,7 +81,10 @@ export const FileUploadProvider = ({ children, projectId, uploaderId, uploaderTy
                 fd.append("uploaderId", uploaderId);
                 fd.append("uploaderType", uploaderType || "USER");
 
-                return api.post("/files/upload", fd, {
+                // temporary
+                const queryString = new URLSearchParams({ projectId, uploaderId, uploaderType: uploaderType ?? "USER" }).toString();
+
+                return api.post(`/files/upload?${queryString}`, fd, {
                     headers: {
                         "Content-Type": "multipart/form-data"
                     },
