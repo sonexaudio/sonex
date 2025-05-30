@@ -13,6 +13,8 @@ import type { ProjectWithUserInfo } from "../../../../types/projects";
 import FileDropzone from "../../../../components/files/FileDropzone";
 import { FileUploadProvider } from "../../../../context/FileUploadProvider";
 import FileUploadViewer from "../../../../components/files/FileUploadViewer";
+import NewClientForm from "../../clients/NewClientForm";
+import ProjectClients from "./ProjectClients";
 
 const CurrentProjectPage = () => {
 	const { currentUser } = useUser();
@@ -45,6 +47,10 @@ const CurrentProjectPage = () => {
 							</section>
 						</FileUploadProvider>
 					</div>
+				</div>
+				<div>
+					<NewClientForm />
+					<ProjectClients />
 				</div>
 				<div className="my-8">
 					<ProjectDangerZone />

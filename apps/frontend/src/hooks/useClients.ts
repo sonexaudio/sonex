@@ -43,8 +43,9 @@ export function useClients() {
         try {
             const { data: { data } } = await api.post("/clients", clientData);
             if (data) {
-                setClients((prev) => [...prev, ...data.clients]);
+                setClients((prev) => [...prev, data.client]);
             }
+            fetchClients();
         } catch (error) {
             console.error(error);
             setError(((error as AxiosError<AxiosResponseError>).response?.data?.error as string));
@@ -75,7 +76,7 @@ export function useClients() {
     async function removeClient(id: string) {
         setLoading(true);
         try {
-            await api.delete("/clients");
+            await api.delete(`/clients/${id}`);
             setClients(clients.filter(client => client.id !== id));
         } catch (error) {
             console.error(error);
@@ -87,7 +88,9 @@ export function useClients() {
 
     async function removeAllClients(clients: Client[]) {
         try {
-            await api.post("/clients/delete-all", clients);
+            const clientIds = clients.map(client => client.id);
+            await api.post("/clients/delete-all", { clients: clientIds });
+            setClients([]);
         } catch (error) {
             console.error(error);
             setError((error as AxiosError<AxiosResponseError>).response?.data?.error as string);
