@@ -1,6 +1,12 @@
 {
-    "extends": ["../../biome.json"],
-    "files": {
-        "ignore": ["node_modules/**/*", "*.json", "*.log", "dist/**/*"]
-    }
+	"extends": ["../../biome.json"],
+	"files": {
+		"ignore": [
+			"node_modules/**/*",
+			"*.json",
+			"*.log",
+			"dist/**/*",
+			"src/generated/prisma"
+		]
+	}
 }

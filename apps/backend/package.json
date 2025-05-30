@@ -14,7 +14,9 @@
 		"migrate": "prisma migrate dev",
 		"generate": "prisma generate",
 		"studio": "prisma studio",
-		"docker:run": "docker compose -f ../infra/docker/compose.yaml -d"
+		"docker:run": "docker compose -f ../infra/docker/compose.yaml -d",
+		"format": "biome format --write .",
+		"lint": "biome lint ."
 	},
 	"keywords": [],
 	"author": "",

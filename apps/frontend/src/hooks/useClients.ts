@@ -4,113 +4,134 @@ import api from "../lib/axios";
 import type { AxiosError } from "axios";
 
 export interface Client {
-    id: string;
-    name: string;
-    email: string;
-    projectId: string;
-    addedBy: string;
-    createdAt: Date | string;
-    updatedAt: Date | string;
+	id: string;
+	name: string;
+	email: string;
+	projectId: string;
+	addedBy: string;
+	createdAt: Date | string;
+	updatedAt: Date | string;
 }
 
 export interface AxiosResponseError extends AxiosError {
-    error?: string;
+	error?: string;
 }
 
-
 export function useClients() {
-    const { currentUser } = useUser();
-    const [clients, setClients] = useState<Client[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+	const { currentUser } = useUser();
+	const [clients, setClients] = useState<Client[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
-    async function fetchClients() {
-        try {
-            const { data: { data } } = await api.get("/clients");
-            if (data) {
-                setClients(data.clients);
-            }
-        } catch (error) {
-            console.error(error);
-            setError(((error as AxiosError<AxiosResponseError>).response?.data?.error as string));
-            setClients([]);
-        } finally {
-            setLoading(false);
-        }
-    }
+	async function fetchClients() {
+		try {
+			const {
+				data: { data },
+			} = await api.get("/clients");
+			if (data) {
+				setClients(data.clients);
+			}
+		} catch (error) {
+			console.error(error);
+			setError(
+				(error as AxiosError<AxiosResponseError>).response?.data
+					?.error as string,
+			);
+			setClients([]);
+		} finally {
+			setLoading(false);
+		}
+	}
 
-    async function addClient(clientData: Partial<Client>) {
-        try {
-            const { data: { data } } = await api.post("/clients", clientData);
-            if (data) {
-                setClients((prev) => [...prev, data.client]);
-            }
-            fetchClients();
-        } catch (error) {
-            console.error(error);
-            setError(((error as AxiosError<AxiosResponseError>).response?.data?.error as string));
-        }
+	async function addClient(clientData: Partial<Client>) {
+		try {
+			const {
+				data: { data },
+			} = await api.post("/clients", clientData);
+			if (data) {
+				setClients((prev) => [...prev, data.client]);
+			}
+			fetchClients();
+		} catch (error) {
+			console.error(error);
+			setError(
+				(error as AxiosError<AxiosResponseError>).response?.data
+					?.error as string,
+			);
+		}
+	}
 
-    }
+	async function updateClient(id: string, clientData: Partial<Client>) {
+		if (Object.entries(clientData).length === 0) return;
 
-    async function updateClient(id: string, clientData: Partial<Client>) {
-        if (Object.entries(clientData).length === 0) return;
+		setLoading(true);
+		try {
+			const {
+				data: { data },
+			} = await api.put(`/clients/${id}`, clientData);
 
-        setLoading(true);
-        try {
-            const { data: { data } } = await api.put(`/clients/${id}`, clientData);
+			if (data) {
+				const updatedClients = clients.map((client) =>
+					client.id === id ? { ...data.client } : client,
+				);
 
-            if (data) {
-                const updatedClients = clients.map(client => client.id === id ? { ...data.client } : client);
+				setClients(updatedClients);
+			}
+		} catch (error) {
+			console.error(error);
+			setError(
+				(error as AxiosError<AxiosResponseError>).response?.data
+					?.error as string,
+			);
+		} finally {
+			setLoading(false);
+		}
+	}
 
-                setClients(updatedClients);
-            }
-        } catch (error) {
-            console.error(error);
-            setError(((error as AxiosError<AxiosResponseError>).response?.data?.error as string));
-        } finally {
-            setLoading(false);
-        }
-    }
+	async function removeClient(id: string) {
+		setLoading(true);
+		try {
+			await api.delete(`/clients/${id}`);
+			setClients(clients.filter((client) => client.id !== id));
+		} catch (error) {
+			console.error(error);
+			setError(
+				(error as AxiosError<AxiosResponseError>).response?.data
+					?.error as string,
+			);
+		} finally {
+			setLoading(false);
+		}
+	}
 
-    async function removeClient(id: string) {
-        setLoading(true);
-        try {
-            await api.delete(`/clients/${id}`);
-            setClients(clients.filter(client => client.id !== id));
-        } catch (error) {
-            console.error(error);
-            setError((error as AxiosError<AxiosResponseError>).response?.data?.error as string);
-        } finally {
-            setLoading(false);
-        }
-    }
+	async function removeAllClients(clients: Client[]) {
+		try {
+			const clientIds = clients.map((client) => client.id);
+			await api.post("/clients/delete-all", { clients: clientIds });
+			setClients([]);
+		} catch (error) {
+			console.error(error);
+			setError(
+				(error as AxiosError<AxiosResponseError>).response?.data
+					?.error as string,
+			);
+		}
+	}
 
-    async function removeAllClients(clients: Client[]) {
-        try {
-            const clientIds = clients.map(client => client.id);
-            await api.post("/clients/delete-all", { clients: clientIds });
-            setClients([]);
-        } catch (error) {
-            console.error(error);
-            setError((error as AxiosError<AxiosResponseError>).response?.data?.error as string);
-        }
-    }
+	useEffect(() => {
+		if (currentUser?.id) {
+			fetchClients();
+		}
+	}, [currentUser?.id]);
 
-    useEffect(() => {
-        if (currentUser?.id) {
-            fetchClients();
-        }
-    }, [currentUser?.id]);
-
-    return {
-        clients,
-        addClient,
-        refetchClients: fetchClients,
-        updateClient,
-        removeClient,
-        removeAllClients,
-        loading,
-        error
-    };
+	return {
+		clients,
+		addClient,
+		refetchClients: fetchClients,
+		updateClient,
+		removeClient,
+		removeAllClients,
+		loading,
+		error,
+	};
 }

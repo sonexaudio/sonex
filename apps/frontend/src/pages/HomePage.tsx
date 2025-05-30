@@ -60,7 +60,11 @@ const HomePage = () => {
 					})}
 				</div>
 
-				{user && <button onClick={logout}>Logout</button>}
+				{user && (
+					<button type="button" onClick={logout}>
+						Logout
+					</button>
+				)}
 			</div>
 		</div>
 	);

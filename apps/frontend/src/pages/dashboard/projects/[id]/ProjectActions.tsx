@@ -20,14 +20,14 @@ const ProjectActions = ({
 
 		return (
 			<div>
-				<button>Edit Project</button>
+				<button type="button">Edit Project</button>
 
 				{project.status === "Complete" ? (
-					<button>Mark as incomplete</button>
+					<button type="button">Mark as incomplete</button>
 				) : project.status === "Archived" ? (
-					<button>Unarchive Project</button>
+					<button type="button">Unarchive Project</button>
 				) : (
-					<button>Mark as complete</button>
+					<button type="button">Mark as complete</button>
 				)}
 
 				{/* Share link */}
@@ -43,7 +43,7 @@ const ProjectActions = ({
 
 	return (
 		<div>
-			<button>Contact {project.user.firstName}</button>
+			<button type="button">Contact {project.user.firstName}</button>
 		</div>
 	);
 };

@@ -39,9 +39,12 @@ const CurrentProjectPage = () => {
 					<ProjectDetails project={project} />
 					<div className="flex gap-8 w-full">
 						<UpdateProjectForm project={project} />
-						<FileUploadProvider projectId={id as string} uploaderId={currentUser?.id as string} uploaderType="USER" >
+						<FileUploadProvider
+							projectId={id as string}
+							uploaderId={currentUser?.id as string}
+							uploaderType="USER"
+						>
 							<section className="border border-red-600 rounded-md size-full p-8 space-y-8">
-
 								<FileDropzone />
 								<FileUploadViewer />
 							</section>

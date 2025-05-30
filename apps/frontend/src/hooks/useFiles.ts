@@ -43,38 +43,50 @@ export default function useFiles() {
 
 	async function getAllFiles() {
 		setLoading(true);
-		const { data: { data } } = await api.get("/files");
+		const {
+			data: { data },
+		} = await api.get("/files");
 		dispatch({ type: GET_ALL_FILES, payload: data });
 		setLoading(false);
 	}
 
 	async function getCurrentFile(id: string) {
 		setLoading(true);
-		const { data: { data } } = await api.get(`/files/${id}`);
+		const {
+			data: { data },
+		} = await api.get(`/files/${id}`);
 		dispatch({ type: GET_CURRENT_FILE, payload: data.file });
 		setLoading(false);
 	}
 
 	async function deleteFile(id: string) {
 		setLoading(true);
-		await api.delete(`/files/${id}`).then(() => {
-			dispatch({ type: DELETE_FILE, payload: { id } });
-		}).catch((err) => {
-			console.error(err);
-		}).finally(() => {
-			setLoading(false);
-		});
+		await api
+			.delete(`/files/${id}`)
+			.then(() => {
+				dispatch({ type: DELETE_FILE, payload: { id } });
+			})
+			.catch((err) => {
+				console.error(err);
+			})
+			.finally(() => {
+				setLoading(false);
+			});
 	}
 
 	async function deleteAllFiles(files: string[]) {
 		setLoading(true);
-		await api.post("/files/delete-all", { fileIds: JSON.stringify(files) }).then(() => {
-			dispatch({ type: DELETE_ALL_FILES });
-		}).catch((err) => {
-			console.error(err);
-		}).finally(() => {
-			setLoading(false);
-		});
+		await api
+			.post("/files/delete-all", { fileIds: JSON.stringify(files) })
+			.then(() => {
+				dispatch({ type: DELETE_ALL_FILES });
+			})
+			.catch((err) => {
+				console.error(err);
+			})
+			.finally(() => {
+				setLoading(false);
+			});
 	}
 
 	return {
@@ -84,6 +96,6 @@ export default function useFiles() {
 		getAllFiles,
 		getCurrentFile,
 		deleteAllFiles,
-		deleteFile
+		deleteFile,
 	};
 }
