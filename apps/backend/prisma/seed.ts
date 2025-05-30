@@ -48,26 +48,42 @@ async function main() {
         ]
     });
 
+    console.log("Adding file...");
     await prisma.file.create({
         data: {
             name: "demo_audio.wav",
             size: 10485760,
             mimeType: "audio/wav",
-            path: `/${user.id}/${project.id}/demo_audi.wav`,
+            path: `/${user.id}/${project.id}/demo_audio.wav`,
             projectId: project.id,
             uploaderId: user.id,
             uploaderType: "USER"
         }
     });
 
+    console.log("Recording activities...");
     await prisma.activity.createMany({
         data: [
+            {
+                userId: user.id,
+                action: "Created account",
+                targetType: "user",
+            },
+            {
+                userId: user.id,
+                action: "Created project",
+                targetType: "project",
+                targetId: project.id,
+                metadata: {
+                    projectTitle: project.title
+                }
+            },
             {
                 userId: user.id,
                 action: "Added client",
                 targetType: "client",
                 metadata: {
-                    name: clients[0].name,
+                    email: clients[0].name,
                     projectTitle: project.title
                 },
                 targetId: clients[0].id
@@ -77,7 +93,7 @@ async function main() {
                 action: "Added client",
                 targetType: "client",
                 metadata: {
-                    name: clients[1].name,
+                    email: clients[1].name,
                     projectTitle: project.title
                 },
                 targetId: clients[1].id

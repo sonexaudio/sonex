@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requireAuth } from "../../middleware/auth";
 import { errorResponse, successResponse } from "../../utils/responses";
 import { prisma } from "../../lib/prisma";
+import { parseUserName } from "../../utils";
 
 const clientRouter = Router();
 
@@ -26,10 +27,12 @@ clientRouter.post("/", requireAuth, async (req, res) => {
     const userId = req.user?.id as string;
 
     try {
+        const clientName = parseUserName(req.body.name);
         const client = await prisma.client.create({
             data: {
                 ...req.body,
-                userId
+                name: `${clientName?.firstName} ${clientName?.lastName}`,
+                addedBy: userId
             }
         });
 
@@ -197,3 +200,5 @@ clientRouter.delete("/:id", requireAuth, async (req, res) => {
         errorResponse(res, 500, "Something went wrong");
     }
 });
+
+export default clientRouter;

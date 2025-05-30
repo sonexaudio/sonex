@@ -5,6 +5,7 @@ import paymentRoutes from "./payments";
 import accountRoutes from "./accounts";
 import projectRoutes from "./projects";
 import fileRoutes from "./files";
+import clientRoutes from "./clients";
 import stripeWebhook from "./webhooks/stripe";
 import stripeConnectWebhook from "./webhooks/stripe-connect";
 import { checkUserStillExists } from "../middleware/auth";
@@ -23,6 +24,7 @@ router.use("/payments", paymentRoutes);
 router.use("/accounts", accountRoutes);
 router.use("/projects", projectRoutes);
 router.use("/files", fileRoutes);
+router.use("/clients", clientRoutes);
 
 router.get("/health", (_, res) => {
 	res.sendStatus(200);

@@ -19,10 +19,9 @@ const initialFiles: FileState = {
 function fileReducer(state: FileState, action: FileReducerAction) {
 	switch (action.type) {
 		case GET_ALL_FILES:
-			console.log(action)
 			return { ...state, allFiles: action.payload };
 		case GET_CURRENT_FILE:
-			return { ...state, currentFile: {...action.payload.file} };
+			return { ...state, currentFile: { ...action.payload.file } };
 		case ADD_FILE:
 			return { ...state, allFiles: [...state.allFiles, action.payload.file] };
 		case DELETE_ALL_FILES:
@@ -39,43 +38,43 @@ export default function useFiles() {
 	const [loading, setLoading] = useState(true);
 
 	function addFileToState(file: SonexFile) {
-		dispatch({type: ADD_FILE, payload: {file}})
-	} 
+		dispatch({ type: ADD_FILE, payload: { file } });
+	}
 
 	async function getAllFiles() {
-		setLoading(true)
-		const {data: {data}} = await api.get("/files")
-		dispatch({type: GET_ALL_FILES, payload: data})
-		setLoading(false)
+		setLoading(true);
+		const { data: { data } } = await api.get("/files");
+		dispatch({ type: GET_ALL_FILES, payload: data });
+		setLoading(false);
 	}
 
 	async function getCurrentFile(id: string) {
-		setLoading(true)
-		const {data: {data}} = await api.get(`/files/${id}`)
-		dispatch({type: GET_CURRENT_FILE, payload: data.file})
-		setLoading(false)
+		setLoading(true);
+		const { data: { data } } = await api.get(`/files/${id}`);
+		dispatch({ type: GET_CURRENT_FILE, payload: data.file });
+		setLoading(false);
 	}
 
-	async function deleteFile(id: string){
-		setLoading(true)
+	async function deleteFile(id: string) {
+		setLoading(true);
 		await api.delete(`/files/${id}`).then(() => {
-			dispatch({type: DELETE_FILE, payload: {id}})
+			dispatch({ type: DELETE_FILE, payload: { id } });
 		}).catch((err) => {
-			console.error(err)
+			console.error(err);
 		}).finally(() => {
-			setLoading(false)
-		})
+			setLoading(false);
+		});
 	}
 
 	async function deleteAllFiles(files: string[]) {
-		setLoading(true)
-		await api.post("/files/delete-all", {fileIds: JSON.stringify(files)}).then(() => {
-			dispatch({type: DELETE_ALL_FILES})
+		setLoading(true);
+		await api.post("/files/delete-all", { fileIds: JSON.stringify(files) }).then(() => {
+			dispatch({ type: DELETE_ALL_FILES });
 		}).catch((err) => {
-			console.error(err)
+			console.error(err);
 		}).finally(() => {
-			setLoading(false)
-		})
+			setLoading(false);
+		});
 	}
 
 	return {
