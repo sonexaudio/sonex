@@ -2,7 +2,7 @@ import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useClients, type Client } from "../../../hooks/useClients";
 
 const ClientCard = ({ client }: { client: Client; }) => {
-    const { updateClient } = useClients();
+    const { updateClient, removeClient } = useClients();
     const [clientData, setClientData] = useState({
         name: client.name,
         email: client.email,
@@ -19,6 +19,10 @@ const ClientCard = ({ client }: { client: Client; }) => {
         console.log("Sending data...", clientData);
         await updateClient(client.id, clientData);
         setIsEditing(false);
+    };
+
+    const handleRemoveClient = async () => {
+        await removeClient(client.id);
     };
 
     return (
@@ -48,7 +52,7 @@ const ClientCard = ({ client }: { client: Client; }) => {
                     </div>
                     <div className="flex gap-4">
                         <button onClick={() => setIsEditing(true)}>Edit</button>
-                        <button>Delete</button>
+                        <button onClick={handleRemoveClient}>Delete</button>
                     </div>
                 </div>
             )}
