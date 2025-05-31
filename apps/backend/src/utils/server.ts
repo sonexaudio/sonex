@@ -50,6 +50,7 @@ export default function createServer() {
 			store: new PGSession({
 				pool: pgPool,
 				tableName: "user_sessions",
+				schemaName: "session",
 				createTableIfMissing: true,
 			}),
 			cookie: {

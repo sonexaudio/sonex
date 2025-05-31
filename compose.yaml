@@ -2,6 +2,7 @@ name: Sonex Audio Database
 services:
   postgres_database:
     image: postgres:latest
+    restart: unless-stopped
     ports:
       - 5432:5432
     environment:

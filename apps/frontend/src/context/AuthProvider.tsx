@@ -13,7 +13,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 	undefined,
 );
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode; }) {
 	const [user, setUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
 	const navigate = useNavigate();
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			if (
 				axiosError.response?.status === 401 &&
 				axiosError.response?.data?.message ===
-					"Session invalid. User no longer exists."
+				"Session invalid. User no longer exists."
 			)
 				console.warn("Session expired or user no longer exists.");
 			setUser(null);

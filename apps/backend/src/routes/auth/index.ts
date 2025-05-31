@@ -26,7 +26,7 @@ authRouter.get("/me", (req, res, next) => {
 			typeof req.isAuthenticated !== "function" ||
 			!req.isAuthenticated()
 		) {
-			res.status(401).json({ data: null });
+			res.status(200).json({ data: null });
 			return;
 		}
 

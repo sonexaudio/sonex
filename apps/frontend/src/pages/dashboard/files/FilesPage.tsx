@@ -1,16 +1,15 @@
-import { AuthProvider } from "../../../context/AuthProvider";
 import PageLayout from "../../../components/PageLayout";
 import FilesViewTable from "./FilesViewTable";
+import AuthLayout from "../../../components/AuthLayout";
 
 const FilesPage = () => {
-
-    return (
-        <AuthProvider>
-            <PageLayout>
-                <FilesViewTable />
-            </PageLayout>
-        </AuthProvider>
-    );
+	return (
+		<AuthLayout>
+			<PageLayout>
+				<FilesViewTable />
+			</PageLayout>
+		</AuthLayout>
+	);
 };
 
 export default FilesPage;

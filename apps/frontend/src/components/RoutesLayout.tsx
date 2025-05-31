@@ -12,6 +12,7 @@ import AccountPage from "../pages/dashboard/account/AccountPage";
 import ProjectsPage from "../pages/dashboard/projects/ProjectsPage";
 import CurrentProjectPage from "../pages/dashboard/projects/[id]/CurrentProjectPage";
 import FilesPage from "../pages/dashboard/files/FilesPage";
+import ClientsPage from "../pages/dashboard/clients/ClientsPage";
 
 const RoutesLayout = () => {
 	return (
@@ -30,6 +31,7 @@ const RoutesLayout = () => {
 						<Route path="files/:fileId" element={<p>Page coming soon!</p>} />
 					</Route>
 				</Route>
+				<Route path="clients" element={<ClientsPage />} />
 				<Route path="files" element={<FilesPage />} />
 				<Route path="account" element={<AccountPage />} />
 			</Route>

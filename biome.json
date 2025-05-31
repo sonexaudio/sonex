@@ -7,7 +7,7 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": ["node_modules"]
+		"ignore": ["**/**/node_modules/", "**/**/*tsconfig*.json"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -21,11 +21,21 @@
 		"rules": {
 			"recommended": true,
 			"a11y": {
-				"useButtonType": "warn"
+				"useButtonType": "warn",
+				"useKeyWithClickEvents": "off",
+				"noSvgWithoutTitle": "off"
 			},
 			"style": {
 				"noNonNullAssertion": "off",
-				"useNodejsImportProtocol": "off"
+				"useNodejsImportProtocol": "off",
+				"useConst": "off",
+				"useExponentiationOperator":"off"
+			},
+			"complexity": {
+				"noForEach":"off"
+			},
+			"correctness": {
+				"useExhaustiveDependencies": "off"
 			},
 			"suspicious": {
 				"noExplicitAny":"warn"

@@ -42,7 +42,7 @@ export interface SonexFile {
 	createdAt: Date | string;
 	projectId: string;
 	uploaderId: string;
-	uploaderType: "USER" | "CLIENT"
+	uploaderType: "USER" | "CLIENT";
 }
 
 export type FileState = {

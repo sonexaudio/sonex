@@ -22,12 +22,12 @@ const AccountPage = () => {
 	const [searchParams] = useSearchParams();
 	const error = searchParams.get("error");
 	/* Functions
-        Check if user has ability to view page
-        Get user information - done via AuthProvider
-        Check if user has active subscription
-        Check if user has successfully onboarded account 
-        Display user's current subscription
-    */
+		Check if user has ability to view page
+		Get user information - done via AuthProvider
+		Check if user has active subscription
+		Check if user has successfully onboarded account 
+		Display user's current subscription
+	*/
 	// Button to customer portal
 	// Button to stripe connect
 

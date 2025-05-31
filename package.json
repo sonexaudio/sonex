@@ -2,14 +2,21 @@
 	"name": "sonex",
 	"private": true,
 	"version": "1.0.0",
-	"workspaces": ["apps/*", "packages/*"],
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
 	"scripts": {
 		"dev": "pnpm -r --parallel dev",
 		"start": "echo 'Production mode run separately for individual apps'",
-		"build": "pnpm -r --parallel build"
+		"build": "pnpm -r --parallel build",
+		"format:all": "pnpm -r --parallel format",
+		"lint:all": "pnpm -r --parallel lint"
 	},
-
 	"author": "Isaiah Vickers",
 	"license": "UNLICENSED",
-	"packageManager": "pnpm@10.9.0"
+	"packageManager": "pnpm@10.9.0",
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4"
+	}
 }

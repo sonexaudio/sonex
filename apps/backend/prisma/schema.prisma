@@ -37,6 +37,24 @@ model User {
   subscriptions Subscription[]
   transactions  Transaction[]
   activities    Activity[]
+  clients       Client[]
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String
+  projectId String
+  addedBy   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectManager User    @relation(fields: [addedBy], references: [id], onDelete: Cascade)
+  project        Project @relation(fields: [projectId], references: [id])
+
+  // Make sure same client is not added again to user
+  // However, same client can be added to multiple users
+  @@unique([email, projectId, addedBy])
 }
 
 model Project {
@@ -52,8 +70,9 @@ model Project {
   updatedAt     DateTime             @updatedAt
 
   // Associations
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  files File[]
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files   File[]
+  clients Client[]
 
   // Prevent user from creating project with the same title
   @@unique([title, userId])
@@ -128,6 +147,18 @@ model Activity {
   createdAt  DateTime @default(now())
 
   @@index([userId])
+}
+
+model ClientAccess {
+  id         String    @id @default(cuid())
+  email      String
+  projectId  String
+  token      String    @unique
+  expires    DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([email, projectId])
 }
 
 enum UploaderType {
