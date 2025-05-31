@@ -5,18 +5,42 @@ import path from "path";
 import fs from "fs";
 import { errorResponse, successResponse } from "../../utils/responses";
 import { requireAuth } from "../../middleware/auth";
+import type { File } from "../../generated/prisma";
 
 const router = Router();
 const storage = multer.diskStorage({
-	destination: (req, _file, cb) => {
-		let { projectId, uploaderId } = req.query;
+	destination: async (req, _file, cb) => {
+		const { projectId, uploaderId, uploaderType } = req.query;
 
-		const folderPath = path.join(
-			__dirname,
-			"uploads",
-			uploaderId as string,
-			projectId as string,
-		);
+		let folderPath: fs.PathLike;
+
+		if (uploaderType === "CLIENT") {
+			const project = await prisma.project.findUnique({
+				where: { id: projectId as string },
+			});
+
+			if (!project) {
+				cb(new Error("Project does not exist"), "");
+				return;
+			}
+
+			folderPath = path.join(
+				__dirname,
+				"uploads",
+				project?.userId as string,
+				projectId as string,
+				"clientUploads",
+				uploaderId as string,
+			);
+		} else {
+			folderPath = path.join(
+				__dirname,
+				"uploads",
+				uploaderId as string,
+				projectId as string,
+			);
+		}
+
 		fs.mkdirSync(folderPath, { recursive: true });
 		cb(null, folderPath);
 	},
@@ -55,16 +79,32 @@ router.post("/upload", upload.array("files"), async (req, res) => {
 	}
 });
 
-// Get all files pertaining to user
+// Get all files pertaining to user/project
 // TODO: will add metadata so that I can add projectId, metadata, and getting files pertaining to project
-router.get("/", requireAuth, async (req, res) => {
+router.get("/", async (req, res) => {
+	const projectAccess = req.session.projectAccess;
+	const projectId = projectAccess?.projectId || req.query.projectId as string;
 	const userId = req.user?.id;
+
 	try {
-		const files = await prisma.file.findMany({
-			where: {
-				uploaderId: userId,
-			},
-		});
+		let files: File[];
+		if (projectId && req.url.includes(projectId)) {
+			files = await prisma.file.findMany({
+				where: { OR: [{ projectId }, { uploaderId: req.user?.id }] },
+				orderBy: { createdAt: "desc" }
+			});
+		} else if (userId) {
+			files = await prisma.file.findMany({
+				where: {
+					project: {
+						userId
+					}
+				}
+			});
+		} else {
+			errorResponse(res, 401, "Unauthorized");
+			return;
+		}
 
 		successResponse(res, files);
 	} catch (error) {
@@ -106,8 +146,9 @@ router.post("/delete-all", requireAuth, async (req, res) => {
 	res.sendStatus(204);
 });
 
-router.delete("/:id", requireAuth, async (req, res) => {
+router.delete("/:id", async (req, res) => {
 	const { id } = req.params;
+
 	const existingFile = await prisma.file.findUnique({
 		where: { id },
 	});

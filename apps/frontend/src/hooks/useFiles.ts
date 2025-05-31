@@ -10,6 +10,7 @@ import {
 	type SonexFile,
 } from "../types/files";
 import api from "../lib/axios";
+import { useParams } from "react-router";
 
 const initialFiles: FileState = {
 	allFiles: [],
@@ -36,18 +37,27 @@ function fileReducer(state: FileState, action: FileReducerAction) {
 export default function useFiles() {
 	const [files, dispatch] = useReducer(fileReducer, initialFiles);
 	const [loading, setLoading] = useState(true);
+	const { id: projectId } = useParams();
 
 	function addFileToState(file: SonexFile) {
 		dispatch({ type: ADD_FILE, payload: { file } });
 	}
 
+
 	async function getAllFiles() {
 		setLoading(true);
-		const {
-			data: { data },
-		} = await api.get("/files");
-		dispatch({ type: GET_ALL_FILES, payload: data });
-		setLoading(false);
+		const params = projectId ? { projectId } : {};
+
+		try {
+			const {
+				data: { data },
+			} = await api.get("/files", { params });
+			dispatch({ type: GET_ALL_FILES, payload: data });
+		} catch (error) {
+			console.error("Failed to fetch files:", error);
+		} finally {
+			setLoading(false);
+		}
 	}
 
 	async function getCurrentFile(id: string) {

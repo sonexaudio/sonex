@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { errorResponse } from "../utils/responses";
 import { prisma } from "../lib/prisma";
 import { generateTokenHash } from "../utils/token";
@@ -8,7 +8,7 @@ export async function checkProjectAccess(
 	res: Response,
 	next: NextFunction,
 ) {
-	const projectId = req.params.id ?? req.body.projectId;
+	const projectId = req.params.id || req.query.projectId || req.body.projectId;
 	const userId = req.user?.id;
 	const clientToken = req.query?.token as string | undefined;
 
@@ -51,8 +51,9 @@ export async function checkProjectAccess(
 				accessGrantedAt: access.createdAt,
 			};
 		}
+		next();
+		return;
 	}
 
 	next();
-	return;
 }

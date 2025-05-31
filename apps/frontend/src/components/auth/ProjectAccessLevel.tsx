@@ -11,7 +11,7 @@ export type ProjectAccessGateState =
 	| "prompt"
 	| "denied";
 
-const ProjectAccessGate = ({ children }: { children: ReactNode }) => {
+const ProjectAccessGate = ({ children }: { children: ReactNode; }) => {
 	const { id: projectId } = useParams();
 	const { search } = useLocation();
 
@@ -46,9 +46,7 @@ const ProjectAccessGate = ({ children }: { children: ReactNode }) => {
 			}
 		};
 
-		checkAccess(accessToken).then(() =>
-			console.log("PROJECT ACCESS RETRIEVED", accessToken),
-		);
+		checkAccess(accessToken);
 	}, [projectId, search]);
 
 	if (access === "loading")

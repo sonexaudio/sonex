@@ -6,6 +6,26 @@ import { parseUserName } from "../../utils";
 
 const clientRouter = Router();
 
+clientRouter.get("/auth", async (req, res) => {
+	const email = req.query.email as string;
+
+	if (!email) {
+		errorResponse(res, 400, "Client email not provided");
+		return;
+	}
+
+	const client = await prisma.client.findFirst({
+		where: { email }
+	});
+
+	if (!client) {
+		errorResponse(res, 404, "Client not found");
+		return;
+	}
+
+	successResponse(res, { client });
+});
+
 clientRouter.get("/", requireAuth, async (req, res) => {
 	const userId = req.user?.id;
 
