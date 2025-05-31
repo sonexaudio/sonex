@@ -4,7 +4,7 @@ import type { ProjectWithUserInfo } from "../../../../types/projects";
 const ProjectActions = ({
 	isOwner,
 	project,
-}: { isOwner: boolean; project: ProjectWithUserInfo }) => {
+}: { isOwner: boolean; project: ProjectWithUserInfo; }) => {
 	if (isOwner) {
 		const [copiedProjectLink, setCopiedProjectLink] = useState(false);
 
@@ -43,7 +43,7 @@ const ProjectActions = ({
 
 	return (
 		<div>
-			<button type="button">Contact {project.user.firstName}</button>
+			<button type="button">Contact {project.user?.email}</button>
 		</div>
 	);
 };

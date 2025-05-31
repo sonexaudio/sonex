@@ -149,6 +149,18 @@ model Activity {
   @@index([userId])
 }
 
+model ClientAccess {
+  id         String    @id @default(cuid())
+  email      String
+  projectId  String
+  token      String    @unique
+  expires    DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([email, projectId])
+}
+
 enum UploaderType {
   USER
   CLIENT

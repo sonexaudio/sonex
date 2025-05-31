@@ -3,8 +3,11 @@ import { requireAuth } from "../../middleware/auth";
 import { prisma } from "../../lib/prisma";
 import { Prisma } from "../../generated/prisma";
 import { validate } from "../../middleware/validate";
-// import { ProjectSchema } from "../../schemas/project";
+import { INVITE_EXPIRATION_DATE } from "../../../types";
 import { ProjectSchema } from "@sonex/schemas/project";
+import { errorResponse, successResponse } from "../../utils/responses";
+import { generateClientAccessToken, generateTokenHash } from "../../utils/token";
+import { checkProjectAccess } from "../../middleware/projectAccess";
 
 const projectRouter = Router();
 
@@ -61,26 +64,122 @@ projectRouter.post(
 	},
 );
 
-projectRouter.get("/:id", requireAuth, async (req, res) => {
+projectRouter.get("/:id", checkProjectAccess, async (req, res) => {
 	const { id } = req.params;
-	const existingProject = await prisma.project.findUnique({
-		where: { id },
-		include: {
-			user: {
-				select: {
-					id: true,
-					firstName: true,
-					email: true,
+	const access = req.session.projectAccess;
+
+	let project;
+
+	if (access?.type === "client") {
+		project = await prisma.project.findUnique({
+			where: { id },
+			include: {
+				user: {
+					select: {
+						id: true,
+						firstName: true,
+						email: true,
+					},
 				},
 			},
-		},
-	});
-
-	if (!existingProject) {
-		res.status(404).json({ error: "Project does not exist" });
+		});
+	} else {
+		project = await prisma.project.findUnique({
+			where: { id }
+		});
 	}
 
-	res.json({ data: { project: existingProject } });
+	res.json({ data: { project } });
+});
+
+projectRouter.post("/:id/check-access", async (req, res) => {
+	const userId = req.user?.id as string;
+	const projectId = req.params.id as string;
+	const token = req.body.accessToken || req.query?.token as string | undefined;
+
+	try {
+		if (userId) {
+			const project = await prisma.project.findUnique({ where: { id: projectId } });
+			if (project?.userId === userId) {
+				req.session.projectAccess = { type: "user", projectId };
+				successResponse(res, { authorized: true, accessType: "user" });
+				return;
+			}
+		}
+
+		if (token) {
+			const hashed = generateTokenHash(token);
+			const clientAccess = await prisma.clientAccess.findFirst({
+				where: {
+					token: hashed,
+					projectId,
+					expires: { gte: new Date() },
+				},
+			});
+
+			if (clientAccess) {
+				req.session.projectAccess = {
+					type: "client",
+					projectId,
+					clientEmail: clientAccess.email,
+					accessGrantedAt: clientAccess.createdAt
+				};
+				successResponse(res, { authorized: true, accessType: "client", email: clientAccess.email });
+				return;
+			}
+
+			successResponse(res, {
+				authorized: false,
+				reason: "invalid_token"
+			});
+
+			return;
+		}
+
+		successResponse(res, {
+			authorized: false,
+			reason: "unauthenticated"
+		});
+	} catch (error) {
+		console.error(error);
+		errorResponse(res, 500, "Something went wrong");
+	}
+});
+
+projectRouter.post("/:id/request-access", async (req, res) => {
+	const { email } = req.body;
+	const projectId = req.params.id;
+
+	if (!email || !projectId) {
+		errorResponse(res, 400, "Missing email or projectId");
+		return;
+	}
+
+	try {
+		const token = generateClientAccessToken();
+		const hashed = generateTokenHash(token);
+
+		await prisma.clientAccess.upsert({
+			where: {
+				email_projectId: { email, projectId }
+			},
+			update: {
+				token: hashed,
+				expires: new Date(Date.now() + INVITE_EXPIRATION_DATE) // 3 days
+			},
+			create: {
+				email,
+				projectId,
+				token: hashed,
+				expires: new Date(Date.now() + INVITE_EXPIRATION_DATE)
+			}
+		});
+
+		successResponse(res, { token, url: `${req.baseUrl}/${projectId}?token=${token}` }); // for dev, will update to email
+	} catch (error) {
+		console.error(error);
+		errorResponse(res, 500, "Failed to create client access");
+	}
 });
 
 projectRouter.put(

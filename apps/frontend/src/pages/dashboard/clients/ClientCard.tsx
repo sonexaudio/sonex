@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useClients, type Client } from "../../../hooks/useClients";
 
-const ClientCard = ({ client }: { client: Client }) => {
+const ClientCard = ({ client }: { client: Client; }) => {
 	const { updateClient, removeClient } = useClients();
 	const [clientData, setClientData] = useState({
 		name: client.name,
@@ -16,7 +16,6 @@ const ClientCard = ({ client }: { client: Client }) => {
 
 	const handleUpdate = async (e: FormEvent) => {
 		e.preventDefault();
-		console.log("Sending data...", clientData);
 		await updateClient(client.id, clientData);
 		setIsEditing(false);
 	};
