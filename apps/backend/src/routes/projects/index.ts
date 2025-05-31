@@ -6,7 +6,10 @@ import { validate } from "../../middleware/validate";
 import { INVITE_EXPIRATION_DATE } from "../../../types";
 import { ProjectSchema } from "@sonex/schemas/project";
 import { errorResponse, successResponse } from "../../utils/responses";
-import { generateClientAccessToken, generateTokenHash } from "../../utils/token";
+import {
+	generateClientAccessToken,
+	generateTokenHash,
+} from "../../utils/token";
 import { checkProjectAccess } from "../../middleware/projectAccess";
 
 const projectRouter = Router();
@@ -85,7 +88,7 @@ projectRouter.get("/:id", checkProjectAccess, async (req, res) => {
 		});
 	} else {
 		project = await prisma.project.findUnique({
-			where: { id }
+			where: { id },
 		});
 	}
 
@@ -95,11 +98,16 @@ projectRouter.get("/:id", checkProjectAccess, async (req, res) => {
 projectRouter.post("/:id/check-access", async (req, res) => {
 	const userId = req.user?.id as string;
 	const projectId = req.params.id as string;
-	const token = req.body.accessToken || req.query?.token as string | undefined;
+	const token =
+		req.body.accessToken || (req.query?.token as string | undefined);
+
+	const project = await prisma.project.findUnique({
+		where: { id: projectId },
+	});
 
 	try {
 		if (userId) {
-			const project = await prisma.project.findUnique({ where: { id: projectId } });
+
 			if (project?.userId === userId) {
 				req.session.projectAccess = { type: "user", projectId };
 				successResponse(res, { authorized: true, accessType: "user" });
@@ -122,15 +130,36 @@ projectRouter.post("/:id/check-access", async (req, res) => {
 					type: "client",
 					projectId,
 					clientEmail: clientAccess.email,
-					accessGrantedAt: clientAccess.createdAt
+					accessGrantedAt: clientAccess.createdAt,
 				};
-				successResponse(res, { authorized: true, accessType: "client", email: clientAccess.email });
+
+				await prisma.clientAccess.update({
+					where: { id: clientAccess.id },
+					data: {
+						acceptedAt: new Date()
+					}
+				});
+
+				await prisma.activity.create({
+					data: {
+						action: `${clientAccess.email} accessed project '${project?.title}'`,
+						targetType: "authorization",
+						userId: project?.userId as string,
+						targetId: clientAccess.id,
+					}
+				});
+
+				successResponse(res, {
+					authorized: true,
+					accessType: "client",
+					email: clientAccess.email,
+				});
 				return;
 			}
 
 			successResponse(res, {
 				authorized: false,
-				reason: "invalid_token"
+				reason: "invalid_token",
 			});
 
 			return;
@@ -138,7 +167,7 @@ projectRouter.post("/:id/check-access", async (req, res) => {
 
 		successResponse(res, {
 			authorized: false,
-			reason: "unauthenticated"
+			reason: "unauthenticated",
 		});
 	} catch (error) {
 		console.error(error);
@@ -161,21 +190,24 @@ projectRouter.post("/:id/request-access", async (req, res) => {
 
 		await prisma.clientAccess.upsert({
 			where: {
-				email_projectId: { email, projectId }
+				email_projectId: { email, projectId },
 			},
 			update: {
 				token: hashed,
-				expires: new Date(Date.now() + INVITE_EXPIRATION_DATE) // 3 days
+				expires: new Date(Date.now() + INVITE_EXPIRATION_DATE), // 3 days
 			},
 			create: {
 				email,
 				projectId,
 				token: hashed,
-				expires: new Date(Date.now() + INVITE_EXPIRATION_DATE)
-			}
+				expires: new Date(Date.now() + INVITE_EXPIRATION_DATE),
+			},
 		});
 
-		successResponse(res, { token, url: `${req.baseUrl}/${projectId}?token=${token}` }); // for dev, will update to email
+		successResponse(res, {
+			token,
+			url: `${req.baseUrl}/${projectId}?token=${token}`,
+		}); // for dev, will update to email
 	} catch (error) {
 		console.error(error);
 		errorResponse(res, 500, "Failed to create client access");

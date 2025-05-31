@@ -63,16 +63,20 @@ const CurrentProjectPage = () => {
 							</div>
 						</>
 					)}
-					<FileUploadProvider
-						projectId={id as string}
-						uploaderId={project.userId as string}
-						uploaderType="CLIENT"
-					>
-						<section className="border border-red-600 rounded-md size-full p-8 space-y-8">
-							<FileDropzone />
-							<FileUploadViewer />
-						</section>
-					</FileUploadProvider>
+
+					{!isOwner && (
+						<FileUploadProvider
+							projectId={id as string}
+							uploaderId={project.userId as string}
+							uploaderType="CLIENT"
+						>
+							<section className="border border-red-600 rounded-md size-full p-8 space-y-8">
+								<FileDropzone />
+								<FileUploadViewer />
+							</section>
+						</FileUploadProvider>
+					)}
+
 				</div>
 			</PageLayout>
 		</ProjectAccessGate>

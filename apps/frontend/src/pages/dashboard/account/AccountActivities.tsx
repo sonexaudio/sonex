@@ -8,7 +8,7 @@ export interface Activity {
 	createdAt: Date | string;
 }
 
-const AccountActivities = ({ activities }: { activities: Activity[]; }) => {
+const AccountActivities = ({ activities }: { activities: Activity[] }) => {
 	return (
 		<div>
 			<h3 className="font-semibold text-lg my-4">Activities</h3>
