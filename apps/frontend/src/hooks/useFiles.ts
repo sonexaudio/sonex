@@ -60,12 +60,18 @@ export default function useFiles() {
 		}
 	}
 
-	async function getCurrentFile(id: string) {
+	async function getCurrentFile(id: string, includeStreamUrl = false) {
 		setLoading(true);
+		let fileUrl = `/files/${id}`;
+
+		if (includeStreamUrl) {
+			fileUrl += "/stream-url";
+		}
+
 		const {
 			data: { data },
-		} = await api.get(`/files/${id}`);
-		dispatch({ type: GET_CURRENT_FILE, payload: data.file });
+		} = await api.get(fileUrl);
+		dispatch({ type: GET_CURRENT_FILE, payload: { file: data.file } });
 		setLoading(false);
 	}
 
@@ -99,12 +105,22 @@ export default function useFiles() {
 			});
 	}
 
+	async function downloadFile(id: string) {
+		try {
+			const { data: { data } } = await api.get(`/files/${id}/download-url`);
+			return data.url;
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	return {
 		files,
 		loading,
 		addFileToState,
 		getAllFiles,
 		getCurrentFile,
+		downloadFile,
 		deleteAllFiles,
 		deleteFile,
 	};
