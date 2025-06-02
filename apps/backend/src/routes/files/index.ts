@@ -8,7 +8,8 @@ import { requireAuth } from "../../middleware/auth";
 import type { Client, File } from "../../generated/prisma";
 import multerS3 from "multer-s3";
 import s3Client from "../../lib/s3-client";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const router = Router();
 interface MulterRequest extends Express.Request {
@@ -23,6 +24,8 @@ interface MulterRequest extends Express.Request {
 interface FileIdRequest extends Request {
 	fileIdMap?: Record<string, string>;
 }
+
+const SIGNED_EXPIRATION_SECONDS = 45;
 
 const storage = multerS3({
 	s3: s3Client,
@@ -200,6 +203,81 @@ router.get("/:id", async (req, res) => {
 		}
 
 		successResponse(res, file);
+	} catch (error) {
+		console.error(error);
+		errorResponse(res, 500, "Something went wrong");
+	}
+});
+
+// get file and stream (including versions)
+router.get("/:id/stream-url", async (req, res) => {
+	const fileId = req.params.id as string;
+	try {
+		const fileInfo = await prisma.file.findUnique({
+			where: { id: fileId },
+		});
+
+		if (!fileInfo) {
+			errorResponse(res, 404, "File not found");
+			return;
+		}
+
+		const streamableTypes = ["video/", "audio/", "image/"];
+		const isStreamable = streamableTypes.some(type => fileInfo.mimeType.startsWith(type));
+
+		if (!isStreamable) {
+			errorResponse(res, 400, "File type not streamable");
+			return;
+		}
+
+		const params = {
+			Bucket: "sonex",
+			Key: fileInfo.path,
+			ResponseContentType: fileInfo.mimeType,
+		};
+
+		const command = new GetObjectCommand(params);
+
+		const url = await getSignedUrl(s3Client, command, { expiresIn: SIGNED_EXPIRATION_SECONDS });
+
+		const file = {
+			...fileInfo,
+			streamUrl: url
+		};
+
+		successResponse(res, { file });
+	} catch (error) {
+		console.error(error);
+		errorResponse(res, 500, "Something went wrong");
+	}
+});
+
+// download file
+router.get("/:id/download-url", async (req, res) => {
+	const fileId = req.params.id as string;
+
+	try {
+		const fileInfo = await prisma.file.findUnique({
+			where: { id: fileId },
+		});
+
+		if (!fileInfo) {
+			errorResponse(res, 404, "File not found");
+			return;
+		}
+
+		const params = {
+			Bucket: "sonex",
+			Key: fileInfo.path,
+			ResponseContentType: fileInfo.mimeType,
+			ResponseContentDisposition: `attachment; filename="${fileInfo.name}"`
+		};
+
+		const command = new GetObjectCommand(params);
+
+		const url = await getSignedUrl(s3Client, command, { expiresIn: SIGNED_EXPIRATION_SECONDS });
+
+		successResponse(res, { url });
 	} catch (error) {
 		console.error(error);
 		errorResponse(res, 500, "Something went wrong");

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import useFiles from "../../../hooks/useFiles";
 import { formatFileSize } from "../../../utils/files";
+import { useNavigate } from "react-router";
 
 const FilesViewTable = () => {
 	const {
@@ -10,6 +11,8 @@ const FilesViewTable = () => {
 		deleteFile,
 		deleteAllFiles,
 	} = useFiles();
+
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		if (loading) {
@@ -43,7 +46,7 @@ const FilesViewTable = () => {
 				<tbody>
 					{allFiles.map((file) => (
 						<tr key={file.id}>
-							<th>{file.name}</th>
+							<th onClick={() => navigate(`/projects/${file.projectId}/files/${file.id}`)}>{file.name}</th>
 							<td>{formatFileSize(file.size)}</td>
 							<td>{file.mimeType}</td>
 							<td>{new Date(file.createdAt).toLocaleDateString()}</td>

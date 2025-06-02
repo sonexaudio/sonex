@@ -43,6 +43,7 @@ export interface SonexFile {
 	projectId: string;
 	uploaderId: string;
 	uploaderType: "USER" | "CLIENT";
+	streamUrl?: string;
 }
 
 export type FileState = {
@@ -52,21 +53,21 @@ export type FileState = {
 
 export type FileReducerAction =
 	| {
-			type: typeof GET_ALL_FILES;
-			payload: { files: SonexFile[] };
-	  }
+		type: typeof GET_ALL_FILES;
+		payload: { files: SonexFile[]; };
+	}
 	| {
-			type: typeof GET_CURRENT_FILE;
-			payload: { file: SonexFile };
-	  }
+		type: typeof GET_CURRENT_FILE;
+		payload: { file: SonexFile; };
+	}
 	| {
-			type: typeof ADD_FILE;
-			payload: { file: SonexFile };
-	  }
+		type: typeof ADD_FILE;
+		payload: { file: SonexFile; };
+	}
 	| {
-			type: typeof DELETE_ALL_FILES;
-	  }
+		type: typeof DELETE_ALL_FILES;
+	}
 	| {
-			type: typeof DELETE_FILE;
-			payload: { id: string };
-	  };
+		type: typeof DELETE_FILE;
+		payload: { id: string; };
+	};

@@ -46,6 +46,7 @@
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.821.0",
+		"@aws-sdk/s3-request-presigner": "^3.821.0",
 		"@prisma/client": "^6.8.2",
 		"@sonex/schemas": "workspace:*",
 		"bcryptjs": "^3.0.2",
