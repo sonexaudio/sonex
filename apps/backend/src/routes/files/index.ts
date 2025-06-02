@@ -6,17 +6,28 @@ import fs from "fs";
 import { errorResponse, successResponse } from "../../utils/responses";
 import { requireAuth } from "../../middleware/auth";
 import type { File } from "../../generated/prisma";
+import multerS3 from "multer-s3";
+import s3Client from "../../lib/s3-client";
 
 const router = Router();
-const storage = multer.diskStorage({
-	destination: async (req, _file, cb) => {
-		const { projectId, uploaderId, uploaderType } = req.query;
+interface MulterRequest extends Express.Request {
+	query: {
+		projectId: string;
+		uploaderId: string;
+		uploaderType: 'CLIENT' | 'USER';
+	};
+}
 
-		let folderPath: fs.PathLike;
-
-		if (uploaderType === "CLIENT") {
+const storage = multerS3({
+	s3: s3Client,
+	bucket: "sonex",
+	key: async (req: MulterRequest, file, cb) => {
+		try {
+			const { projectId, uploaderId, uploaderType } = req.query;
+			const extension = path.extname(file.originalname);
+			const filename = path.basename(file.originalname, extension);
 			const project = await prisma.project.findUnique({
-				where: { id: projectId as string },
+				where: { id: projectId }
 			});
 
 			if (!project) {
@@ -24,31 +35,16 @@ const storage = multer.diskStorage({
 				return;
 			}
 
-			folderPath = path.join(
-				__dirname,
-				"uploads",
-				project?.userId as string,
-				projectId as string,
-				"clientUploads",
-				uploaderId as string,
-			);
-		} else {
-			folderPath = path.join(
-				__dirname,
-				"uploads",
-				uploaderId as string,
-				projectId as string,
-			);
+			if (uploaderType === "CLIENT") {
+				cb(null, `${project.userId}/${project.title}_${projectId}/${filename}${extension}`);
+			} else {
+				cb(null, `${uploaderId}/${project.title}_${projectId}/${filename}${extension}`);
+			}
+		} catch (error) {
+			cb(new Error(`Invalid upload parameters: ${error}`), "");
 		}
 
-		fs.mkdirSync(folderPath, { recursive: true });
-		cb(null, folderPath);
-	},
-	filename: (_req, file, cb) => {
-		const extension = path.extname(file.originalname);
-		const filename = path.basename(file.originalname, extension);
-		cb(null, `${filename}${extension}`);
-	},
+	}
 });
 
 const upload = multer({ storage: storage });
@@ -56,15 +52,41 @@ const upload = multer({ storage: storage });
 router.post("/upload", upload.array("files"), async (req, res) => {
 	const { projectId, uploaderId, uploaderType } = req.body;
 
+	// Additional validation: ensure project exists and user has permission
+	const project = await prisma.project.findUnique({
+		where: { id: projectId },
+		select: {
+			id: true,
+			userId: true,
+		}
+	});
+
+	if (!project) {
+		errorResponse(res, 404, "Project not found");
+		return;
+	}
+
+	// Permission check
+	if (uploaderType === "USER" && project.userId !== uploaderId) {
+		errorResponse(res, 403, "Insufficient permissions");
+		return;
+	}
+
+	const files = req.files as Express.MulterS3.File[];
+	if (!files || files.length === 0) {
+		errorResponse(res, 400, "No files uploaded");
+		return;
+	}
+
 	try {
 		const savedFiles = await Promise.all(
-			(req.files as Express.Multer.File[]).map((file) =>
+			files.map((file) =>
 				prisma.file.create({
 					data: {
 						name: file.originalname,
 						size: file.size,
 						mimeType: file.mimetype,
-						path: file.path,
+						path: file.key || file.path,
 						projectId,
 						uploaderId,
 						uploaderType,

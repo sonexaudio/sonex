@@ -19,6 +19,11 @@ const config = {
 		connectSecret: process.env.STRIPE_CONNECT_WEBHOOK_SECRET!,
 	},
 	dbUrl: process.env.DATABASE_URL!,
+	storage: {
+		accessKeyId: process.env.CLOUDFLARE_ACCESS_KEY_ID!,
+		secretAccessKey: process.env.CLOUDFLARE_SECRET_ACCESS_KEY!,
+		endpoint: process.env.CLOUDFLARE_ENDPOINT!
+	}
 };
 
 export default config;
