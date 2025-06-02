@@ -20,7 +20,7 @@ const initialFiles: FileState = {
 function fileReducer(state: FileState, action: FileReducerAction) {
 	switch (action.type) {
 		case GET_ALL_FILES:
-			return { ...state, allFiles: action.payload };
+			return { ...state, allFiles: action.payload.files };
 		case GET_CURRENT_FILE:
 			return { ...state, currentFile: { ...action.payload.file } };
 		case ADD_FILE:
@@ -28,7 +28,7 @@ function fileReducer(state: FileState, action: FileReducerAction) {
 		case DELETE_ALL_FILES:
 			return { ...state, allFiles: [], currentFile: null };
 		case DELETE_FILE:
-			return { ...state };
+			return { ...state, allFiles: state.allFiles.filter(file => file.id !== action.payload.id) };
 		default:
 			return state;
 	}

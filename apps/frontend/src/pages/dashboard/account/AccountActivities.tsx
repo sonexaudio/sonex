@@ -2,13 +2,13 @@ export interface Activity {
 	id: string;
 	userId: string;
 	action: string;
-	metadata?: Record<string, unknown>;
+	metadata?: Record<string, any>;
 	targetType: string;
 	targetId: string;
 	createdAt: Date | string;
 }
 
-const AccountActivities = ({ activities }: { activities: Activity[] }) => {
+const AccountActivities = ({ activities }: { activities: Activity[]; }) => {
 	return (
 		<div>
 			<h3 className="font-semibold text-lg my-4">Activities</h3>

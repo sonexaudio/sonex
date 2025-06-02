@@ -3,6 +3,7 @@ import useProjects from "../../../hooks/useProjects";
 import { ProjectSchema } from "@sonex/schemas/project";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import type { Project } from "../../../types/projects";
 
 // Here for safe keeping
 const NewProjectForm = () => {
@@ -20,7 +21,7 @@ const NewProjectForm = () => {
 		},
 	});
 
-	const handleSubmitProject = async (data) => {
+	const handleSubmitProject = async (data: Partial<Project>) => {
 		setSubmitError(null);
 
 		try {

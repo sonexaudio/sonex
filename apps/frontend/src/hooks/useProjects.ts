@@ -10,6 +10,8 @@ import {
 	type ProjectReducerAction,
 	type ProjectState,
 } from "../types/projects";
+import type { AxiosError } from "axios";
+import type { AxiosResponseError } from "./useClients";
 
 const initialProjects: ProjectState = {
 	allProjects: [],
@@ -108,8 +110,8 @@ export default function useProjects() {
 			dispatch({ type: CREATE_PROJECT, payload: data });
 			getAllProjects();
 		} catch (error) {
-			// console.error(error);
-			throw error.response.data.error;
+			console.error(error);
+			throw (error as AxiosError<AxiosResponseError>).response?.data.error;
 		} finally {
 			setLoading(false);
 		}

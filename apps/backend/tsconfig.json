@@ -3,7 +3,7 @@
 		"incremental": true,
 		"target": "ESNext",
 		"module": "commonjs",
-		"rootDir": "./src",
+		"rootDir": ".",
 		"typeRoots": [
 			"./types",
 			"./node_modules/@types"
@@ -18,7 +18,8 @@
 	},
 	"include": [
 		"src/**/*",
-		"src/generated/**/*"
+		"src/generated/**/*",
+		"types"
 	],
 	"exclude": [
 		"node_modules",

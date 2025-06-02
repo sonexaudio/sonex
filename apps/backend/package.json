@@ -5,9 +5,9 @@
 	"main": "index.js",
 	"scripts": {
 		"build": "rimraf dist -I && tsc --build",
-		"postbuild": "cp -r src/generated dist/generated",
+		"postbuild": "cp -r src/generated dist/src/generated",
 		"dev": "pnpm start:development",
-		"start:production": "node ./dist/index.js",
+		"start:production": "node ./dist/src/index.js",
 		"start:development": "nodemon ./src/index.ts",
 		"test": "vitest --run",
 		"test:coverage": "vitest run --coverage",

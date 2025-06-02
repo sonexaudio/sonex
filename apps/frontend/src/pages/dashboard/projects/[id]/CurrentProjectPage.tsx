@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import AuthLayout from "../../../../components/AuthLayout";
 import PageLayout from "../../../../components/PageLayout";
 import useProjects from "../../../../hooks/useProjects";
 import { useParams } from "react-router";
