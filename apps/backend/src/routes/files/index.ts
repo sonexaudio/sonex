@@ -5,16 +5,18 @@ import path from "path";
 import fs from "fs";
 import { errorResponse, successResponse } from "../../utils/responses";
 import { requireAuth } from "../../middleware/auth";
-import type { File } from "../../generated/prisma";
+import type { Client, File } from "../../generated/prisma";
 import multerS3 from "multer-s3";
 import s3Client from "../../lib/s3-client";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+
 
 const router = Router();
 interface MulterRequest extends Express.Request {
 	query: {
 		projectId: string;
 		uploaderId: string;
-		uploaderType: 'CLIENT' | 'USER';
+		uploaderType: "CLIENT" | "USER";
 	};
 }
 
@@ -27,7 +29,7 @@ const storage = multerS3({
 			const extension = path.extname(file.originalname);
 			const filename = path.basename(file.originalname, extension);
 			const project = await prisma.project.findUnique({
-				where: { id: projectId }
+				where: { id: projectId },
 			});
 
 			if (!project) {
@@ -36,15 +38,49 @@ const storage = multerS3({
 			}
 
 			if (uploaderType === "CLIENT") {
-				cb(null, `${project.userId}/${project.title}_${projectId}/${filename}${extension}`);
+				cb(
+					null,
+					`${project.userId}/${project.title}_${projectId}/${filename}${extension}`,
+				);
 			} else {
-				cb(null, `${uploaderId}/${project.title}_${projectId}/${filename}${extension}`);
+				cb(
+					null,
+					`${uploaderId}/${project.title}_${projectId}/${filename}${extension}`,
+				);
 			}
 		} catch (error) {
 			cb(new Error(`Invalid upload parameters: ${error}`), "");
 		}
+	},
+	metadata: async (req: MulterRequest, _file, cb) => {
+		const { projectId, uploaderId, uploaderType } = req.query;
 
-	}
+		let client: Client | null;
+
+		const project = await prisma.project.findUnique({
+			where: { id: projectId },
+		});
+
+		if (!project) {
+			cb(new Error("Project does not exist"), "");
+			return;
+		}
+
+		if (uploaderType === "CLIENT") {
+			client = await prisma.client.findUnique({
+				where: { id: uploaderId as string },
+			});
+		} else {
+			client = null;
+		}
+
+		const md = {
+			projectTitle: project.title,
+			uploadedBy: uploaderType === "CLIENT" ? client?.email : "User",
+		};
+
+		cb(null, md);
+	},
 });
 
 const upload = multer({ storage: storage });
@@ -58,7 +94,7 @@ router.post("/upload", upload.array("files"), async (req, res) => {
 		select: {
 			id: true,
 			userId: true,
-		}
+		},
 	});
 
 	if (!project) {
@@ -105,7 +141,7 @@ router.post("/upload", upload.array("files"), async (req, res) => {
 // TODO: will add metadata so that I can add projectId, metadata, and getting files pertaining to project
 router.get("/", async (req, res) => {
 	const projectAccess = req.session.projectAccess;
-	const projectId = projectAccess?.projectId || req.query.projectId as string;
+	const projectId = projectAccess?.projectId || (req.query.projectId as string);
 	const userId = req.user?.id;
 
 	try {
@@ -113,15 +149,15 @@ router.get("/", async (req, res) => {
 		if (projectId && req.url.includes(projectId)) {
 			files = await prisma.file.findMany({
 				where: { OR: [{ projectId }, { uploaderId: req.user?.id }] },
-				orderBy: { createdAt: "desc" }
+				orderBy: { createdAt: "desc" },
 			});
 		} else if (userId) {
 			files = await prisma.file.findMany({
 				where: {
 					project: {
-						userId
-					}
-				}
+						userId,
+					},
+				},
 			});
 		} else {
 			errorResponse(res, 401, "Unauthorized");
@@ -173,12 +209,27 @@ router.delete("/:id", async (req, res) => {
 
 	const existingFile = await prisma.file.findUnique({
 		where: { id },
+		include: {
+			project: {
+				select: {
+					userId: true
+				}
+			}
+		}
 	});
 
 	if (!existingFile) {
 		errorResponse(res, 404, "File not found");
 		return;
 	}
+
+	const params = {
+		Bucket: "sonex",
+		Key: existingFile.path
+	};
+
+	const command = new DeleteObjectCommand(params);
+	await s3Client.send(command);
 
 	await prisma.file.delete({
 		where: { id },
