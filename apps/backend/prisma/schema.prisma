@@ -84,13 +84,42 @@ model File {
   size      Int
   mimeType  String
   path      String
+  isDownloadable Boolean @default(false)
+  isPublic Boolean @default(true)
   createdAt DateTime @default(now())
+
+  folderId String?
+  folder Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   uploaderId   String
   uploaderType UploaderType @default(USER)
+
+  versions FileVersion[]
+}
+
+model Folder {
+  id String @id @default(cuid())
+  name String
+  parentId String?
+  projectId String
+
+  files File[]
+  createdAt DateTime @default(now())
+  lastModified DateTime @updatedAt
+}
+
+model FileVersion {
+  id Int @id @default(autoincrement()) // don't need hash string
+  note String?
+  version Int
+
+  fileId String
+  file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  lastModified DateTime @updatedAt
 }
 
 model Subscription {

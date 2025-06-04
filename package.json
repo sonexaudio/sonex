@@ -2,16 +2,15 @@
 	"name": "sonex",
 	"private": true,
 	"version": "1.0.0",
-	"workspaces": [
-		"apps/*",
-		"packages/*"
-	],
+	"workspaces": ["apps/*", "packages/*"],
 	"scripts": {
 		"dev": "pnpm -r --parallel dev",
 		"start": "echo 'Production mode run separately for individual apps'",
 		"build": "pnpm -r --parallel build",
 		"format:all": "pnpm -r --parallel format",
-		"lint:all": "pnpm -r --parallel lint"
+		"lint:all": "pnpm -r --parallel lint",
+		"migrate": "pnpm --filter backend migrate",
+		"studio": "pnpm --filter backend studio"
 	},
 	"author": "Isaiah Vickers",
 	"license": "UNLICENSED",

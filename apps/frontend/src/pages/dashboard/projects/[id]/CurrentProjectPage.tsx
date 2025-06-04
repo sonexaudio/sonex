@@ -17,6 +17,8 @@ import ProjectClients from "./ProjectClients";
 import ProjectAccessGate from "../../../../components/auth/ProjectAccessLevel";
 import useClientAuth from "../../../../hooks/useClientAuth";
 import ProjectFiles from "./ProjectFiles";
+import NewFolderForm from "../../../../components/folders/NewFolderForm";
+import ProjectFileSystem from "./ProjectFileSystem";
 
 
 const CurrentProjectPage = () => {
@@ -68,7 +70,9 @@ const CurrentProjectPage = () => {
 							</div>
 
 							<div>
-								<ProjectFiles isProjectOwner={isOwner} />
+								<NewFolderForm />
+								{/* <ProjectFiles isProjectOwner={isOwner} /> */}
+								<ProjectFileSystem />
 								<NewClientForm />
 								<ProjectClients />
 							</div>

@@ -5,6 +5,8 @@ import type { SonexFile } from "../../../../types/files";
 import { formatFileSize } from "../../../../utils/files";
 import useUser from "../../../../hooks/useUser";
 import useClientAuth from "../../../../hooks/useClientAuth";
+import { useFileSystem } from "../../../../hooks/useFileSystem";
+import FolderNode from "./ProjectFileSystem";
 
 interface SonexFileExtended extends SonexFile {
     isFileOwner: boolean;
@@ -33,7 +35,7 @@ const ProjectFile = ({ file }: { file: SonexFileExtended; }) => {
 };
 
 const ProjectFiles = ({ isProjectOwner }: { isProjectOwner: boolean; }) => {
-    const { files, getAllFiles, loading } = useFiles();
+    const { files: { allFiles }, getAllFiles, loading } = useFiles();
     const { id: projectId } = useParams();
     const { currentUser } = useUser();
     const { client, getClient } = useClientAuth();
@@ -44,13 +46,12 @@ const ProjectFiles = ({ isProjectOwner }: { isProjectOwner: boolean; }) => {
     useEffect(() => {
         if (!client) getClient();
         if (projectId) getAllFiles();
-    }, [projectId, client?.id]);
+    }, [client?.id]);
 
-
-    const projectFiles: SonexFileExtended[] = files.allFiles.filter(file => file.projectId === projectId).map(file => ({
+    const projectFiles = allFiles.filter(file => file.projectId === projectId).map(file => ({
         ...file,
         isFileOwner: file.uploaderId === userId || file.uploaderId === clientId || isProjectOwner
-    }));
+    })) || [];
 
     if (loading) return <p>Loading...</p>;
 
@@ -58,7 +59,7 @@ const ProjectFiles = ({ isProjectOwner }: { isProjectOwner: boolean; }) => {
         <div className="border rounded-md p-6 my-8">
             <h3 className="font-semibold text-lg">Files</h3>
             {projectFiles.map(file => (
-                <ProjectFile key={file.id} file={file} />
+                <ProjectFile file={file} key={file.id} />
             ))}
         </div>
     );

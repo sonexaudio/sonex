@@ -52,7 +52,7 @@ export default function useFiles() {
 			const {
 				data: { data },
 			} = await api.get("/files", { params });
-			dispatch({ type: GET_ALL_FILES, payload: data });
+			dispatch({ type: GET_ALL_FILES, payload: { files: data.files } });
 		} catch (error) {
 			console.error("Failed to fetch files:", error);
 		} finally {
