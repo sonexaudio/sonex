@@ -31,9 +31,6 @@ export function useFileSystem() {
         const rootFiles = files.filter(file => !file.folderId);
         const tree = buildFolderTree(folders, files);
 
-        console.log("ROOT FILES", rootFiles);
-        console.log("TREE", tree);
-
         return { tree, rootFiles };
     }, [folders, files]);
 

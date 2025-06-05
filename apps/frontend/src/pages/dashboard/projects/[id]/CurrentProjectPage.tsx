@@ -21,6 +21,7 @@ import NewFolderForm from "../../../../components/folders/NewFolderForm";
 import ProjectFileSystem from "./ProjectFileSystem";
 
 
+
 const CurrentProjectPage = () => {
 	const { currentUser } = useUser();
 	const { client, getClient } = useClientAuth();
@@ -73,6 +74,7 @@ const CurrentProjectPage = () => {
 								<NewFolderForm />
 								{/* <ProjectFiles isProjectOwner={isOwner} /> */}
 								<ProjectFileSystem />
+								{/* <FileDroppableArea /> */}
 								<NewClientForm />
 								<ProjectClients />
 							</div>

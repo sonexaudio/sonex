@@ -42,6 +42,21 @@ export function useFolders() {
         }
     }
 
+    async function moveItemIntoFolder(itemId: string, targetFolderId: string | null, itemType: "folder" | "file") {
+        try {
+            const { data: { data } } = await api.put("/folders/move", { itemId, targetFolderId: targetFolderId ?? null, itemType });
+
+            if (data.success) {
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+
     async function deleteFolder(id: string): Promise<boolean> {
         try {
             await api.delete(`/folders/${id}`);
@@ -55,6 +70,7 @@ export function useFolders() {
     return {
         createFolder,
         updateFolder,
-        deleteFolder
+        deleteFolder,
+        moveItemIntoFolder
     };
 }

@@ -286,8 +286,7 @@ router.get("/:id/download-url", async (req, res) => {
 
 // Delete all files
 router.post("/delete-all", requireAuth, async (req, res) => {
-	const fileIds = JSON.parse(req.body.fileIds); // expecting array of file ids
-	console.log(typeof fileIds);
+	const fileIds = JSON.parse(req.body.fileIds);
 	try {
 		const files = await prisma.file.findMany({
 			where: { id: { in: fileIds } },
