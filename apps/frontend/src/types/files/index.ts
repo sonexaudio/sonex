@@ -10,6 +10,7 @@ export interface SonexFile {
 	status: FileUploadStatus;
 	progress: number;
 	error: string | null;
+	folderId?: string;
 }
 
 export type FileUploadContextValues = {

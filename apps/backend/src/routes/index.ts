@@ -5,6 +5,7 @@ import paymentRoutes from "./payments";
 import accountRoutes from "./accounts";
 import projectRoutes from "./projects";
 import fileRoutes from "./files";
+import folderRoutes from "./folders";
 import clientRoutes from "./clients";
 import stripeWebhook from "./webhooks/stripe";
 import stripeConnectWebhook from "./webhooks/stripe-connect";
@@ -24,6 +25,7 @@ router.use("/payments", paymentRoutes);
 router.use("/accounts", accountRoutes);
 router.use("/projects", projectRoutes);
 router.use("/files", fileRoutes);
+router.use("/folders", folderRoutes);
 router.use("/clients", clientRoutes);
 
 router.get("/health", (_, res) => {
