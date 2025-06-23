@@ -49,8 +49,9 @@ model Client {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  projectManager User    @relation(fields: [addedBy], references: [id], onDelete: Cascade)
-  project        Project @relation(fields: [projectId], references: [id])
+  projectManager User      @relation(fields: [addedBy], references: [id], onDelete: Cascade)
+  project        Project   @relation(fields: [projectId], references: [id])
+  comments       Comment[]
 
   // Make sure same client is not added again to user
   // However, same client can be added to multiple users
@@ -79,17 +80,17 @@ model Project {
 }
 
 model File {
-  id        String   @id @default(cuid())
-  name      String
-  size      Int
-  mimeType  String
-  path      String
-  isDownloadable Boolean @default(false)
-  isPublic Boolean @default(true)
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  name           String
+  size           Int
+  mimeType       String
+  path           String
+  isDownloadable Boolean  @default(false)
+  isPublic       Boolean  @default(true)
+  createdAt      DateTime @default(now())
 
   folderId String?
-  folder Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -98,28 +99,45 @@ model File {
   uploaderType UploaderType @default(USER)
 
   versions FileVersion[]
+  comments Comment[]
 }
 
 model Folder {
-  id String @id @default(cuid())
-  name String
-  parentId String?
+  id        String  @id @default(cuid())
+  name      String
+  parentId  String?
   projectId String
 
-  files File[]
-  createdAt DateTime @default(now())
+  files        File[]
+  createdAt    DateTime @default(now())
   lastModified DateTime @updatedAt
 }
 
 model FileVersion {
-  id Int @id @default(autoincrement()) // don't need hash string
-  note String?
+  id      Int     @id @default(autoincrement()) // don't need hash string
+  note    String?
   version Int
 
-  fileId String
-  file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  fileId       String
+  file         File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
   lastModified DateTime @updatedAt
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  file      File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileId    String
+  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
+  parent    Comment?  @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId  String? // null for root comments
+  children  Comment[] @relation("Thread")
+  content   String
+  timestamp Float? // only for files marked as revision
+  done      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Subscription {
