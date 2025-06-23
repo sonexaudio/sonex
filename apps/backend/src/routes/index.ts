@@ -7,6 +7,7 @@ import projectRoutes from "./projects";
 import fileRoutes from "./files";
 import folderRoutes from "./folders";
 import clientRoutes from "./clients";
+import commentRoutes from "./comments";
 import stripeWebhook from "./webhooks/stripe";
 import stripeConnectWebhook from "./webhooks/stripe-connect";
 import { checkUserStillExists } from "../middleware/auth";
@@ -27,6 +28,7 @@ router.use("/projects", projectRoutes);
 router.use("/files", fileRoutes);
 router.use("/folders", folderRoutes);
 router.use("/clients", clientRoutes);
+router.use("/comments", commentRoutes);
 
 router.get("/health", (_, res) => {
 	res.sendStatus(200);
