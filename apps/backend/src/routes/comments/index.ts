@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { successResponse } from "../../utils/responses";
+import { errorResponse, successResponse } from "../../utils/responses";
 import { prisma } from "../../lib/prisma";
 
 const router = Router();
@@ -44,6 +44,30 @@ router.post("/", async (req, res) => {
 
     successResponse(res, { comment }, null, 201);
     return;
+});
+
+router.delete("/:id", async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        const comment = await prisma.comment.findUnique({
+            where: { id }
+        });
+
+        if (!comment) {
+            errorResponse(res, 404, "Comment does not exist");
+            return;
+        }
+
+        await prisma.comment.delete({
+            where: { id }
+        });
+
+        successResponse(res, null, null, 204);
+    } catch (error) {
+        console.error(error);
+        errorResponse(res, 500, "Something went wrong");
+    }
 });
 
 export default router;

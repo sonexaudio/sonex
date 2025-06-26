@@ -72,9 +72,7 @@ const CurrentProjectPage = () => {
 
 							<div>
 								<NewFolderForm />
-								{/* <ProjectFiles isProjectOwner={isOwner} /> */}
 								<ProjectFileSystem />
-								{/* <FileDroppableArea /> */}
 								<NewClientForm />
 								<ProjectClients />
 							</div>

@@ -1,9 +1,15 @@
+import type { Client } from "../../hooks/useClients";
+import type { User } from "../users";
+
 export interface ISonexComment {
     id: string;
     fileId: string;
     clientId: string | null;
+    userId: string | null;
     parentId: string | null;
     replies: ISonexComment[];
+    user: User | null;
+    client: Client | null;
     content: string;
     timestamp: number;
     done: boolean;
