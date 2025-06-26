@@ -38,6 +38,7 @@ model User {
   transactions  Transaction[]
   activities    Activity[]
   clients       Client[]
+  comments Comment[]
 }
 
 model Client {
@@ -128,8 +129,10 @@ model Comment {
   id        String    @id @default(cuid())
   file      File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
   fileId    String
-  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId  String
+  client    Client?    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String?
+  userId String?
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent    Comment?  @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
   parentId  String? // null for root comments
   children  Comment[] @relation("Thread")
