@@ -49,7 +49,7 @@ async function main() {
 	});
 
 	console.log("Adding file...");
-	await prisma.file.create({
+	const file = await prisma.file.create({
 		data: {
 			name: "demo_audio.wav",
 			size: 10485760,
@@ -59,6 +59,29 @@ async function main() {
 			uploaderId: user.id,
 			uploaderType: "USER",
 		},
+	});
+
+	console.log("Creating comments for created file...");
+	const comments = await prisma.comment.createManyAndReturn({
+		data: [
+			{
+				clientId: clients[0].id,
+				content: "Can we take out the drums here?",
+				fileId: file.id,
+				timestamp: 63,
+			},
+			{
+				clientId: clients[1].id,
+				content: "Loving this!",
+				fileId: file.id,
+			},
+			{
+				clientId: clients[0].id,
+				content: "Add reverb here",
+				fileId: file.id,
+				timestamp: 42,
+			}
+		]
 	});
 
 	console.log("Recording activities...");
