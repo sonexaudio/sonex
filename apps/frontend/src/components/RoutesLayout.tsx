@@ -15,6 +15,7 @@ import FilesPage from "../pages/dashboard/files/FilesPage";
 import ClientsPage from "../pages/dashboard/clients/ClientsPage";
 import FilePlayer from "../pages/dashboard/files/FilePlayer";
 import SingleFilePage from "../pages/dashboard/files/[name]/SingleFilePage";
+import { ProjectProvider } from "../context/ProjectProvider";
 
 const RoutesLayout = () => {
 	return (
@@ -29,7 +30,11 @@ const RoutesLayout = () => {
 				<Route path="projects">
 					<Route index element={<ProjectsPage />} />
 					<Route path=":id">
-						<Route index element={<CurrentProjectPage />} />
+						<Route index element={
+							<ProjectProvider>
+								<CurrentProjectPage />
+							</ProjectProvider>
+						} />
 						<Route path="files/:fileId" element={<SingleFilePage />} />
 					</Route>
 				</Route>

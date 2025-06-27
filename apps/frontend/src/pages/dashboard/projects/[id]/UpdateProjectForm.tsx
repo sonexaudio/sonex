@@ -3,8 +3,13 @@ import type { ProjectWithUserInfo } from "../../../../types/projects";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ProjectSchema } from "@sonex/schemas/project";
 import useProjects from "../../../../hooks/useProjects";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
+import { Input } from "../../../../components/ui/input";
+import { Textarea } from "../../../../components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../components/ui/select";
+import { Button } from "../../../../components/ui/button";
 
-const UpdateProjectForm = ({ project }: { project: ProjectWithUserInfo }) => {
+const UpdateProjectForm = ({ project }: { project: ProjectWithUserInfo; }) => {
 	const { updateProject } = useProjects();
 	const {
 		register,
@@ -21,50 +26,64 @@ const UpdateProjectForm = ({ project }: { project: ProjectWithUserInfo }) => {
 		},
 	});
 	return (
-		<div>
-			<h3 className="text-lg font-bold">Project Update</h3>
-			<form
-				onSubmit={handleSubmit((data) => updateProject(project.id, data))}
-				className="flex flex-col gap-8"
-			>
-				<div>
-					<input type="text" {...register("title")} />
-					{errors.title && (
-						<p className="text-sm text-red-600">{errors.title.message}</p>
-					)}
-				</div>
-				<div>
-					<textarea {...register("description")} />
-					{errors.description && (
-						<p className="text-sm text-red-600">{errors.description.message}</p>
-					)}
-				</div>
-				<div>
-					<input
-						type="number"
-						{...register("amount", { valueAsNumber: true })}
-					/>
-					{errors.amount && (
-						<p className="text-sm text-red-600">{errors.amount.message}</p>
-					)}
-				</div>
-				<select {...register("status")}>
-					<option value="Active">Active</option>
-					<option value="Complete">Complete</option>
-					<option value="Archived">Archived</option>
-					<option value="Private">Private</option>
-				</select>
-				<select
-					{...register("paymentStatus")}
-					defaultValue={project.paymentStatus}
+		<Card>
+			<CardHeader>
+				<CardTitle>Update Project Information</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<form
+					onSubmit={handleSubmit((data) => updateProject(project.id, data))}
+					className="flex flex-col gap-8"
 				>
-					<option value="Free"> Free</option>
-					<option value="Unpaid">Unpaid</option>
-					<option value="Paid">Paid</option>
-				</select>
-				<button type="submit">Update Project</button>
-			</form>
-		</div>
+					<div>
+						<Input type="text" {...register("title")} />
+						{errors.title && (
+							<p className="text-sm text-red-600">{errors.title.message}</p>
+						)}
+					</div>
+					<div>
+						<Textarea {...register("description")} />
+						{errors.description && (
+							<p className="text-sm text-red-600">{errors.description.message}</p>
+						)}
+					</div>
+					<div>
+						<Input
+							type="number"
+							{...register("amount", { valueAsNumber: true })}
+						/>
+						{errors.amount && (
+							<p className="text-sm text-red-600">{errors.amount.message}</p>
+						)}
+					</div>
+					<Select {...register("status")}>
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Project Status" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="Active">Active</SelectItem>
+							<SelectItem value="Complete">Complete</SelectItem>
+							<SelectItem value="Archived">Archived</SelectItem>
+							<SelectItem value="Private">Private</SelectItem>
+						</SelectContent>
+					</Select>
+					<Select
+						{...register("paymentStatus")}
+						defaultValue={project.paymentStatus}
+					>
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Payment Status" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="Free"> Free</SelectItem>
+							<SelectItem value="Unpaid">Unpaid</SelectItem>
+							<SelectItem value="Paid">Paid</SelectItem>
+						</SelectContent>
+					</Select>
+					<Button type="submit">Update Project</Button>
+				</form>
+			</CardContent>
+		</Card>
 	);
 };
 export default UpdateProjectForm;

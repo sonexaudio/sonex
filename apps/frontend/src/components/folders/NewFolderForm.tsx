@@ -1,6 +1,10 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useParams } from "react-router";
 import { useFolders } from "../../hooks/useFolders";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Folder } from "lucide-react";
 
 const NewFolderForm = () => {
     const { id: projectId } = useParams();
@@ -40,14 +44,34 @@ const NewFolderForm = () => {
     if (!projectId) return null;
 
     return (
-        <div>
-            <h3 className="text-lg font-semibold">Create A New Folder</h3>
-            <form className="flex items-center gap-2">
-                <input type="text" name="name" placeholder="Enter new folder name" value={folderInputData.name} onChange={handleFolderInputChange} />
-                <input type="text" disabled value={folderInputData.parentId as string} placeholder="Coming soon..." />
-                <button type="submit" disabled={loading} onClick={handleCreateFolder}>Create New Folder</button>
-            </form>
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex gap-2 font-bold text-lg items-center"><Folder /> Create A New Folder</CardTitle>
+                <CardDescription>Your new folder will be added to your <em>Files</em> section.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form className="flex flex-col gap-2">
+                    <Input
+                        type="text"
+                        name="name"
+                        placeholder="Enter new folder name"
+                        value={folderInputData.name}
+                        onChange={handleFolderInputChange}
+                    />
+                    <Input
+                        type="text"
+                        disabled
+                        value={folderInputData.parentId as string} placeholder="Add parent folder coming soon..."
+                    />
+                    <Button
+                        type="submit"
+                        disabled={loading}
+                        onClick={handleCreateFolder}
+                    >Create New Folder
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
     );
 };
 

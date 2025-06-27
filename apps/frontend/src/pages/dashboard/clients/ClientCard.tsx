@@ -1,7 +1,12 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useClients, type Client } from "../../../hooks/useClients";
+import { Mail, Trash } from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "../../../components/ui/button";
+import { Switch } from "../../../components/ui/switch";
+import { Label } from "../../../components/ui/label";
 
-const ClientCard = ({ client }: { client: Client }) => {
+const ClientCard = ({ client }: { client: Client; }) => {
 	const { updateClient, removeClient } = useClients();
 	const [clientData, setClientData] = useState({
 		name: client.name,
@@ -57,27 +62,30 @@ const ClientCard = ({ client }: { client: Client }) => {
 					</form>
 				</div>
 			) : (
-				<div className="flex justify-between gap-4 border p-4">
+				<div className="flex items-center justify-between gap-4 border p-3 rounded-md my-2">
 					<div>
-						<p>
-							{client.name} - {client.email}
-						</p>
-						<div className="flex gap-4 items-center">
-							<span>
-								Created: {new Date(client.createdAt).toLocaleDateString()}
-							</span>
-							<span>
-								Last Updated: {new Date(client.updatedAt).toLocaleDateString()}
-							</span>
+						<p className="font-medium">{client.name}</p>
+						<div className="flex text-xs text-muted-foreground items-center">
+							<Mail className="mr-1 size-3" />
+							{client.email}
 						</div>
 					</div>
-					<div className="flex gap-4">
-						<button type="button" onClick={() => setIsEditing(true)}>
-							Edit
-						</button>
-						<button type="button" onClick={handleRemoveClient}>
-							Delete
-						</button>
+					<div className="flex items-center gap-4">
+						<div className="flex items-center gap-2">
+							<Switch checked disabled />
+							<Label htmlFor={`upload-${client.id}`} className="text-sm">
+								Can Upload
+							</Label>
+						</div>
+						<div className="flex items-center gap-2">
+							<Switch checked disabled />
+							<Label htmlFor={`upload-${client.id}`} className="text-sm">
+								Can Comment
+							</Label>
+						</div>
+						<Button variant="ghost" size="icon" onClick={handleRemoveClient} className="text-destructive hover:text-destructive">
+							<Trash className="size-4" />
+						</Button>
 					</div>
 				</div>
 			)}

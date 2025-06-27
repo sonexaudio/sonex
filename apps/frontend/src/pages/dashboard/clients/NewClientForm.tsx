@@ -2,6 +2,8 @@ import { useState, type ChangeEvent, type FormEvent } from "react";
 import useUser from "../../../hooks/useUser";
 import { useParams } from "react-router";
 import { useClients } from "../../../hooks/useClients";
+import { Input } from "../../../components/ui/input";
+import { Button } from "../../../components/ui/button";
 
 const NewClientForm = () => {
 	const { currentUser } = useUser();
@@ -34,21 +36,21 @@ const NewClientForm = () => {
 
 	return (
 		<form onSubmit={handleAddClient}>
-			<h3>New Client Form</h3>
-			<input
+			<h3>Create a New Client</h3>
+			<Input
 				type="text"
 				value={clientData.name}
 				onChange={handleInputChange}
 				name="name"
 				placeholder="Enter Client Name"
 			/>
-			<input
+			<Input
 				type="email"
 				name="email"
 				onChange={handleInputChange}
 				placeholder="Enter Client Email"
 			/>
-			<button type="submit">Create new Client</button>
+			<Button type="submit">Create new Client</Button>
 		</form>
 	);
 };

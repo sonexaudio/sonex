@@ -3,7 +3,6 @@ import PageLayout from "../../../../components/PageLayout";
 import useProjects from "../../../../hooks/useProjects";
 import { useParams } from "react-router";
 import useUser from "../../../../hooks/useUser";
-import ProjectDetails from "./ProjectDetails";
 import ProjectActions from "./ProjectActions";
 import ProjectHeader from "./ProjectHeader";
 import UpdateProjectForm from "./UpdateProjectForm";
@@ -19,28 +18,24 @@ import useClientAuth from "../../../../hooks/useClientAuth";
 import ProjectFiles from "./ProjectFiles";
 import NewFolderForm from "../../../../components/folders/NewFolderForm";
 import ProjectFileSystem from "./ProjectFileSystem";
+import ProjectViewTabs from "./ProjectTabs/ProjectView";
+import { useProjectContext } from "../../../../context/ProjectProvider";
 
 
 
 const CurrentProjectPage = () => {
 	const { currentUser } = useUser();
 	const { client, getClient } = useClientAuth();
+	const { project, loading, refreshProject } = useProjectContext();
 
-	const { getSingleProject, loading, state } = useProjects();
 	const { id } = useParams();
 
 	useEffect(() => {
-		if (id) {
-			getSingleProject(id as string);
-
-			if (!currentUser) {
-				getClient();
-			}
+		if (!currentUser) {
+			getClient();
 		}
-
 	}, [id, currentUser?.id, client?.id]);
 
-	const project = state.currentProject as ProjectWithUserInfo;
 	const isOwner = (!!currentUser && currentUser.id === project?.userId);
 
 	if (loading) return <p>Loading...</p>;
@@ -48,40 +43,15 @@ const CurrentProjectPage = () => {
 	return (
 		<ProjectAccessGate>
 			<PageLayout>
-				<div>
-					<ProjectHeader isOwner={isOwner} project={project} />
-					<ProjectActions isOwner={isOwner} project={project} />
 
-					<ProjectDetails project={project} />
+				<div className="flex flex-col gap-6 p-6">
+					<div className="flex items-center justify-between">
+						<ProjectHeader project={project as ProjectWithUserInfo} isOwner={isOwner} />
+
+					</div>
 					{isOwner && (
-						<>
-							<div className="flex gap-8 w-full">
-								<UpdateProjectForm project={project} />
-
-								<FileUploadProvider
-									projectId={id as string}
-									uploaderId={currentUser?.id as string}
-									uploaderType="USER"
-								>
-									<section className="border border-red-600 rounded-md size-full p-8 space-y-8">
-										<FileDropzone />
-										<FileUploadViewer />
-									</section>
-								</FileUploadProvider>
-							</div>
-
-							<div>
-								<NewFolderForm />
-								<ProjectFileSystem />
-								<NewClientForm />
-								<ProjectClients />
-							</div>
-							<div className="my-8">
-								<ProjectDangerZone />
-							</div>
-						</>
+						<ProjectViewTabs />
 					)}
-
 					{client && (
 						<>
 							<FileUploadProvider
@@ -98,7 +68,6 @@ const CurrentProjectPage = () => {
 							<ProjectFiles isProjectOwner={false} />
 						</>
 					)}
-
 				</div>
 			</PageLayout>
 		</ProjectAccessGate>
