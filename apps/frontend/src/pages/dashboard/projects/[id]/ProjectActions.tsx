@@ -9,8 +9,6 @@ const ProjectActions = ({
 		return (
 			<div>
 				<div className="flex lg:flex-row flex-col gap-2 justify-self-end mb-2">
-					<Button variant="outline" type="button">Edit Project</Button>
-
 					{project.status === "Complete" ? (
 						<Button type="button">Mark as incomplete</Button>
 					) : project.status === "Archived" ? (
