@@ -16,7 +16,6 @@ const DashboardLayout = () => {
 	const location = useLocation();
 
 	const pathSegments = location.pathname.split("/").filter(Boolean);
-	console.log(pathSegments);
 
 	if (loading) return <p>Loading...</p>;
 

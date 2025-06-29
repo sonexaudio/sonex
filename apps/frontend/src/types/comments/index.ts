@@ -11,7 +11,7 @@ export interface ISonexComment {
     user: User | null;
     client: Client | null;
     content: string;
-    timestamp: number;
+    timestamp: number | null;
     done: boolean;
     createdAt: Date | string;
     updatedAt: Date | string;

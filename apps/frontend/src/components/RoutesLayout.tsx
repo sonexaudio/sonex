@@ -13,7 +13,7 @@ import ProjectsPage from "../pages/dashboard/projects/ProjectsPage";
 import CurrentProjectPage from "../pages/dashboard/projects/[id]/CurrentProjectPage";
 import FilesPage from "../pages/dashboard/files/FilesPage";
 import ClientsPage from "../pages/dashboard/clients/ClientsPage";
-import FilePlayer from "../pages/dashboard/files/FilePlayer";
+import FilePlayer from "./AudioPlayer";
 import SingleFilePage from "../pages/dashboard/files/[name]/SingleFilePage";
 import { ProjectProvider } from "../context/ProjectProvider";
 

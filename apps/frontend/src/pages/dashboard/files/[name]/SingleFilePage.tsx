@@ -1,22 +1,18 @@
+import { useNavigate, useParams } from "react-router";
 import PageLayout from "../../../../components/PageLayout";
-import FilePlayer from "../FilePlayer";
+import FilePlayer from "../../../../components/AudioPlayer";
 import CommentView from "./CommentView";
+import FileView from "./FileView";
 import NewCommentForm from "./NewCommentForm";
 
 const SingleFilePage = () => {
+    const navigate = useNavigate();
+    const { id } = useParams();
     return (
         <PageLayout>
-            <div>
-                <FilePlayer />
-                <div className="grid grid-cols-3 gap-4 mt-8">
-                    <div className="col-span-2">
-                        <CommentView />
-                    </div>
-                    <div className="col-span-1">
-                        <NewCommentForm />
-                    </div>
-                </div>
-            </div>
+            <FileView
+                onBack={() => navigate(`/projects/${id as string}`)}
+            />
         </PageLayout>
     );
 };

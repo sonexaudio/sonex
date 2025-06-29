@@ -58,7 +58,7 @@ const FileNode = ({ file, isInEditMode }: { file: SonexFile; isInEditMode: boole
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                            <Button variant="ghost">
+                            <Button variant="ghost" onClick={handleClick}>
                                 <ExternalLink className="mr-2 size-4" />
                                 Open in new tab
                             </Button>
