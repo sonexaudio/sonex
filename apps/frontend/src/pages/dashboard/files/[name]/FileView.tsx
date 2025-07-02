@@ -1,0 +1,136 @@
+import { ArrowLeft, Car, Download, MoreVertical, Share2 } from "lucide-react";
+import { Button } from "../../../../components/ui/button";
+import useFiles from "../../../../hooks/useFiles";
+import { useEffect } from "react";
+import { useParams } from "react-router";
+import { formatDistanceToNow } from "date-fns";
+import { formatFileSize } from "../../../../utils/files";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
+import useProjects from "../../../../hooks/useProjects";
+import { Badge } from "../../../../components/ui/badge";
+import FileCommentSection from "../../../../components/FileCommentSection";
+import AudioPlayer from "../../../../components/AudioPlayer";
+import { useAudioPlayback } from "../../../../hooks/useAudioPlayer";
+
+interface FileViewProps {
+    onBack: () => void;
+}
+
+const FileView = ({ onBack }: FileViewProps) => {
+    const { files: { currentFile }, getCurrentFile, loading } = useFiles();
+    const { state: { currentProject } } = useProjects();
+    const { fileId } = useParams();
+
+    useEffect(() => {
+        getCurrentFile(fileId as string, true);
+    }, [currentFile?.id]);
+
+    if (!currentFile) return null;
+
+    if (loading) return <p>Loading...</p>;
+
+    return (
+        <div className="p-8 max-w-5xl mx-auto">
+            <Button onClick={onBack} variant="link">
+                <ArrowLeft className="size-5" />
+                Back
+            </Button>
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-x-4">
+                    <div>
+                        <h1 className="text-2xl font-bold">{currentFile.name}</h1>
+                        <p className="text-sm">Added {formatDistanceToNow(currentFile.createdAt)} ago • {formatFileSize(currentFile.size)}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-x-2">
+                    <Button>
+                        <Download className="size-4" />
+                        <span>Download</span>
+                    </Button>
+                    <Button>
+                        <Share2 className="size-4" />
+                        <span>Share</span>
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                        <MoreVertical className="size-4" />
+                    </Button>
+                </div>
+            </div>
+
+            {/* File Details */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div className="lg:col-span-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg ">File Information</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span className="text-gray-500">Format:</span>
+                                    <span className="ml-2">{currentFile.mimeType}</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500">Duration:</span>
+                                    <span className="ml-2 text-gray-900">3:24</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500">Sample Rate:</span>
+                                    <span className="ml-2 text-gray-900">44.1 kHz</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500">Bit Depth:</span>
+                                    <span className="ml-2 text-gray-900">24-bit</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500">Channels:</span>
+                                    <span className="ml-2 text-gray-900">Stereo</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500">Size:</span>
+                                    <span className="ml-2 text-gray-900">{formatFileSize(currentFile.size)}</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Project Status</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600">Status</span>
+                                    <Badge>{currentProject?.status}</Badge>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600">Version</span>
+                                    <span className="text-sm text-gray-900">Not available</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600">Created by</span>
+                                    <span className="text-sm text-gray-900">Not available</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+
+            {/* Audio Player */}
+            <div className="mb-8">
+                <AudioPlayer />
+            </div>
+
+            {/* Comments Section */}
+            <FileCommentSection />
+        </div>
+    );
+};
+
+export default FileView;

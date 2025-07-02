@@ -1,6 +1,7 @@
 import { useParams } from "react-router";
 import { useClients } from "../../../../hooks/useClients";
 import ClientCard from "../../clients/ClientCard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
 
 const ProjectClients = () => {
 	const { clients, loading } = useClients();
@@ -10,12 +11,17 @@ const ProjectClients = () => {
 	if (loading) return <p>Loading clients...</p>;
 
 	return (
-		<>
-			<h3 className="font-semibold text-lg my-4">Clients</h3>
-			{projectClients.map((client) => (
-				<ClientCard key={client.id} client={client} />
-			))}
-		</>
+		<Card>
+			<CardHeader>
+				<CardTitle className="font-semibold text-lg">Clients</CardTitle>
+				<CardDescription>Clients with access to this project</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{projectClients.map((client) => (
+					<ClientCard key={client.id} client={client} />
+				))}
+			</CardContent>
+		</Card>
 	);
 };
 

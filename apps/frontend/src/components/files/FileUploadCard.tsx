@@ -5,6 +5,8 @@ import FileThumbnail from "./FileUploadThumbnail";
 import FileUploadProgressBar from "./FileUploadProgressBar";
 import { useEffect, useState } from "react";
 import FileUploadCircularProgress from "./FileUploadCircularProgress";
+import { formatFileSize } from "../../utils/files";
+import { Button } from "../ui/button";
 
 const FileUploadCard = ({
 	file,
@@ -40,20 +42,24 @@ const FileUploadCard = ({
 	}
 
 	return (
-		<li>
-			<div>
-				<h3>{file.name}</h3>
-				<FileThumbnail name={file.name} />
-				<FileUploadProgressBar progress={progress} status={uploadStatus} />
-				<div>Status: {uploadStatus}</div>
+		<li className="flex items-center justify-between bg-muted text-primary p-4 rounded-lg shadow">
+			<div className="flex items-center gap-2">
+				<span className="text-primary"><FileThumbnail name={file.name} /></span>
+				<div>
+					<h3 className="font-bold">{file.name}</h3>
+					<span className="text-foreground text-xs flex gap-2">
+						<span>{formatFileSize(file.size)}</span>
+						<span>Status: {uploadStatus}</span>
+					</span>
+				</div>
 			</div>
 
 			{uploadStatus === "uploading" ? (
 				<FileUploadCircularProgress progress={uploadProgress} />
 			) : (
-				<button type="button" onClick={handleRemoveFile}>
+				<Button variant="destructive" onClick={handleRemoveFile}>
 					<Trash2Icon />
-				</button>
+				</Button>
 			)}
 		</li>
 	);

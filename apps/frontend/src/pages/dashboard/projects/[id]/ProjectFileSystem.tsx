@@ -3,14 +3,21 @@ import { useFileSystem } from "../../../../hooks/useFileSystem";
 import { useFolders, type ISonexFolder } from "../../../../hooks/useFolders";
 import type { SonexFile } from "../../../../types/files";
 import { formatFileSize } from "../../../../utils/files";
-import { AudioWaveformIcon, ChevronRightIcon, FolderIcon } from "lucide-react";
+import { AudioWaveformIcon, ChevronRightIcon, Download, ExternalLink, FolderIcon, MoreVertical, Trash } from "lucide-react";
 import DraggableItem from "../../../../components/DraggableItem";
 import { DndContext, useDroppable, type DragEndEvent } from "@dnd-kit/core";
 import { useNavigate } from "react-router";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
+import { Button } from "../../../../components/ui/button";
+import { Separator } from "../../../../components/ui/separator";
+import { formatDistanceToNow } from "date-fns";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../../../components/ui/dropdown-menu";
+import useFiles from "../../../../hooks/useFiles";
 
 
 const FileNode = ({ file, isInEditMode }: { file: SonexFile; isInEditMode: boolean; }) => {
     const navigate = useNavigate();
+    const { deleteFile } = useFiles();
     const projectId = file.projectId;
 
     const handleClick = () => {
@@ -20,10 +27,58 @@ const FileNode = ({ file, isInEditMode }: { file: SonexFile; isInEditMode: boole
         }
     };
 
+    const handleDeleteFile = async () => {
+        await deleteFile(file.id);
+    };
+
     const content = (
-        <div className={`flex items-center gap-2 px-3 py-2 rounded w-full text-sm
-                ${isInEditMode ? "bg-violet-600 text-white cursor-grab active:cursor-grabbing" : "bg-zinc-800 text-white cursor-pointer hover:bg-zinc-700"}`} onClick={handleClick}>
-            <AudioWaveformIcon className="size-4" /> {file.name} - {formatFileSize(file.size)}
+        <div
+            className={` flex items-center justify-between p-2 rounded-md w-full ${isInEditMode ? " bg-primary text-background cursor-grab active:cursor-grabbing hover:bg-primary/80" : "  cursor-pointer hover:bg-muted"}`}
+        >
+            <div className="flex items-center gap-3 overflow-hidden">
+                <div className="shrink-0 size-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <AudioWaveformIcon className="size-4" />
+                </div>
+                <div className="overflow-hidden">
+                    <p className="font-medium truncate">{file.name}</p>
+                    <div className="flex gap-2 text-xs text-muted-foreground">
+                        <span>{formatFileSize(file.size)}</span>
+                        <span>•</span>
+                        <span>{formatDistanceToNow(file.createdAt)} ago</span>
+                    </div>
+                </div>
+            </div>
+            <div className="flex items-center gap-2">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <MoreVertical className="size-4" />
+                            <span className="sr-only">More options</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                            <Button variant="ghost" onClick={handleClick}>
+                                <ExternalLink className="mr-2 size-4" />
+                                Open in new tab
+                            </Button>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <a href={file.streamUrl} download={file.name}>
+                                <Download className="mr-2 size-4" />
+                                Download
+                            </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={handleDeleteFile}
+                            className="text-destructive focus:text-destructive"
+                        >
+                            <Trash className="mr-2 size-4 text-destructive" />
+                            Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </div>
     );
     return isInEditMode ? (
@@ -121,23 +176,48 @@ const ProjectFileSystem = () => {
     };
 
     return (
-        <div className="p-6 border my-6 rounded-lg flex flex-col">
-            <button
-                type="button"
-                className="mb-4 self-end px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
-                onClick={() => setIsInEditMode(prev => !prev)}
-            >
-                {isInEditMode ? "Done" : "Edit Mode"}
-            </button>
-            <div>
-                <h3 className="text-lg font-semibold">Files</h3>
-                <hr className="mb-4" />
-            </div>
-            {isInEditMode ? (
-                <DndContext onDragEnd={handleDragEnd}>
-                    <div ref={rootSetNodeRef}
-                        className={`transition-colors
-                      ${rootIsOver ? "bg-zinc-800 scale-[1.1]" : ""}`}
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                    <div className="mb-2">
+                        <h3 className="text-lg font-semibold">Files</h3>
+                        <CardDescription>Files and folders related to this project</CardDescription>
+                    </div>
+                    <Button
+                        type="button"
+                        onClick={() => setIsInEditMode(prev => !prev)}
+                    >
+                        {isInEditMode ? "Done" : "Edit Mode"}
+                    </Button>
+                </CardTitle>
+                <Separator />
+            </CardHeader>
+
+            <CardContent>
+                {isInEditMode ? (
+                    <DndContext onDragEnd={handleDragEnd}>
+                        <div ref={rootSetNodeRef}
+                            className={`transition-colors
+                      ${rootIsOver ? "scale-[1.1]" : ""}`}
+                        >
+                            {/* Top level folders */}
+                            <div>
+                                {fileTree.map((folder) => (
+                                    <FolderNode key={folder.id} folder={folder} isInEditMode={isInEditMode} />
+                                ))}
+                            </div>
+                            {/* Root Level Files */}
+                            {rootFiles
+                                .filter((f) => !f.folderId)
+                                .map((file) => (
+                                    <FileNode key={file.id} file={file} isInEditMode={isInEditMode} />
+                                ))}
+                        </div>
+                    </DndContext>
+                ) : (
+                    <div
+                        className={`transition-colors space-y-1
+                        ${rootIsOver ? "scale-[1.1]" : ""}`}
                     >
                         {/* Top level folders */}
                         <div>
@@ -152,25 +232,10 @@ const ProjectFileSystem = () => {
                                 <FileNode key={file.id} file={file} isInEditMode={isInEditMode} />
                             ))}
                     </div>
-                </DndContext>
-            ) : (
-                <div className={`transition-colors
-          ${rootIsOver ? "bg-zinc-800 scale-[1.1" : ""}`}>
-                    {/* Top level folders */}
-                    <div>
-                        {fileTree.map((folder) => (
-                            <FolderNode key={folder.id} folder={folder} isInEditMode={isInEditMode} />
-                        ))}
-                    </div>
-                    {/* Root Level Files */}
-                    {rootFiles
-                        .filter((f) => !f.folderId)
-                        .map((file) => (
-                            <FileNode key={file.id} file={file} isInEditMode={isInEditMode} />
-                        ))}
-                </div>
-            )}
-        </div>
+                )}
+            </CardContent>
+
+        </Card>
 
     );
 };
