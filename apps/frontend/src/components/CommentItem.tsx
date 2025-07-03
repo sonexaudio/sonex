@@ -14,7 +14,7 @@ interface CommentItemProps {
         isRevision: boolean,
         audioTimeStamp?: number,
     ) => void;
-    getCurrentTime?: () => number;
+    getCurrentTime?: () => string;
     onTimestampClick?: (time: number) => void;
     level?: number;
 }
@@ -55,8 +55,13 @@ const CommentItem: React.FC<CommentItemProps> = ({
         }
     };
 
+    const renderCommentAuthor = () => {
+        if (comment.client?.name) return comment.client.name;
+        return `${comment.user?.firstName} ${comment.user?.lastName}`;
+    };
+
     return (
-        <div className={`${level > 0 ? "ml-8 border-1 border-muted-foreground pl-4" : ""}`}>
+        <div className={`${level > 0 ? "ml-4 pl-4" : ""}`}>
             <div className="flex gap-x-3 mb-4">
                 <div className="size-8 bg-gradient-to-br from-bg-primary to-bg-primary/50 rounded-full flex items-center justify-center shrink-0">
                     <span className="text-sm font-semibold text-white">{comment.client?.name[0]}</span>
@@ -67,7 +72,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 <div className="bg-muted rounded-lg p-3 mb-2">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-x-2">
-                            <span className="font-medium">{comment.client?.name}</span>
+                            <span className="font-medium">{renderCommentAuthor()}</span>
                             <span className="text-xs text-muted-foreground">{formatRelativeTime(comment.createdAt as Date)}</span>
                             {comment.timestamp && (
                                 <Button onClick={handleTimeStampClick} className="flex items-center gap-x-1 text-xs text-primary bg-blue-50 px-2 py-1 rounded-full hover:bg-blue-100 transition-colors duration-200">
@@ -104,7 +109,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     <div className="mt-3">
                         <CommentForm
                             onSubmit={handleReply}
-                            getCurrentTime={getCurrentTime}
                             placeholder="Write a reply"
                             buttonText="Reply"
                             compact

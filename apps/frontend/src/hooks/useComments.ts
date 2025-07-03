@@ -1,80 +1,23 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
-import { DELETE_COMMENT, GET_ALL_COMMENTS, GET_FILE_COMMENTS, POST_COMMENT, type CommentReducerAction, type CommentState, type ISonexComment } from "../types/comments";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ISonexComment } from "../types/comments";
 import api from "../lib/axios";
 import { useAuth } from "./useAuth";
 import useClientAuth from "./useClientAuth";
-import useFiles from "./useFiles";
+import { useParams } from "react-router";
 
-// function commentReducer(state: CommentState, action: CommentReducerAction) {
-//     switch (action.type) {
-//         case GET_ALL_COMMENTS:
-//             return { ...state, allComments: action.payload.comments };
-//         case GET_FILE_COMMENTS:
-//             return { ...state, allComments: action.payload.comments };
-//         case POST_COMMENT:
-//             return { ...state, allComments: [action.payload.comment, ...state.allComments] };
-//         case DELETE_COMMENT:
-//             return { ...state, allComments: state.allComments.filter(c => c.id !== action.payload.id) };
-//         default:
-//             return state;
-//     }
-// }
-
-
-// export function useComments() {
-//     const [comments, dispatch] = useReducer(commentReducer, { allComments: [] });
-//     const [loading, setLoading] = useState(true);
-
-//     async function getComments(fileId: string | null = null) {
-//         setLoading(true);
-//         try {
-//             const params = fileId ? { fileId } : {};
-//             const { data: { data } } = await api.get("/comments", { params });
-//             dispatch({ type: fileId ? GET_FILE_COMMENTS : GET_ALL_COMMENTS, payload: { comments: data.comments } });
-//         } catch (error) {
-//             console.error("Failed to fetch files:", error);
-//         } finally {
-//             setLoading(false);
-//         }
-//     }
-
-//     async function postComment(commentData: Partial<ISonexComment>) {
-//         try {
-//             const { data: { data } } = await api.post("/comments", commentData);
-//             dispatch({ type: POST_COMMENT, payload: data.comment });
-//         } catch (error) {
-//             console.error("Failed to add comment", error);
-//         }
-//     }
-
-//     async function deleteComment(id: string) {
-//         try {
-//             await api.delete(`/comments/${id}`);
-//             dispatch({ type: DELETE_COMMENT, payload: { id } });
-//         } catch (error) {
-//             console.error("Error Deleting Comment", error);
-//         }
-//     }
-
-//     return {
-//         comments,
-//         loading,
-//         getComments,
-//         postComment,
-//         deleteComment
-//     };
-// }
 
 export interface NewCommentData {
     content: string;
     isRevision: boolean;
-    audioTimestamp?: number;
+    audioTimestamp?: number | null;
+    userId?: string | null;
+    clientId?: string | null;
 }
 
 export const useComments = () => {
     const { user } = useAuth();
     const { client } = useClientAuth();
-    const { files: { currentFile } } = useFiles();
+    const { fileId } = useParams();
 
     const [comments, setComments] = useState<ISonexComment[]>([]);
     const [loading, setLoading] = useState(false);
@@ -83,14 +26,15 @@ export const useComments = () => {
         if (user?.id || client?.id) {
             getComments();
         }
-    }, [user?.id, client?.id, currentFile?.id]);
+    }, [user?.id, client?.id, fileId]);
 
     const getComments = async () => {
         setLoading(true);
         try {
-            const params = currentFile?.id ? { fileId: currentFile?.id as string } : {};
-            const { data: { data } } = await api.get("/comments", { params });
-            console.log(comments);
+            const params = fileId ? { fileId: fileId as string } : {};
+            const {
+                data: { data },
+            } = await api.get("/comments", { params });
             setComments(data.comments);
         } catch (error) {
             console.error(error);
@@ -103,66 +47,71 @@ export const useComments = () => {
         setLoading(true);
         try {
             const newComment: Partial<ISonexComment> = {
-                clientId: client ? client.id : null,
-                userId: user ? user.id : null,
-                fileId: currentFile?.id,
+                clientId: client?.id || null,
+                userId: user?.id || null,
+                fileId: fileId as string,
                 content: commentData.content,
-                timestamp: commentData.isRevision ? commentData.audioTimestamp as number : null
+                timestamp: commentData.isRevision
+                    ? (commentData.audioTimestamp as number)
+                    : null,
             };
 
-            const { data: { data } } = await api.post("/comments", newComment);
+            const {
+                data: { data },
+            } = await api.post("/comments", newComment);
 
-            setComments(prev => [...prev, data.comment]);
+            if (data) {
+                getComments();
+            }
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
         }
-
     }, []);
 
-    const postReply = useCallback(async (parentId: string, replyData: NewCommentData) => {
-        setLoading(true);
-        try {
-            const newReply: Partial<ISonexComment> = {
-                clientId: client ? client.id : null,
-                userId: user ? user.id : null,
-                fileId: currentFile?.id,
-                content: replyData.content,
-                timestamp: replyData.isRevision ? replyData.audioTimestamp as number : null
-            };
-
-            const { data: { data } } = await api.post("/comments/reply", { reply: newReply, parentId });
-
-            setComments(prev => prev.map(comment => {
-                if (comment.id === parentId) {
-                    return { ...comment, replies: [...comment.replies, data.reply] };
-                }
-
-                return {
-                    ...comment,
-                    replies: comment.replies.map(reply => reply.id === parentId ? { ...reply, replies: [...reply.replies, data.reply] } : reply)
+    const postReply = useCallback(
+        async (parentId: string, replyData: NewCommentData) => {
+            setLoading(true);
+            try {
+                const newReply: Partial<ISonexComment> = {
+                    clientId: client?.id || null,
+                    userId: user?.id || null,
+                    fileId: fileId as string,
+                    content: replyData.content,
+                    timestamp: replyData.isRevision
+                        ? (replyData.audioTimestamp as number)
+                        : null,
+                    parentId,
                 };
-            }));
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
 
-    }, []);
+                const {
+                    data: { data },
+                } = await api.post("/comments/reply", newReply);
+
+                if (data.comment) {
+                    await getComments();
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [],
+    );
 
     const deleteComment = useCallback(async (id: string) => {
         setLoading(true);
         try {
             await api.delete(`/comments/${id}`);
-            setComments(prev =>
+            setComments((prev) =>
                 prev
-                    .filter(comment => comment.id !== id)
-                    .map(comment => ({
+                    .filter((comment) => comment.id !== id)
+                    .map((comment) => ({
                         ...comment,
-                        replies: comment.replies.filter(reply => reply.id !== id)
-                    }))
+                        replies: comment.replies.filter((reply) => reply.id !== id),
+                    })),
             );
         } catch (error) {
             console.error(error);
@@ -171,11 +120,42 @@ export const useComments = () => {
         }
     }, []);
 
+    const threads = useMemo(() => {
+        if (!fileId) return [];
+
+        // Build a map of comments
+        const commentMap = new Map<
+            string,
+            ISonexComment & { replies: ISonexComment[]; }
+        >();
+
+        // Initialize all comments with empty replies
+        comments.forEach((c) => {
+            commentMap.set(c.id, { ...c, replies: [] });
+        });
+
+        const roots: (ISonexComment & { replies: ISonexComment[]; })[] = [];
+
+        commentMap.forEach((comment) => {
+            if (comment.parentId) {
+                const parent = commentMap.get(comment.parentId);
+                if (parent) {
+                    parent.replies.push(comment);
+                }
+            } else {
+                roots.push(comment);
+            }
+        });
+
+        return roots;
+    }, [comments, fileId]);
+
     return {
         comments,
         postComment,
         postReply,
         deleteComment,
         loading,
+        threads,
     };
 };

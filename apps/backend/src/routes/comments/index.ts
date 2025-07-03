@@ -15,6 +15,9 @@ router.get("/", async (req, res) => {
                 client: true,
                 user: true,
             },
+            orderBy: {
+                createdAt: "desc"
+            }
         });
     } else {
         comments = await prisma.comment.findMany({
@@ -35,6 +38,24 @@ router.post("/", async (req, res) => {
         data: {
             content: content as string,
             parentId: parentId ? parentId as string : null,
+            userId: userId ? userId as string : null,
+            clientId: clientId ? clientId as string : null,
+            timestamp: timestamp ? timestamp as number : null,
+            fileId: fileId as string
+        }
+    });
+
+    successResponse(res, { comment }, null, 201);
+    return;
+});
+
+router.post("/reply", async (req, res) => {
+    const { content, timestamp, parentId, userId, clientId, fileId } = req.body;
+
+    const comment = await prisma.comment.create({
+        data: {
+            content: content as string,
+            parentId: parentId as string,
             userId: userId ? userId as string : null,
             clientId: clientId ? clientId as string : null,
             timestamp: timestamp ? timestamp as number : null,

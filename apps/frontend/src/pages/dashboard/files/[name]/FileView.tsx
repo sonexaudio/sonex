@@ -1,7 +1,6 @@
-import { ArrowLeft, Car, Download, MoreVertical, Share2 } from "lucide-react";
+import { ArrowLeft, Download, MoreVertical, Share2 } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 import useFiles from "../../../../hooks/useFiles";
-import { useEffect } from "react";
 import { useParams } from "react-router";
 import { formatDistanceToNow } from "date-fns";
 import { formatFileSize } from "../../../../utils/files";
@@ -10,20 +9,33 @@ import useProjects from "../../../../hooks/useProjects";
 import { Badge } from "../../../../components/ui/badge";
 import FileCommentSection from "../../../../components/FileCommentSection";
 import AudioPlayer from "../../../../components/AudioPlayer";
-import { useAudioPlayback } from "../../../../hooks/useAudioPlayer";
+import { useSingleFileContext } from "../../../../context/SingleFileContextProvider";
 
 interface FileViewProps {
     onBack: () => void;
 }
 
 const FileView = ({ onBack }: FileViewProps) => {
-    const { files: { currentFile }, getCurrentFile, loading } = useFiles();
+    const { downloadFile } = useFiles();
     const { state: { currentProject } } = useProjects();
     const { fileId } = useParams();
+    const { currentFile, loading, duration, formatTime } = useSingleFileContext();
 
-    useEffect(() => {
-        getCurrentFile(fileId as string, true);
-    }, [currentFile?.id]);
+    const handleDownloadFile = async () => {
+        if (!fileId) return;
+
+        const downloadUrl = await downloadFile(fileId);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = currentFile?.name || "sonex_download.mp3";
+        document.body.appendChild(link);
+        link.click();
+
+        // Clean up after 2 seconds
+        setTimeout(() => {
+            document.body.removeChild(link);
+        }, 2000);
+    };
 
     if (!currentFile) return null;
 
@@ -45,7 +57,7 @@ const FileView = ({ onBack }: FileViewProps) => {
                     </div>
                 </div>
                 <div className="flex items-center gap-x-2">
-                    <Button>
+                    <Button onClick={handleDownloadFile}>
                         <Download className="size-4" />
                         <span>Download</span>
                     </Button>
@@ -74,7 +86,7 @@ const FileView = ({ onBack }: FileViewProps) => {
                                 </div>
                                 <div>
                                     <span className="text-gray-500">Duration:</span>
-                                    <span className="ml-2 text-gray-900">3:24</span>
+                                    <span className="ml-2 text-gray-900">{formatTime(duration)}</span>
                                 </div>
                                 <div>
                                     <span className="text-gray-500">Sample Rate:</span>
@@ -106,7 +118,7 @@ const FileView = ({ onBack }: FileViewProps) => {
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Status</span>
-                                    <Badge>{currentProject?.status}</Badge>
+                                    <Badge>{currentProject?.status || "Active"}</Badge>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Version</span>
