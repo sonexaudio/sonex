@@ -1,5 +1,6 @@
-import { useState, type ReactNode, createContext } from "react";
+import { useState, type ReactNode, createContext, useContext } from "react";
 import api from "../lib/axios";
+import { useProjectContext } from "./ProjectProvider";
 
 export type SonexUploadFile = {
 	file: File;
@@ -45,6 +46,7 @@ export const FileUploadProvider = ({
 		throw new Error("ProjectId, UploaderId, and/or UploaderType missing");
 
 	const [filesToUpload, setFilesToUpload] = useState<SonexUploadFile[]>([]);
+	const { refreshFiles } = useProjectContext();
 
 	function addFiles(acceptedFiles: File[]) {
 		// TODO: Abstract this hunk of code... I don't wanna see it like this lol
@@ -76,7 +78,7 @@ export const FileUploadProvider = ({
 	) {
 		setFilesToUpload(
 			filesToUpload.map((file) =>
-				file.id === id ? { ...file, status } : file,
+				file.id === id ? { ...file, uploadStatus: status } : file,
 			),
 		);
 	}
@@ -142,6 +144,9 @@ export const FileUploadProvider = ({
 		});
 
 		await Promise.all(uploadPromises);
+
+		// Refresh files after successful upload
+		await refreshFiles();
 	}
 
 	return (

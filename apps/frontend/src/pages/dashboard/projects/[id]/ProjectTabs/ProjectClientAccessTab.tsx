@@ -20,9 +20,9 @@ import {
 import useUser from "../../../../../hooks/useUser";
 
 const ProjectClientAccessTab = () => {
-    const { project } = useProjectContext();
+    const { project, clients } = useProjectContext();
     const { currentUser } = useUser();
-    const { clients, addClient } = useClients();
+    const { addClient } = useClients();
     const [showDialog, setShowDialog] = useState(false);
     const [newClientEmail, setNewClientEmail] = useState("");
     const [newClientName, setNewClientName] = useState("");

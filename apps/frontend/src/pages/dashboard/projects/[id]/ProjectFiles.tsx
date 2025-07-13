@@ -1,12 +1,10 @@
 import { useParams } from "react-router";
 import useFiles from "../../../../hooks/useFiles";
-import { useEffect } from "react";
 import type { SonexFile } from "../../../../types/files";
 import { formatFileSize } from "../../../../utils/files";
 import useUser from "../../../../hooks/useUser";
 import useClientAuth from "../../../../hooks/useClientAuth";
-import { useFileSystem } from "../../../../hooks/useFileSystem";
-import FolderNode from "./ProjectFileSystem";
+import { useProjectContext } from "../../../../context/ProjectProvider";
 
 interface SonexFileExtended extends SonexFile {
     isFileOwner: boolean;
@@ -35,7 +33,7 @@ const ProjectFile = ({ file }: { file: SonexFileExtended; }) => {
 };
 
 const ProjectFiles = ({ isProjectOwner }: { isProjectOwner: boolean; }) => {
-    const { files: { allFiles }, getAllFiles, loading } = useFiles();
+    const { files, filesLoading } = useProjectContext();
     const { id: projectId } = useParams();
     const { currentUser } = useUser();
     const { client, getClient } = useClientAuth();
@@ -43,17 +41,19 @@ const ProjectFiles = ({ isProjectOwner }: { isProjectOwner: boolean; }) => {
     const userId = currentUser?.id as string;
     const clientId = client?.id as string;
 
-    useEffect(() => {
-        if (!client) getClient();
-        if (projectId) getAllFiles();
-    }, [client?.id]);
+    // Only get client if not already loaded
+    if (!client) {
+        getClient();
+    }
 
-    const projectFiles = allFiles.filter(file => file.projectId === projectId).map(file => ({
-        ...file,
-        isFileOwner: file.uploaderId === userId || file.uploaderId === clientId || isProjectOwner
-    })) || [];
+    const projectFiles = files
+        .filter(file => file.projectId === projectId)
+        .map(file => ({
+            ...file,
+            isFileOwner: file.uploaderId === userId || file.uploaderId === clientId || isProjectOwner
+        })) || [];
 
-    if (loading) return <p>Loading...</p>;
+    if (filesLoading) return <p>Loading...</p>;
 
     return (
         <div className="border rounded-md p-6 my-8">

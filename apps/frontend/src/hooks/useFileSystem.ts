@@ -1,31 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ISonexFolder } from "./useFolders";
 import type { SonexFile } from "../types/files";
-import { useParams } from "react-router";
-import api from "../lib/axios";
 import { buildFolderTree } from "../utils/fileTree";
+import { useProjectContext } from "../context/ProjectProvider";
 
 export function useFileSystem() {
-    const [folders, setFolders] = useState<ISonexFolder[]>([]);
-    const [files, setFiles] = useState<SonexFile[]>([]);
-
-    const { id: projectId } = useParams();
-
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                const [folderRes, fileRes] = await Promise.all([
-                    api.get("/folders", { params: { projectId } }),
-                    api.get("/files", { params: { projectId } })
-                ]);
-                setFolders(folderRes.data.data.folders);
-                setFiles(fileRes.data.data.files);
-            } catch (error) {
-                console.error("Failed to get filesystem", error);
-            }
-        }
-        if (projectId) fetchData();
-    }, [projectId]);
+    const { files, folders, filesLoading, foldersLoading } = useProjectContext();
 
     const { tree: folderTree, rootFiles } = useMemo(() => {
         const rootFiles = files.filter(file => !file.folderId);
@@ -37,5 +17,6 @@ export function useFileSystem() {
     return {
         tree: folderTree,
         rootFiles,
+        loading: filesLoading || foldersLoading,
     };
 }

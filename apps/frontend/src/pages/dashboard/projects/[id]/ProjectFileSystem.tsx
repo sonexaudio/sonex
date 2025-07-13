@@ -97,14 +97,23 @@ const FolderNode = ({ folder, isInEditMode }: { folder: ISonexFolder; isInEditMo
         }
     });
 
-    const handleClick = () => {
-        if (!isInEditMode) setIsOpen((prev) => !prev);
+    const handleToggleFolder = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent drag from starting
+        setIsOpen((prev) => !prev);
     };
+
+    const handleFolderClick = () => {
+        if (!isInEditMode) {
+            setIsOpen((prev) => !prev);
+        }
+    };
+
+    const hasContent = folder.subfolders?.length || folder.files?.length;
 
     const content = (
         <div
             ref={setNodeRef}
-            onClick={handleClick}
+            onClick={handleFolderClick}
             className={`flex items-center justify-between w-full px-3 py-2 rounded font-medium transition-all
             ${isOver ? "bg-zinc-700 scale-[1.01]" : "bg-zinc-900"} text-white
             ${isInEditMode ? "cursor-grab active:cursor-grabbing" : "cursor-pointer hover:bg-zinc-800"}`}
@@ -113,10 +122,26 @@ const FolderNode = ({ folder, isInEditMode }: { folder: ISonexFolder; isInEditMo
                 <FolderIcon className="size-5 text-white" />
                 {folder.name}
             </div>
-            {(folder.subfolders?.length || folder.files?.length) && (
-                <ChevronRightIcon
-                    className={`transition-transform duration-100 size-5 text-white ${isOpen ? "rotate-90" : ""}`}
-                />
+            {hasContent && (
+                <div className="flex items-center gap-2">
+                    {isInEditMode && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleToggleFolder}
+                            className="h-6 w-6 p-0 text-white hover:bg-zinc-700"
+                        >
+                            <ChevronRightIcon
+                                className={`transition-transform duration-100 size-4 ${isOpen ? "rotate-90" : ""}`}
+                            />
+                        </Button>
+                    )}
+                    {!isInEditMode && (
+                        <ChevronRightIcon
+                            className={`transition-transform duration-100 size-5 text-white ${isOpen ? "rotate-90" : ""}`}
+                        />
+                    )}
+                </div>
             )}
         </div>
     );
@@ -143,7 +168,7 @@ const FolderNode = ({ folder, isInEditMode }: { folder: ISonexFolder; isInEditMo
 };
 
 const ProjectFileSystem = () => {
-    const { tree: fileTree, rootFiles } = useFileSystem();
+    const { tree: fileTree, rootFiles, loading } = useFileSystem();
     const { setNodeRef: rootSetNodeRef, isOver: rootIsOver } = useDroppable({
         id: "ROOT",
         data: { type: "root" },
@@ -174,6 +199,16 @@ const ProjectFileSystem = () => {
         }
 
     };
+
+    if (loading) {
+        return (
+            <Card>
+                <CardContent className="p-6">
+                    <p>Loading files...</p>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card>

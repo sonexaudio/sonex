@@ -1,15 +1,15 @@
 import { useParams } from "react-router";
-import { useClients } from "../../../../hooks/useClients";
 import ClientCard from "../../clients/ClientCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
 import { Eye, MessageCircle } from "lucide-react";
+import { useProjectContext } from "../../../../context/ProjectProvider";
 
 const ProjectClients = () => {
-	const { clients, loading } = useClients();
+	const { clients, clientsLoading } = useProjectContext();
 	const { id } = useParams();
 	const projectClients = clients.filter((client) => client.projectId === id);
 
-	if (loading) return <p>Loading clients...</p>;
+	if (clientsLoading) return <p>Loading clients...</p>;
 
 	return (
 		<Card>

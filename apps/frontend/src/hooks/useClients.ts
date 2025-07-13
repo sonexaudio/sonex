@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import useUser from "./useUser";
 import api from "../lib/axios";
 import type { AxiosError } from "axios";
+import { useProjectContext } from "../context/ProjectProvider";
 
 export interface Client {
 	id: string;
@@ -19,29 +20,15 @@ export interface AxiosResponseError extends AxiosError {
 
 export function useClients() {
 	const { currentUser } = useUser();
-	const [clients, setClients] = useState<Client[]>([]);
-	const [loading, setLoading] = useState(true);
+	const {
+		clients,
+		clientsLoading,
+		refreshClients,
+		addClientToState,
+		updateClientInState,
+		deleteClientFromState
+	} = useProjectContext();
 	const [error, setError] = useState<string | null>(null);
-
-	async function fetchClients() {
-		try {
-			const {
-				data: { data },
-			} = await api.get("/clients");
-			if (data) {
-				setClients(data.clients);
-			}
-		} catch (error) {
-			console.error(error);
-			setError(
-				(error as AxiosError<AxiosResponseError>).response?.data
-					?.error as string,
-			);
-			setClients([]);
-		} finally {
-			setLoading(false);
-		}
-	}
 
 	async function addClient(clientData: Partial<Client>) {
 		try {
@@ -49,9 +36,8 @@ export function useClients() {
 				data: { data },
 			} = await api.post("/clients", clientData);
 			if (data) {
-				setClients((prev) => [...prev, data.client]);
+				addClientToState(data.client);
 			}
-			fetchClients();
 		} catch (error) {
 			console.error(error);
 			setError(
@@ -64,18 +50,13 @@ export function useClients() {
 	async function updateClient(id: string, clientData: Partial<Client>) {
 		if (Object.entries(clientData).length === 0) return;
 
-		setLoading(true);
 		try {
 			const {
 				data: { data },
 			} = await api.put(`/clients/${id}`, clientData);
 
 			if (data) {
-				const updatedClients = clients.map((client) =>
-					client.id === id ? { ...data.client } : client,
-				);
-
-				setClients(updatedClients);
+				updateClientInState(id, data.client);
 			}
 		} catch (error) {
 			console.error(error);
@@ -83,24 +64,19 @@ export function useClients() {
 				(error as AxiosError<AxiosResponseError>).response?.data
 					?.error as string,
 			);
-		} finally {
-			setLoading(false);
 		}
 	}
 
 	async function removeClient(id: string) {
-		setLoading(true);
 		try {
 			await api.delete(`/clients/${id}`);
-			setClients(clients.filter((client) => client.id !== id));
+			deleteClientFromState(id);
 		} catch (error) {
 			console.error(error);
 			setError(
 				(error as AxiosError<AxiosResponseError>).response?.data
 					?.error as string,
 			);
-		} finally {
-			setLoading(false);
 		}
 	}
 
@@ -108,7 +84,8 @@ export function useClients() {
 		try {
 			const clientIds = clients.map((client) => client.id);
 			await api.post("/clients/delete-all", { clients: clientIds });
-			setClients([]);
+			// Clear all clients from state
+			clients.forEach(client => deleteClientFromState(client.id));
 		} catch (error) {
 			console.error(error);
 			setError(
@@ -118,20 +95,14 @@ export function useClients() {
 		}
 	}
 
-	useEffect(() => {
-		if (currentUser?.id) {
-			fetchClients();
-		}
-	}, [currentUser?.id]);
-
 	return {
 		clients,
 		addClient,
-		refetchClients: fetchClients,
+		refetchClients: refreshClients,
 		updateClient,
 		removeClient,
 		removeAllClients,
-		loading,
+		loading: clientsLoading,
 		error,
 	};
 }
