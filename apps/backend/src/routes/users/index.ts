@@ -122,4 +122,23 @@ userRouter.get("/:id/transactions", requireAuth, async (req, res) => {
 	}
 });
 
+// Mark user as onboarded
+userRouter.put("/onboarded", requireAuth, async (req, res) => {
+	try {
+		const userId = req.user?.id;
+		if (!userId) {
+			res.status(401).json({ error: "Unauthorized" });
+			return;
+		}
+		const updated = await prisma.user.update({
+			where: { id: userId },
+			data: { isOnboarded: true },
+		});
+		res.json({ data: { user: updated } });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Something went wrong" });
+	}
+});
+
 export default userRouter;
