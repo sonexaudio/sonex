@@ -1,4 +1,4 @@
-import { useReducer, useState } from "react";
+import { useReducer, useState, useCallback } from "react";
 import api from "../lib/axios";
 import {
 	CREATE_PROJECT,
@@ -16,12 +16,17 @@ import type { AxiosResponseError } from "./useClients";
 const initialProjects: ProjectState = {
 	allProjects: [],
 	currentProject: null,
+	pagination: null,
 };
 
 function projectReducer(state: ProjectState, action: ProjectReducerAction) {
 	switch (action.type) {
 		case GET_ALL_PROJECTS:
-			return { ...state, allProjects: [...action.payload.projects] };
+			return {
+				...state,
+				allProjects: [...action.payload.projects],
+				pagination: action.payload.pagination || null,
+			};
 
 		case GET_SINGLE_PROJECT:
 			return { ...state, currentProject: { ...action.payload.project } };
@@ -65,12 +70,20 @@ export default function useProjects() {
 	const [state, dispatch] = useReducer(projectReducer, initialProjects);
 	const [loading, setLoading] = useState(true);
 
-	const getAllProjects = async () => {
+	const getAllProjects = useCallback(async (params?: {
+		page?: number;
+		limit?: number;
+		search?: string;
+		status?: string;
+		paymentStatus?: string;
+		sortField?: string;
+		sortDirection?: string;
+	}) => {
 		setLoading(true);
 		try {
 			const {
 				data: { data },
-			} = await api.get("/projects");
+			} = await api.get("/projects", { params });
 
 			if (data) {
 				dispatch({
@@ -83,9 +96,9 @@ export default function useProjects() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
 
-	const getSingleProject = async (id: string) => {
+	const getSingleProject = useCallback(async (id: string) => {
 		setLoading(true);
 		try {
 			const {
@@ -99,9 +112,9 @@ export default function useProjects() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
 
-	const createProject = async (projectData: Partial<Project>) => {
+	const createProject = useCallback(async (projectData: Partial<Project>) => {
 		setLoading(true);
 		try {
 			const {
@@ -115,9 +128,9 @@ export default function useProjects() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [getAllProjects]);
 
-	const updateProject = async (id: string, projectData: Partial<Project>) => {
+	const updateProject = useCallback(async (id: string, projectData: Partial<Project>) => {
 		setLoading(true);
 		try {
 			const {
@@ -129,9 +142,9 @@ export default function useProjects() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
 
-	const deleteProject = async (id: string) => {
+	const deleteProject = useCallback(async (id: string) => {
 		setLoading(true);
 		try {
 			await api.delete(`/projects/${id}`);
@@ -141,7 +154,7 @@ export default function useProjects() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
 
 	return {
 		state,

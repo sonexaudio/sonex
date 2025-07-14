@@ -1,11 +1,14 @@
-import { useState, type ReactNode, createContext } from "react";
+import { useState, type ReactNode, createContext, useContext } from "react";
 import api from "../lib/axios";
+import { useProjectContext } from "./ProjectProvider";
 
 export type SonexUploadFile = {
 	file: File;
 	id: string;
 	progress: number;
 	uploadStatus: "idle" | "uploading" | "completed" | "failed";
+	folderId?: string | null;
+	isPublic?: boolean;
 };
 
 export type FileUploadState = {
@@ -21,6 +24,7 @@ export type FileUploadActions = {
 		status: SonexUploadFile["uploadStatus"],
 	) => void;
 	updateUploadProgress: (id: string, progress: number) => void;
+	updateFileSettings: (id: string, settings: { folderId?: string | null; isPublic?: boolean; }) => void;
 	upload: () => Promise<void>;
 };
 
@@ -45,6 +49,7 @@ export const FileUploadProvider = ({
 		throw new Error("ProjectId, UploaderId, and/or UploaderType missing");
 
 	const [filesToUpload, setFilesToUpload] = useState<SonexUploadFile[]>([]);
+	const { refreshFiles } = useProjectContext();
 
 	function addFiles(acceptedFiles: File[]) {
 		// TODO: Abstract this hunk of code... I don't wanna see it like this lol
@@ -76,7 +81,7 @@ export const FileUploadProvider = ({
 	) {
 		setFilesToUpload(
 			filesToUpload.map((file) =>
-				file.id === id ? { ...file, status } : file,
+				file.id === id ? { ...file, uploadStatus: status } : file,
 			),
 		);
 	}
@@ -85,6 +90,14 @@ export const FileUploadProvider = ({
 		setFilesToUpload(
 			filesToUpload.map((file) =>
 				file.id === id ? { ...file, progress } : file,
+			),
+		);
+	}
+
+	function updateFileSettings(id: string, settings: { folderId?: string | null; isPublic?: boolean; }) {
+		setFilesToUpload(
+			filesToUpload.map((file) =>
+				file.id === id ? { ...file, ...settings } : file,
 			),
 		);
 	}
@@ -106,6 +119,10 @@ export const FileUploadProvider = ({
 				fd.append("projectId", projectId);
 				fd.append("uploaderId", uploaderId);
 				fd.append("uploaderType", uploaderType || "USER");
+				if (file.folderId) {
+					fd.append("folderId", file.folderId);
+				}
+				fd.append("isPublic", String(file.isPublic ?? true));
 
 				// temporary
 				const queryString = new URLSearchParams({
@@ -142,6 +159,9 @@ export const FileUploadProvider = ({
 		});
 
 		await Promise.all(uploadPromises);
+
+		// Refresh files after successful upload
+		await refreshFiles();
 	}
 
 	return (
@@ -154,6 +174,7 @@ export const FileUploadProvider = ({
 				upload,
 				updateUploadProgress,
 				updateUploadStatus,
+				updateFileSettings,
 			}}
 		>
 			{children}

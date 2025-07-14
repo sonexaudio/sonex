@@ -5,10 +5,10 @@ import { Checkbox } from "./ui/checkbox";
 import { Clock, Send } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { useSingleFileContext } from "../context/SingleFileContextProvider";
 
 interface CommentFormProps {
     onSubmit: (content: string, isRevision: boolean, audioTimestamp?: number) => void;
-    getCurrentTime?: () => number;
     placeholder?: string;
     buttonText?: string;
     compact?: boolean;
@@ -16,11 +16,11 @@ interface CommentFormProps {
 
 const CommentForm: React.FC<CommentFormProps> = ({
     onSubmit,
-    getCurrentTime,
     placeholder = "Add a comment",
     buttonText = "Post Comment",
     compact = false
 }) => {
+    const { formatTime, getCurrentTimeForComment } = useSingleFileContext();
     const [content, setContent] = useState("");
     const [isRevision, setIsRevision] = useState(false);
 
@@ -28,33 +28,40 @@ const CommentForm: React.FC<CommentFormProps> = ({
         e.preventDefault();
         if (!content.trim()) return;
 
-        const audioTimeStamp = isRevision && getCurrentTime ? getCurrentTime() : undefined;
-        onSubmit(content, isRevision, audioTimeStamp);
+        const audioTimeStamp = isRevision ? getCurrentTimeForComment() : null;
+        onSubmit(content, isRevision, audioTimeStamp as number);
         setContent("");
         setIsRevision(false);
     };
 
-    const formatTime = (time: number) => {
-        const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
-        return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-    };
 
     return (
-        <form onSubmit={handleSubmit} className={`${compact ? "space-y-2" : "space-y-4"}`}>
+        <form
+            onSubmit={handleSubmit}
+            className={`${compact ? "space-y-2" : "space-y-4"}`}
+        >
             <div className="flex gap-x-3">
                 <div className={`${compact ? "size-6" : "size-8"} bg-gradient-to-br from-bg-primary to-bg-primary-50 rounded-full flex items-center justify-center shrink-0`}>
                     <span className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-white`}>IV</span>
                 </div>
                 <div className="flex-1">
-                    <Textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder={placeholder} rows={compact ? 2 : 3} />
+                    <Textarea
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder={placeholder}
+                        rows={compact ? 2 : 3}
+                    />
                 </div>
             </div>
 
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-x-3">
-                    <Label htmlFor="revision" className="flex items-center gap-x-2 cursor-pointer">
-                        <Checkbox checked={isRevision} onChange={(e) => setIsRevision(!isRevision)} />
+                    <Label htmlFor="revision" className="flex items-center gap-x-2">
+                        <Checkbox
+                            checked={isRevision}
+                            onCheckedChange={(checked) => setIsRevision(checked as boolean)}
+                            className="cursor-pointer"
+                        />
 
                         <span className="text-sm text-muted-foreground flex items-center gap-1">
                             <Clock className="size-4" />
@@ -62,8 +69,8 @@ const CommentForm: React.FC<CommentFormProps> = ({
                         </span>
                     </Label>
 
-                    {isRevision && getCurrentTime && (
-                        <Badge>&commat; {formatTime(getCurrentTime())}</Badge>
+                    {isRevision && (
+                        <Badge className="pointer-events-none select-none">@ {formatTime(getCurrentTimeForComment())}</Badge>
                     )}
                 </div>
 

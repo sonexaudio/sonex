@@ -17,35 +17,52 @@ export interface Project {
 	paymentStatus?: string;
 	createdAt?: string | Date | undefined;
 	updatedAt?: string | Date | undefined;
+	fileCount?: number;
+	clientCount?: number;
 }
 
 export interface ProjectWithUserInfo extends Project {
 	user: Pick<User, "id" | "firstName" | "email">;
 }
 
+export interface PaginationInfo {
+	page: number;
+	limit: number;
+	totalCount: number;
+	totalPages: number;
+	hasNextPage: boolean;
+	hasPrevPage: boolean;
+}
+
+export interface PaginatedProjectsResponse {
+	projects: Project[];
+	pagination: PaginationInfo;
+}
+
 export type ProjectState = {
 	allProjects: Project[];
 	currentProject: Project | ProjectWithUserInfo | null;
+	pagination: PaginationInfo | null;
 };
 
 export type ProjectReducerAction =
 	| {
-			type: typeof GET_ALL_PROJECTS;
-			payload: { projects: Project[] };
-	  }
+		type: typeof GET_ALL_PROJECTS;
+		payload: { projects: Project[]; pagination?: PaginationInfo; };
+	}
 	| {
-			type: typeof GET_SINGLE_PROJECT;
-			payload: { project: ProjectWithUserInfo };
-	  }
+		type: typeof GET_SINGLE_PROJECT;
+		payload: { project: ProjectWithUserInfo; };
+	}
 	| {
-			type: typeof CREATE_PROJECT;
-			payload: { project: Project };
-	  }
+		type: typeof CREATE_PROJECT;
+		payload: { project: Project; };
+	}
 	| {
-			type: typeof UPDATE_PROJECT;
-			payload: { project: Project };
-	  }
+		type: typeof UPDATE_PROJECT;
+		payload: { project: Project; };
+	}
 	| {
-			type: typeof DELETE_PROJECT;
-			payload: { id: string };
-	  };
+		type: typeof DELETE_PROJECT;
+		payload: { id: string; };
+	};

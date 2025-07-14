@@ -4,34 +4,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { MessageSquare } from "lucide-react";
 import CommentForm from "./CommentForm";
 import CommentItem from "./CommentItem";
-import useFiles from "../hooks/useFiles";
-import { useEffect } from "react";
-import { useParams } from "react-router";
+import { useSingleFileContext } from "../context/SingleFileContextProvider";
+import useClientAuth from "../hooks/useClientAuth";
+import useUser from "../hooks/useUser";
 
-interface FileCommentSectionProps {
-    getCurrentTime?: () => number;
-    onTimestampClick?: (time: number) => void;
-}
 
-const FileCommentSection: React.FC<FileCommentSectionProps> = ({
-    getCurrentTime,
-    onTimestampClick
-}) => {
-    const { comments, postComment, postReply } = useComments();
-    const { files: { currentFile }, getCurrentFile } = useFiles();
-    const { fileId } = useParams();
+const FileCommentSection: React.FC = () => {
+    const { client } = useClientAuth();
+    const { currentUser } = useUser();
+    const { comments, postComment, postReply, threads } = useComments();
+    const { currentFile, seekToTime } = useSingleFileContext();
 
-    useEffect(() => {
-        getCurrentFile(fileId as string);
-    }, []);
+    console.log("COMMENT THREADS", threads);
 
     const handleNewComment = async (content: string, isRevision: boolean, audioTimestamp?: number) => {
         await postComment({ content, isRevision, audioTimestamp });
     };
 
     const handleReply = async (parentId: string, content: string, isRevision: boolean, audioTimestamp?: number) => {
-        await postReply(parentId, { content, isRevision, audioTimestamp });
+        await postReply(parentId, { content, isRevision, audioTimestamp, clientId: client?.id || null, userId: currentUser?.id || null });
     };
+
+    const handleTimestampClick = (time: number) => {
+        seekToTime(time);
+    };
+
 
     const fileComments = comments.filter((comment) => comment.fileId === currentFile?.id);
 
@@ -48,10 +45,7 @@ const FileCommentSection: React.FC<FileCommentSectionProps> = ({
             <CardContent>
                 {/* New Comment Form */}
                 <div className="mb-8">
-                    <CommentForm
-                        onSubmit={handleNewComment}
-                        getCurrentTime={getCurrentTime}
-                    />
+                    <CommentForm onSubmit={handleNewComment} />
                 </div>
 
                 {/* Comments List */}
@@ -62,13 +56,12 @@ const FileCommentSection: React.FC<FileCommentSectionProps> = ({
                             <p className="text-muted">No comments yet. Be the first to share your thoughts!</p>
                         </div>
                     ) : (
-                        fileComments?.map((comment) => (
+                        threads?.map((comment) => (
                             <CommentItem
                                 key={comment.id}
                                 comment={comment}
                                 onReply={handleReply}
-                                getCurrentTime={getCurrentTime}
-                                onTimestampClick={onTimestampClick}
+                                onTimestampClick={handleTimestampClick}
                             />
                         ))
                     )}

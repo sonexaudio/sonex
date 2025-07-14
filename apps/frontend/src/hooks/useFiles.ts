@@ -11,6 +11,7 @@ import {
 } from "../types/files";
 import api from "../lib/axios";
 import { useParams } from "react-router";
+import { useProjectContext } from "../context/ProjectProvider";
 
 const initialFiles: FileState = {
 	allFiles: [],
@@ -38,21 +39,24 @@ export default function useFiles() {
 	const [files, dispatch] = useReducer(fileReducer, initialFiles);
 	const [loading, setLoading] = useState(true);
 	const { id: projectId } = useParams();
+	const {
+		files: projectFiles,
+		filesLoading,
+		refreshFiles,
+		addFileToState,
+		deleteFileFromState
+	} = useProjectContext();
 
-	function addFileToState(file: SonexFile) {
+	function addFileToLocalState(file: SonexFile) {
 		dispatch({ type: ADD_FILE, payload: { file } });
+		addFileToState(file);
 	}
-
 
 	async function getAllFiles() {
 		setLoading(true);
-		const params = projectId ? { projectId } : {};
-
 		try {
-			const {
-				data: { data },
-			} = await api.get("/files", { params });
-			dispatch({ type: GET_ALL_FILES, payload: { files: data.files } });
+			await refreshFiles();
+			dispatch({ type: GET_ALL_FILES, payload: { files: projectFiles } });
 		} catch (error) {
 			console.error("Failed to fetch files:", error);
 		} finally {
@@ -68,41 +72,43 @@ export default function useFiles() {
 			fileUrl += "/stream-url";
 		}
 
-		const {
-			data: { data },
-		} = await api.get(fileUrl);
-		dispatch({ type: GET_CURRENT_FILE, payload: { file: data.file } });
-		setLoading(false);
+		try {
+			const {
+				data: { data },
+			} = await api.get(fileUrl);
+			dispatch({ type: GET_CURRENT_FILE, payload: { file: data.file } });
+		} catch (error) {
+			console.error("Failed to fetch current file:", error);
+		} finally {
+			setLoading(false);
+		}
 	}
 
 	async function deleteFile(id: string) {
 		setLoading(true);
-		await api
-			.delete(`/files/${id}`)
-			.then(() => {
-				dispatch({ type: DELETE_FILE, payload: { id } });
-			})
-			.catch((err) => {
-				console.error(err);
-			})
-			.finally(() => {
-				setLoading(false);
-			});
+		try {
+			await api.delete(`/files/${id}`);
+			dispatch({ type: DELETE_FILE, payload: { id } });
+			deleteFileFromState(id);
+		} catch (err) {
+			console.error(err);
+		} finally {
+			setLoading(false);
+		}
 	}
 
 	async function deleteAllFiles(files: string[]) {
 		setLoading(true);
-		await api
-			.post("/files/delete-all", { fileIds: JSON.stringify(files) })
-			.then(() => {
-				dispatch({ type: DELETE_ALL_FILES });
-			})
-			.catch((err) => {
-				console.error(err);
-			})
-			.finally(() => {
-				setLoading(false);
-			});
+		try {
+			await api.post("/files/delete-all", { fileIds: JSON.stringify(files) });
+			dispatch({ type: DELETE_ALL_FILES });
+			// Refresh files from context
+			await refreshFiles();
+		} catch (err) {
+			console.error(err);
+		} finally {
+			setLoading(false);
+		}
 	}
 
 	async function downloadFile(id: string) {
@@ -116,8 +122,8 @@ export default function useFiles() {
 
 	return {
 		files,
-		loading,
-		addFileToState,
+		loading: loading || filesLoading,
+		addFileToState: addFileToLocalState,
 		getAllFiles,
 		getCurrentFile,
 		downloadFile,

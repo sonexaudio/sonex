@@ -13,9 +13,9 @@ import ProjectsPage from "../pages/dashboard/projects/ProjectsPage";
 import CurrentProjectPage from "../pages/dashboard/projects/[id]/CurrentProjectPage";
 import FilesPage from "../pages/dashboard/files/FilesPage";
 import ClientsPage from "../pages/dashboard/clients/ClientsPage";
-import FilePlayer from "./AudioPlayer";
 import SingleFilePage from "../pages/dashboard/files/[name]/SingleFilePage";
 import { ProjectProvider } from "../context/ProjectProvider";
+import PaymentsPage from "../pages/dashboard/payments/PaymentsPage";
 
 const RoutesLayout = () => {
 	return (
@@ -26,7 +26,7 @@ const RoutesLayout = () => {
 			<Route path="forgot-password" element={<ForgotPasswordPage />} />
 			<Route path="reset-password" element={<ResetPasswordPage />} />
 			<Route element={<DashboardLayout />}>
-				<Route path="overview" element={<OverviewPage />} />
+				<Route path="overview" element={<ProjectProvider><OverviewPage /></ProjectProvider>} />
 				<Route path="projects">
 					<Route index element={<ProjectsPage />} />
 					<Route path=":id">
@@ -38,13 +38,23 @@ const RoutesLayout = () => {
 						<Route path="files/:fileId" element={<SingleFilePage />} />
 					</Route>
 				</Route>
-				<Route path="clients" element={<ClientsPage />} />
-				<Route path="files" element={<FilesPage />} />
+				<Route path="clients" element={
+					<ProjectProvider>
+						<ClientsPage />
+					</ProjectProvider>
+				} />
+				<Route path="files" element={
+					<ProjectProvider>
+						<FilesPage />
+					</ProjectProvider>
+				} />
 				<Route path="account" element={<AccountPage />} />
+				<Route path="payments">
+					<Route index element={<PaymentsPage />} />
+					<Route path="success" element={<SuccessPage />} />
+				</Route>
 			</Route>
-			<Route path="payments">
-				<Route path="success" element={<SuccessPage />} />
-			</Route>
+
 			<Route path="*" element={<Error404 />} />
 		</Routes>
 	);

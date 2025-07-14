@@ -16,13 +16,109 @@ const projectRouter = Router();
 
 projectRouter.get("/", requireAuth, async (req, res) => {
 	const id = req.user?.id;
-	const projects = await prisma.project.findMany({
-		where: {
-			userId: id,
-		},
-	});
 
-	res.json({ data: { projects } });
+	// Parse query parameters for pagination and filtering
+	const page = Number.parseInt(req.query.page as string) || 1;
+	const limit = Number.parseInt(req.query.limit as string) || 10;
+	const search = (req.query.search as string) || "";
+	const status = (req.query.status as string) || "";
+	const paymentStatus = (req.query.paymentStatus as string) || "";
+	const sortField = (req.query.sortField as string) || "createdAt";
+	const sortDirection = (req.query.sortDirection as string) || "desc";
+
+	// Calculate offset
+	const offset = (page - 1) * limit;
+
+	// Build where clause
+	const where: Prisma.ProjectWhereInput = {
+		userId: id,
+	};
+
+	if (search) {
+		where.OR = [
+			{ title: { contains: search, mode: "insensitive" } },
+			{ description: { contains: search, mode: "insensitive" } },
+		];
+	}
+
+	if (status && status !== "all") {
+		where.status = status as any;
+	}
+
+	if (paymentStatus && paymentStatus !== "all") {
+		where.paymentStatus = paymentStatus as any;
+	}
+
+	// Validate sort field to prevent injection
+	const allowedSortFields = [
+		"title",
+		"status",
+		"paymentStatus",
+		"amount",
+		"dueDate",
+		"createdAt",
+		"updatedAt",
+	];
+	const validSortField = allowedSortFields.includes(sortField)
+		? sortField
+		: "createdAt";
+	const validSortDirection = sortDirection === "asc" ? "asc" : "desc";
+
+	try {
+		// Get projects with counts
+		const projects = await prisma.project.findMany({
+			where,
+			orderBy: {
+				[validSortField]: validSortDirection,
+			},
+			skip: offset,
+			take: limit,
+			select: {
+				id: true,
+				title: true,
+				description: true,
+				status: true,
+				paymentStatus: true,
+				amount: true,
+				dueDate: true,
+				createdAt: true,
+				updatedAt: true,
+				_count: {
+					select: {
+						files: true,
+						clients: true,
+					},
+				},
+			},
+		});
+
+		// Get total count for pagination
+		const totalCount = await prisma.project.count({ where });
+
+		// Transform data to include counts
+		const transformedProjects = projects.map((project) => ({
+			...project,
+			fileCount: project._count.files,
+			clientCount: project._count.clients,
+		}));
+
+		res.json({
+			data: {
+				projects: transformedProjects,
+				pagination: {
+					page,
+					limit,
+					totalCount,
+					totalPages: Math.ceil(totalCount / limit),
+					hasNextPage: page < Math.ceil(totalCount / limit),
+					hasPrevPage: page > 1,
+				},
+			},
+		});
+	} catch (error) {
+		console.error("Error fetching projects:", error);
+		res.status(500).json({ error: "Failed to fetch projects" });
+	}
 });
 
 projectRouter.post(
@@ -71,7 +167,7 @@ projectRouter.get("/:id", checkProjectAccess, async (req, res) => {
 	const { id } = req.params;
 	const access = req.session.projectAccess;
 
-	let project;
+	let project: any;
 
 	if (access?.type === "client") {
 		project = await prisma.project.findUnique({
@@ -107,7 +203,6 @@ projectRouter.post("/:id/check-access", async (req, res) => {
 
 	try {
 		if (userId) {
-
 			if (project?.userId === userId) {
 				req.session.projectAccess = { type: "user", projectId };
 				successResponse(res, { authorized: true, accessType: "user" });
@@ -136,8 +231,8 @@ projectRouter.post("/:id/check-access", async (req, res) => {
 				await prisma.clientAccess.update({
 					where: { id: clientAccess.id },
 					data: {
-						acceptedAt: new Date()
-					}
+						acceptedAt: new Date(),
+					},
 				});
 
 				await prisma.activity.create({
@@ -146,7 +241,7 @@ projectRouter.post("/:id/check-access", async (req, res) => {
 						targetType: "authorization",
 						userId: project?.userId as string,
 						targetId: clientAccess.id,
-					}
+					},
 				});
 
 				successResponse(res, {
