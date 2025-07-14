@@ -7,6 +7,8 @@ export type SonexUploadFile = {
 	id: string;
 	progress: number;
 	uploadStatus: "idle" | "uploading" | "completed" | "failed";
+	folderId?: string | null;
+	isPublic?: boolean;
 };
 
 export type FileUploadState = {
@@ -22,6 +24,7 @@ export type FileUploadActions = {
 		status: SonexUploadFile["uploadStatus"],
 	) => void;
 	updateUploadProgress: (id: string, progress: number) => void;
+	updateFileSettings: (id: string, settings: { folderId?: string | null; isPublic?: boolean; }) => void;
 	upload: () => Promise<void>;
 };
 
@@ -91,6 +94,14 @@ export const FileUploadProvider = ({
 		);
 	}
 
+	function updateFileSettings(id: string, settings: { folderId?: string | null; isPublic?: boolean; }) {
+		setFilesToUpload(
+			filesToUpload.map((file) =>
+				file.id === id ? { ...file, ...settings } : file,
+			),
+		);
+	}
+
 	function clearUploadQueue() {
 		setFilesToUpload([]);
 	}
@@ -108,6 +119,10 @@ export const FileUploadProvider = ({
 				fd.append("projectId", projectId);
 				fd.append("uploaderId", uploaderId);
 				fd.append("uploaderType", uploaderType || "USER");
+				if (file.folderId) {
+					fd.append("folderId", file.folderId);
+				}
+				fd.append("isPublic", String(file.isPublic ?? true));
 
 				// temporary
 				const queryString = new URLSearchParams({
@@ -159,6 +174,7 @@ export const FileUploadProvider = ({
 				upload,
 				updateUploadProgress,
 				updateUploadStatus,
+				updateFileSettings,
 			}}
 		>
 			{children}

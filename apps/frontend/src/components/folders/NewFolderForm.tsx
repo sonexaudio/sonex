@@ -6,7 +6,11 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Folder } from "lucide-react";
 
-const NewFolderForm = () => {
+interface NewFolderFormProps {
+    onClose?: () => void;
+}
+
+const NewFolderForm = ({ onClose }: NewFolderFormProps) => {
     const { id: projectId } = useParams();
     const { createFolder } = useFolders();
     const [folderInputData, setFolderInputData] = useState<{ name: string, parentId?: string | null; }>({
@@ -31,6 +35,10 @@ const NewFolderForm = () => {
             };
 
             const newFolder = await createFolder(folderData);
+
+            if (onClose) {
+                onClose();
+            }
 
             return newFolder;
         } catch (error) {

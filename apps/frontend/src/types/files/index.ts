@@ -40,11 +40,14 @@ export interface SonexFile {
 	size: number;
 	mimeType: string;
 	path: string;
+	isDownloadable: boolean;
+	isPublic: boolean;
 	createdAt: Date | string;
 	projectId: string;
 	uploaderId: string;
 	uploaderType: "USER" | "CLIENT";
 	streamUrl?: string;
+	folderId?: string;
 }
 
 export type FileState = {

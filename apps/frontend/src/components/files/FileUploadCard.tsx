@@ -1,4 +1,4 @@
-import { Trash2Icon } from "lucide-react";
+import { Trash2Icon, Folder, Eye, EyeOff } from "lucide-react";
 import type { SonexUploadFile } from "../../context/FileUploadProvider";
 import { useFileUpload } from "../../hooks/useFileUpload";
 import FileThumbnail from "./FileUploadThumbnail";
@@ -7,14 +7,21 @@ import { useEffect, useState } from "react";
 import FileUploadCircularProgress from "./FileUploadCircularProgress";
 import { formatFileSize } from "../../utils/files";
 import { Button } from "../ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { useProjectData } from "../../hooks/useProjectData";
+import { Switch } from "../ui/switch";
+import { Label } from "../ui/label";
 
 const FileUploadCard = ({
 	file,
 	id,
 	progress,
 	uploadStatus,
+	folderId,
+	isPublic = true,
 }: SonexUploadFile) => {
-	const { removeFile } = useFileUpload();
+	const { removeFile, updateFileSettings } = useFileUpload();
+	const { folders } = useProjectData();
 
 	const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -41,6 +48,14 @@ const FileUploadCard = ({
 		removeFile(id);
 	}
 
+	const handleFolderChange = (value: string) => {
+		updateFileSettings(id, { folderId: value === "root" ? null : value });
+	};
+
+	const handleAccessChange = (checked: boolean) => {
+		updateFileSettings(id, { isPublic: checked });
+	};
+
 	return (
 		<li className="flex items-center justify-between bg-muted text-primary p-4 rounded-lg shadow">
 			<div className="flex items-center gap-2">
@@ -57,9 +72,38 @@ const FileUploadCard = ({
 			{uploadStatus === "uploading" ? (
 				<FileUploadCircularProgress progress={uploadProgress} />
 			) : (
-				<Button variant="destructive" onClick={handleRemoveFile}>
-					<Trash2Icon />
-				</Button>
+				<div className="flex items-center space-x-2">
+					{/* Folder Selection */}
+					<Select value={folderId || "root"} onValueChange={handleFolderChange}>
+						<SelectTrigger className="w-32">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="root">Root</SelectItem>
+							{folders.map((folder) => (
+								<SelectItem key={folder.id} value={folder.id}>
+									{folder.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+
+					{/* Access Control */}
+					<div className="flex items-center space-x-2">
+						<Switch
+							id={`access-${id}`}
+							checked={isPublic}
+							onCheckedChange={handleAccessChange}
+						/>
+						<Label htmlFor={`access-${id}`} className="text-xs">
+							{isPublic ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+						</Label>
+					</div>
+
+					<Button variant="destructive" onClick={handleRemoveFile}>
+						<Trash2Icon />
+					</Button>
+				</div>
 			)}
 		</li>
 	);
