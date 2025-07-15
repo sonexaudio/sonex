@@ -10,6 +10,7 @@ datasource db {
 }
 
 model User {
+  // User fields
   id             String  @id @default(cuid())
   firstName      String?
   lastName       String?
@@ -17,11 +18,23 @@ model User {
   hashedPassword String?
   googleId       String? @unique
   avatarUrl      String?
+  storageUsed    Int     @default(0)
+  storageLimit   Int     @default(5369) // 5369MB = ~5GB
 
   // Stripe fields
   stripeCustomerId   String? @unique
   connectedAccountId String? @unique
-  isOnboarded        Boolean @default(false)
+
+  // Flags
+  isFounderMember         Boolean   @default(false)
+  isVerified              Boolean   @default(false)
+  isOnboarded             Boolean   @default(false)
+  isAdmin                 Boolean   @default(false)
+  isActive                Boolean   @default(true)
+  // flags to allow user time to backup their data in a grace period if over storage limit, subscription expired and storage limit exceeded 5gb, etc
+  isInGracePeriod         Boolean   @default(false)
+  hasExceededStorageLimit Boolean   @default(false) // if storage limit is exceeded, set to true
+  gracePeriodExpiresAt    DateTime? // if storage limit is exceeded, set to the date and time the grace period expires
 
   // Password reset fields
   resetPasswordToken    String?   @db.VarChar(64)
@@ -38,25 +51,32 @@ model User {
   transactions  Transaction[]
   activities    Activity[]
   clients       Client[]
-  comments Comment[]
+  comments      Comment[]
 }
 
 model Client {
-  id        String   @id @default(cuid())
+  // Client fields
+  id        String  @id @default(cuid())
   name      String?
   email     String
   projectId String
-  addedBy   String
+  userId    String
+
+  // Flags
+  projectPermissions Json? // { "projectId": string, "canComment": boolean, canView: boolean, canUpload: boolean }
+  isBlocked          Boolean @default(false)
+
+  // Database Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  projectManager User      @relation(fields: [addedBy], references: [id], onDelete: Cascade)
-  project        Project   @relation(fields: [projectId], references: [id])
-  comments       Comment[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project  Project   @relation(fields: [projectId], references: [id])
+  comments Comment[]
 
   // Make sure same client is not added again to user
   // However, same client can be added to multiple users
-  @@unique([email, projectId, addedBy])
+  @@unique([email, projectId, userId])
 }
 
 model Project {
@@ -81,24 +101,27 @@ model Project {
 }
 
 model File {
-  id             String   @id @default(cuid())
-  name           String
-  size           Int
-  mimeType       String
-  path           String
-  isDownloadable Boolean  @default(false)
-  isPublic       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-
-  folderId String?
-  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
-
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  uploaderId   String
+  id           String       @id @default(cuid())
+  name         String
+  size         Int
+  mimeType     String
+  path         String
+  projectId    String
+  folderId     String?
+  uploaderId   String // user or client id
   uploaderType UploaderType @default(USER)
 
+  // Flags
+  isDownloadable Boolean @default(false)
+  isPublic       Boolean @default(true)
+
+  // Database Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Associations
+  folder   Folder?       @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  project  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   versions FileVersion[]
   comments Comment[]
 }
@@ -126,21 +149,25 @@ model FileVersion {
 }
 
 model Comment {
-  id        String    @id @default(cuid())
-  file      File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
   fileId    String
-  client    Client?    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId  String?
-  userId String?
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent    Comment?  @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
+  userId    String?
   parentId  String? // null for root comments
-  children  Comment[] @relation("Thread")
   content   String
   timestamp Float? // only for files marked as revision
-  done      Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  done      Boolean @default(false)
+
+  // Database Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Associations
+  file     File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  client   Client?   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   Comment?  @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
+  children Comment[] @relation("Thread")
 }
 
 model Subscription {
@@ -148,10 +175,12 @@ model Subscription {
   userId               String
   stripeSubscriptionId String   @unique
   plan                 String
-  status               String   @default("active")
   startDate            DateTime
   endDate              DateTime
   cancelAtPeriodEnd    Boolean  @default(false)
+
+  // Flags
+  isActive Boolean @default(true)
 
   // Associations
   user         User          @relation(fields: [userId], references: [id])

@@ -9,7 +9,7 @@ export interface Client {
 	name: string;
 	email: string;
 	projectId: string;
-	addedBy: string;
+	userId: string;
 	createdAt: Date | string;
 	updatedAt: Date | string;
 }

@@ -35,7 +35,7 @@ const NewClientForm = ({ onClose }: NewClientFormProps) => {
 				name: clientData.name,
 				email: clientData.email,
 				projectId,
-				addedBy: currentUser?.id,
+				userId: currentUser?.id,
 			};
 
 			await addClient(data);

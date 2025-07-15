@@ -53,7 +53,7 @@ const ProjectClientAccessTab = () => {
     };
 
     const handleAddNewClientToProject = async () => {
-        await addClient({ email: newClientEmail, name: newClientName, addedBy: currentUser?.id, projectId: project?.id });
+        await addClient({ email: newClientEmail, name: newClientName, userId: currentUser?.id, projectId: project?.id });
         setShowDialog(false);
         setNewClientEmail("");
         setNewClientName("");
