@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import AuthLayout from "../../../components/AuthLayout";
 import PageLayout from "../../../components/PageLayout";
 import { useClients } from "../../../hooks/useClients";
@@ -10,7 +10,11 @@ import ClientsTable from "./ClientsTable";
 
 const ClientsPage = () => {
 	const [showNewClientForm, setShowNewClientForm] = useState(false);
-	const { clients, loading, error } = useClients();
+	const { clients, fetchClients, loading, error } = useClients();
+
+	useEffect(() => {
+		fetchClients();
+	}, []);
 
 	const handleCloseDialog = () => {
 		setShowNewClientForm(false);

@@ -36,13 +36,13 @@ async function main() {
 			{
 				email: "myfirstclient@sonexdemo.com",
 				name: "Client Demo",
-				addedBy: user.id,
+				userId: user.id,
 				projectId: project.id,
 			},
 			{
 				email: "mybesclient@sonexdemo.com",
 				name: "Precious Clientele",
-				addedBy: user.id,
+				userId: user.id,
 				projectId: project.id,
 			},
 		],

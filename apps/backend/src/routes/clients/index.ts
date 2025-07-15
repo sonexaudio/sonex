@@ -32,10 +32,10 @@ clientRouter.get("/", requireAuth, async (req, res) => {
 	try {
 		const clients = await prisma.client.findMany({
 			where: {
-				addedBy: userId,
+				userId
 			},
 		});
-
+		console.log(clients);
 		successResponse(res, { clients });
 	} catch (error) {
 		console.error(error);
@@ -52,7 +52,7 @@ clientRouter.post("/", requireAuth, async (req, res) => {
 			data: {
 				...req.body,
 				name: `${clientName?.firstName} ${clientName?.lastName}`,
-				addedBy: userId,
+				userId,
 			},
 		});
 
@@ -87,11 +87,11 @@ clientRouter.post("/delete-all", requireAuth, async (req, res) => {
 	}
 
 	try {
-		// Fetch only clients that match both ID and addedBy
+		// Fetch only clients that match both ID and userId
 		const existingClients = await prisma.client.findMany({
 			where: {
 				id: { in: clients },
-				addedBy: userId,
+				userId,
 			},
 		});
 
@@ -152,7 +152,7 @@ clientRouter.put("/:id", requireAuth, async (req, res) => {
 			return;
 		}
 
-		if (client.addedBy !== userId) {
+		if (client.userId !== userId) {
 			errorResponse(res, 403, "Forbidden");
 			return;
 		}
@@ -194,7 +194,7 @@ clientRouter.delete("/:id", requireAuth, async (req, res) => {
 			return;
 		}
 
-		if (client.addedBy !== userId) {
+		if (client.userId !== userId) {
 			errorResponse(res, 403, "Forbidden");
 			return;
 		}

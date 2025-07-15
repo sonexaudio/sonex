@@ -1,9 +1,11 @@
-import { CreditCard, Files, FolderOpen, LayoutDashboard, MessageSquare, Settings, Users } from "lucide-react";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "./ui/sidebar";
+import { CreditCard, Files, FolderOpen, LayoutDashboard, MessageSquare, Settings, Users, Rocket } from "lucide-react";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "./ui/sidebar";
 import { Button } from "./ui/button";
 import UserProfileDropdown from "./UserProfileDropdown";
 import { currentVersion } from "../utils/version";
 import { useNavigate } from "react-router";
+import { useAuth } from "../hooks/useAuth";
+import { useState } from "react";
 
 const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: "overview" },
@@ -17,6 +19,16 @@ const navigationItems = [
 
 const DashboardSidebar = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const { open } = useSidebar();
+    const [triggered, setTriggered] = useState(false);
+
+    const handleOnboardingTrigger = () => {
+        localStorage.setItem("promptForOnboarding", "true");
+        setTriggered(true);
+        window.location.reload(); // Ensures AuthLayout picks up the change
+    };
+
     return (
         <Sidebar collapsible="icon">
             <SidebarHeader>
@@ -43,11 +55,26 @@ const DashboardSidebar = () => {
                         })}
                     </SidebarMenu>
                 </SidebarGroup>
-
             </SidebarContent>
-            <SidebarFooter>
-                <UserProfileDropdown />
-            </SidebarFooter>
+            {open && (
+                <SidebarFooter>
+                    {/* Onboarding trigger button, only if user needs onboarding */}
+                    {user && !user.isOnboarded && (
+                        <Button
+                            variant="secondary"
+                            className="w-full mb-2 flex items-center justify-center"
+                            onClick={handleOnboardingTrigger}
+                            disabled={triggered}
+                        >
+                            <Rocket className="mr-2 size-4" />
+                            Setup Sonex
+                        </Button>
+                    )}
+
+                    <UserProfileDropdown />
+                </SidebarFooter>
+            )}
+
         </Sidebar>
     );
 };

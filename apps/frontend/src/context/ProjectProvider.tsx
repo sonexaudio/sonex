@@ -100,8 +100,9 @@ export const ProjectProvider = ({ children }: { children: ReactNode; }) => {
         setClientsLoading(true);
         try {
             const {
-                data: { data },
+                data,
             } = await api.get("/clients");
+            console.log("CLIENTS DATA", data);
             if (data) {
                 setClients(data.clients);
             }
@@ -188,7 +189,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode; }) => {
             refreshClients();
             refreshFolders();
         }
-    }, [currentProject?.id, refreshFiles, refreshClients, refreshFolders]);
+    }, [currentProject?.id, id]);
 
     const value = useMemo(
         () => ({

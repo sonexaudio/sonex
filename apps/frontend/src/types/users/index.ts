@@ -9,7 +9,19 @@ export interface User {
 	stripeCustomerId?: string | null;
 	connectedAccountId?: string | null;
 
-	isOnboarded?: boolean;
+	isFounderMember: boolean;
+	isVerified: boolean;
+	isConnectedToStripe: boolean;
+	isOnboarded: boolean;
+	isAdmin: boolean;
+	isActive: boolean;
+
+	isInGracePeriod: boolean;
+	hasExceededStorageLimit: boolean;
+	gracePeriodExpiresAt: string;
+	resetPasswordToken: string;
+	resetTokenExpiresAt: string;
+
 	createdAt?: string;
 	updatedAt?: string;
 }

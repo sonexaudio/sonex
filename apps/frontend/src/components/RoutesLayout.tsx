@@ -38,11 +38,7 @@ const RoutesLayout = () => {
 						<Route path="files/:fileId" element={<SingleFilePage />} />
 					</Route>
 				</Route>
-				<Route path="clients" element={
-					<ProjectProvider>
-						<ClientsPage />
-					</ProjectProvider>
-				} />
+				<Route path="clients" element={<ClientsPage />} />
 				<Route path="files" element={
 					<ProjectProvider>
 						<FilesPage />

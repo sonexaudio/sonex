@@ -19,7 +19,7 @@ paymentRouter.get("/subscription", requireAuth, async (req, res) => {
 	const subscription = await prisma.subscription.findFirst({
 		where: {
 			userId: req.user?.id,
-			status: "Active",
+			isActive: true,
 			endDate: {
 				gte: new Date(),
 			},
