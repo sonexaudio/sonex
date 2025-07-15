@@ -20,6 +20,7 @@ model User {
   avatarUrl      String?
   storageUsed    Int     @default(0)
   storageLimit   Int     @default(5369) // 5369MB = ~5GB
+  subscriptionStatus SubscriptionStatus @default(free)
 
   // Stripe fields
   stripeCustomerId   String? @unique
@@ -28,6 +29,7 @@ model User {
   // Flags
   isFounderMember         Boolean   @default(false)
   isVerified              Boolean   @default(false)
+  isConnectedToStripe     Boolean   @default(false)
   isOnboarded             Boolean   @default(false)
   isAdmin                 Boolean   @default(false)
   isActive                Boolean   @default(true)
@@ -256,4 +258,12 @@ enum ProjectPaymentStatus {
   Free
   Unpaid
   Paid
+}
+
+enum SubscriptionStatus {
+  subscribed
+  past_due
+  free
+  cancelled
+  incomplete
 }
