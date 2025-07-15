@@ -1,4 +1,4 @@
-import React from "react";
+import { Button } from "../ui/button";
 
 export default function OnboardingStepCreateProject({ onNext, onSkip }: { onNext: () => void; onSkip: () => void; }) {
     return (
@@ -9,19 +9,22 @@ export default function OnboardingStepCreateProject({ onNext, onSkip }: { onNext
             <div className="w-full px-2">
                 <h2 className="text-2xl font-semibold mb-2">Create a Project</h2>
                 <p className="mb-4 text-sm">Click the +New button then add details to create a new project. Once you've created a project, we can add a client to it.</p>
-                <div className="flex items-center mb-6">
-                    {[0, 1, 2, 3, 4, 5, 6].map(i => (
-                        <span key={i} className={`mx-1 w-3 h-3 rounded-full ${i === 3 ? 'bg-black' : 'bg-gray-300'}`} />
-                    ))}
-                </div>
+
                 <div className="flex flex-row justify-between items-center gap-4">
-                    <span className="text-black cursor-pointer" onClick={onSkip}>Skip</span>
-                    <button
-                        className="bg-black text-white px-8 py-2 rounded-lg text-lg"
-                        onClick={onNext}
-                    >
-                        Next
-                    </button>
+                    <div className="flex items-center mb-6">
+                        {[0, 1, 2, 3, 4, 5, 6].map(i => (
+                            <span key={i} className={`mx-1 w-3 h-3 rounded-full ${i === 3 ? 'bg-black' : 'bg-gray-300'}`} />
+                        ))}
+                    </div>
+                    <div className="flex flex-row items-center gap-4">
+                        <span className="text-black cursor-pointer" onClick={onSkip}>Skip</span>
+                        <Button
+                            type="button"
+                            onClick={onNext}
+                        >
+                            Next
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

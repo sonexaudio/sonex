@@ -65,6 +65,7 @@ stripeWhRouter.post(
 					},
 				});
 				// add new activity
+				// TODO: Create an activity util function so that I can also use winston for logging on my end.
 				await prisma.activity.create({
 					data: {
 						userId: user?.id as string,

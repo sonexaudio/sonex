@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Dialog,
     DialogContent,
@@ -6,11 +6,13 @@ import {
 import OnboardingStepWelcome from "./OnboardingStepWelcome";
 import OnboardingStepVerifyEmail from "./OnboardingStepVerifyEmail";
 import OnboardingStepStripe from "./OnboardingStepStripe";
-import OnboardingStepStripeReview from "./OnboardingStepStripeReview";
 import OnboardingStepCreateProject from "./OnboardingStepCreateProject";
 import OnboardingStepAddClient from "./OnboardingStepAddClient";
 import OnboardingStepPreferences from "./OnboardingStepPreferences";
 import OnboardingStepHelp from "./OnboardingStepHelp";
+import type { User } from "../../types/users";
+import type { Project } from "../../types/projects";
+import type { Client } from "../../hooks/useClients";
 
 const TOTAL_STEPS = 7;
 
@@ -23,9 +25,9 @@ export default function OnboardingDialog({
     forcePrompt = false,
 }: {
     open: boolean;
-    user: any;
-    projects: any[];
-    clients: any[];
+    user: User;
+    projects: Project[];
+    clients: Client[];
     onComplete: () => void;
     forcePrompt?: boolean;
 }) {
@@ -39,7 +41,7 @@ export default function OnboardingDialog({
     // Step skipping logic
     useEffect(() => {
         if (step === 1 && user?.isVerified) setStep((s) => s + 1);
-        if (step === 2 && user?.stripeAccountId) setStep((s) => s + 1);
+        if (step === 2 && user?.isConnectedToStripe) setStep((s) => s + 1);
         if (step === 3 && projects?.length > 0) setStep((s) => s + 1);
         if (step === 4 && clients?.length > 0) setStep((s) => s + 1);
     }, [step, user, projects, clients]);
@@ -77,7 +79,7 @@ export default function OnboardingDialog({
             case 5:
                 return <OnboardingStepPreferences onNext={handleNext} onSkip={handleSkip} />;
             case 6:
-                return <OnboardingStepHelp onNext={handleNext} onSkip={handleSkip} />;
+                return <OnboardingStepHelp onNext={handleNext} />;
             default:
                 return null;
         }

@@ -1,12 +1,18 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import api from "../../lib/axios";
+import type { User } from "../../types/users";
+import { Button } from "../ui/button";
 
-export default function OnboardingStepVerifyEmail({ onNext, user }: { onNext: () => void; user: any; }) {
+export default function OnboardingStepVerifyEmail({ onNext, user }: { onNext: () => void; user: User; }) {
     const [resending, setResending] = useState(false);
+
     const handleResend = async () => {
         setResending(true);
         // TODO: Call resend email API
+        await api.post("/auth/send-verification-email", { email: user?.email });
         setTimeout(() => setResending(false), 1000);
     };
+
     return (
         <div className="flex flex-col w-full">
             <h2 className="text-2xl font-semibold mb-2">Verify your email</h2>
@@ -17,19 +23,20 @@ export default function OnboardingStepVerifyEmail({ onNext, user }: { onNext: ()
                 ))}
             </div>
             <div className="flex justify-end items-center gap-4">
-                <button
-                    className="text-black px-2 py-2 rounded disabled:opacity-50"
+                <Button
+                    type="button"
+                    variant="link"
                     onClick={handleResend}
                     disabled={resending}
                 >
                     {resending ? "Resending..." : "Resend Email"}
-                </button>
-                <button
-                    className="bg-black text-white px-8 py-2 rounded-lg text-lg"
+                </Button>
+                <Button
+                    type="button"
                     onClick={onNext}
                 >
                     Next
-                </button>
+                </Button>
             </div>
         </div>
     );

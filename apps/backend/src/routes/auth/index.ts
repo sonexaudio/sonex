@@ -150,6 +150,41 @@ authRouter.get("/logout", (req, res) => {
 	});
 });
 
+// Verify email
+// TODO: add a token to the email and use email api to send
+authRouter.post("/send-verification-email", requireAuth, async (req, res) => {
+	const { email } = req.body;
+	if (!email) {
+		res.status(400).json({ error: "Email is required to verify" });
+		return;
+	}
+
+	try {
+		const user = await prisma.user.findUnique({
+			where: {
+				email,
+			},
+		});
+
+		if (!user) {
+			res.status(404).json({ error: "User with that email does not exist" });
+			return;
+		}
+
+		await prisma.user.update({
+			where: {
+				id: user.id,
+			},
+			data: {
+				isVerified: true,
+			},
+		});
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Something went wrong" });
+	}
+});
+
 // Request to generate new token for forgotten password
 authRouter.post("/forgot-password", async (req, res) => {
 	const { email } = req.body;

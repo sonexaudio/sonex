@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 export default function OnboardingStepStripeReview({ onNext, user }: { onNext: () => void; user: any; }) {
     const [loading, setLoading] = useState(false);
     const handleReview = async () => {
         setLoading(true);
-        // TODO: Call Stripe review API
+        // TODO: Setup and call Stripe review API
         setTimeout(() => {
             setLoading(false);
             onNext();

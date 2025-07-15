@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import useProjects from "../hooks/useProjects";
 import OnboardingDialog from "./onboarding/OnboardingDialog";
 import api from "../lib/axios";
+import type { Client } from "../hooks/useClients";
 
 const publicRoutes = [
 	"/",
@@ -17,8 +18,8 @@ const publicRoutes = [
 const AuthLayout = ({ children }: PropsWithChildren) => {
 	const { user, loading, refetchUser } = useAuth();
 	const location = useLocation();
-	const { state: { allProjects }, loading: projectsLoading, getAllProjects } = useProjects();
-	const [clients, setClients] = useState<any[]>([]);
+	const { state: { allProjects }, getAllProjects } = useProjects();
+	const [clients, setClients] = useState<Client[]>([]);
 	const [clientsLoading, setClientsLoading] = useState(false);
 	const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -28,7 +29,7 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 		const fetchClients = async () => {
 			setClientsLoading(true);
 			try {
-				const { data: { data } } = await api.get("/clients/all");
+				const { data: { data } } = await api.get("/clients");
 				setClients(data.clients || []);
 			} catch (e) {
 				setClients([]);
@@ -41,7 +42,7 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 
 	useEffect(() => {
 		if (user && allProjects.length === 0) getAllProjects();
-	}, [user, allProjects.length, getAllProjects]);
+	}, [user, allProjects.length]);
 
 	useEffect(() => {
 		const prompt = localStorage.getItem("promptForOnboarding");
@@ -57,10 +58,16 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 
 	const handleOnboardingComplete = async () => {
 		if (!user?.isOnboarded) {
-			await api.put("/users/onboarded", { isOnboarded: true });
-			await refetchUser();
+			// Check if user is verified, has a connected account, has at least one project, and has at least one client
+			if (!user?.isVerified || !user?.isConnectedToStripe || allProjects.length === 0 || clients.length === 0) {
+				localStorage.setItem("promptForOnboarding", "true");
+			}
+			else {
+				await api.put(`/users/${user?.id}`, { isOnboarded: true });
+				localStorage.removeItem("promptForOnboarding");
+				await refetchUser();
+			}
 		}
-		localStorage.removeItem("promptForOnboarding");
 		setShowOnboarding(false);
 	};
 

@@ -35,7 +35,7 @@ clientRouter.get("/", requireAuth, async (req, res) => {
 				userId
 			},
 		});
-
+		console.log(clients);
 		successResponse(res, { clients });
 	} catch (error) {
 		console.error(error);

@@ -122,7 +122,6 @@ userRouter.get("/:id/transactions", requireAuth, async (req, res) => {
 	}
 });
 
-
 // Mark user as onboarded
 userRouter.put("/onboarded", requireAuth, async (req, res) => {
 	try {
