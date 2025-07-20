@@ -177,6 +177,10 @@ model Subscription {
   userId               String
   stripeSubscriptionId String   @unique
   plan                 String
+  interval             String @default("month")
+  priceId              String
+  pendingDowngradeTo   String?
+  pendingDowngradeAt   DateTime?
   startDate            DateTime
   endDate              DateTime
   cancelAtPeriodEnd    Boolean  @default(false)

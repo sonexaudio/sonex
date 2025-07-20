@@ -31,16 +31,20 @@ stripeWhRouter.post(
 			case "invoice.paid": {
 				const invoice = event.data.object as Stripe.Invoice;
 
+				if (!invoice.parent?.subscription_details?.subscription) {
+					console.warn("Invoice is not associated with a subscription", {
+						invoiceId: invoice.id,
+						invoiceStatus: invoice.status,
+						invoiceCustomer: invoice.customer,
+						invoiceMetadata: invoice.metadata,
+					});
+					break;
+				}
+
+				//  Find the subscription that the invoice is associated with
 				const subscription = await stripe.subscriptions.retrieve(
 					invoice.parent?.subscription_details?.subscription as string,
 				);
-
-				const periodStart = subscription.items.data[0]?.current_period_start;
-				const periodEnd = subscription.items.data[0]?.current_period_end;
-				const cancelAtPeriodEnd = subscription.cancel_at_period_end;
-
-				// Needed: subscription's limit. I will have to add this to the Stripe product metadata in order to retrieve it.
-				// const limit = subscription.items.data[0].plan.metadata.limit;
 
 				// Who is the user?
 				// Add current subscription to that user
@@ -50,33 +54,56 @@ stripeWhRouter.post(
 					},
 				});
 
-				// Find existing subscriptions for user that are active and outside of current start and end date relative to current date
-				// If any are found, cancel them recursively
-				await prisma.subscription.updateMany({
+				if (!user) {
+					console.warn("User not found", {
+						invoiceId: invoice.id,
+						invoiceStatus: invoice.status,
+						invoiceCustomer: invoice.customer,
+					});
+					break;
+				}
+
+				//  Get subscription details
+				const priceId = subscription.items.data[0].plan.id;
+				const plan = subscription.items.data[0].plan.metadata?.planName;
+				const interval = subscription.items.data[0].plan.metadata?.planInterval;
+				const periodStart = subscription.items.data[0]?.current_period_start;
+				const periodEnd = subscription.items.data[0]?.current_period_end;
+				const cancelAtPeriodEnd = subscription.cancel_at_period_end;
+				const storageLimit = Number(subscription.items.data[0].price.metadata?.storageLimit) || 5369;
+				const storageUsed = user.storageUsed || 0;
+				const hasExceededStorageLimit = storageUsed > storageLimit;
+
+				// Create or update subscription record
+				const subscriptionRecord = await prisma.subscription.upsert({
 					where: {
-						userId: user?.id as string,
-						isActive: true,
-						startDate: {
-							lte: new Date(periodStart * 1000),
-						},
-						endDate: {
-							gte: new Date(periodEnd * 1000)
-						}
+						stripeSubscriptionId: subscription.id,
 					},
-					data: {
-						isActive: false,
+					update: {
+						isActive: true,
+						startDate: new Date(periodStart * 1000),
+						endDate: new Date(periodEnd * 1000),
+						cancelAtPeriodEnd,
+						priceId,
+						plan
+					},
+					create: {
+						userId: user.id,
+						stripeSubscriptionId: subscription.id,
+						plan: plan as string,
+						priceId,
+						interval,
+						startDate: new Date(periodStart * 1000),
+						endDate: new Date(periodEnd * 1000),
+						cancelAtPeriodEnd,
+						isActive: true,
 					}
 				});
 
-				// Update user information
-				// storageLimit should be set to the subscription's limit
-				// isFounderMember should be set or kept to true if the user is a founder member.
+				// Update user
+				// TODO: isFounderMember should be set or kept to true if the user is a founder member.
 				// If this is a new subscription, isFounderMember should be determined somehow by checking how many founder member discounts was provided in stripe. Should only be given to first 500 users for life (even if they cancel and re-subscribe), but I don't know how to do this.
 				// If this is a renewal or reactivation, isFounderMember should be kept to true if it was true before.
-				const STORAGE_LIMIT = Number(invoice.metadata?.storageLimit);
-				const storageUsed = user?.storageUsed || 0;
-				const hasExceededStorageLimit = storageUsed > STORAGE_LIMIT;
-
 				await prisma.user.update({
 					where: {
 						id: user?.id as string
@@ -85,21 +112,9 @@ stripeWhRouter.post(
 						subscriptionStatus: "subscribed",
 						isInGracePeriod: false,
 						gracePeriodExpiresAt: null,
-						storageLimit: STORAGE_LIMIT,
+						storageLimit: storageLimit,
 						hasExceededStorageLimit,
 					}
-				});
-
-				// Add subscription to database
-				const newSubscription = await prisma.subscription.create({
-					data: {
-						userId: user?.id as string,
-						stripeSubscriptionId: subscription.id,
-						plan: subscription.items.data[0].plan.id as string,
-						startDate: new Date(periodStart * 1000),
-						endDate: new Date(periodEnd * 1000),
-						cancelAtPeriodEnd,
-					},
 				});
 
 				// Create new transaction
@@ -108,7 +123,7 @@ stripeWhRouter.post(
 						userId: user?.id as string,
 						type: "Subscription",
 						amount: invoice.amount_paid / 100,
-						subscriptionId: newSubscription.id,
+						subscriptionId: subscriptionRecord.id,
 					},
 				});
 
@@ -126,7 +141,7 @@ stripeWhRouter.post(
 						plan: subscription?.items.data[0]?.plan.id,
 					}
 				});
-				// Email user the receipt
+				// TODO: Email user the receipt
 				break;
 			}
 
@@ -178,6 +193,8 @@ stripeWhRouter.post(
 
 			case "customer.subscription.deleted": {
 				const subscription = event.data.object as Stripe.Subscription;
+
+				// Mark subscription as inactive
 				await prisma.subscription.update({
 					where: {
 						stripeSubscriptionId: subscription.id
@@ -187,27 +204,26 @@ stripeWhRouter.post(
 					}
 				});
 
-				// I need to check if after cancellation, the user has exceeded their storage limit after resetting the storage limit back to 5GB.
-				// If they have, will need to establish grace period 21 days from current date for time to pay or remove files before cancelling the account.
-
 				const user = await prisma.user.findUnique({
 					where: {
 						stripeCustomerId: subscription.customer as string
 					}
 				});
 
-				const STORAGE_LIMIT = 5369;
+				//  Reset user to free plan
+				const STORAGE_LIMIT = 5369; // Free plan limit
 				const storageUsed = user?.storageUsed || 0;
 				const hasExceededStorageLimit = storageUsed > STORAGE_LIMIT;
-				const gracePeriodExpiresAt = hasExceededStorageLimit ? new Date(Date.now() * 21 * 24 * 60 * 60 * 1000) : null; // 21 days from now or null if they haven't exceeded the limit
+				const gracePeriodExpiresAt = hasExceededStorageLimit
+					? new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
+					: null;
 
 				await prisma.user.update({
-					where: {
-						id: subscription.customer as string,
-					},
+					where: { id: user?.id as string },
 					data: {
 						subscriptionStatus: "free",
 						storageLimit: STORAGE_LIMIT,
+						hasExceededStorageLimit,
 						gracePeriodExpiresAt,
 						isInGracePeriod: hasExceededStorageLimit,
 					}
@@ -219,12 +235,9 @@ stripeWhRouter.post(
 					targetType: "subscription",
 					targetId: subscription.id,
 					metadata: {
-						plan: subscription.items.data[0].plan.id,
 						reason: subscription.cancellation_details?.reason,
 					}
 				});
-
-				// TODO: Send email regarding subscription cancellation and storage limit reset to 5GB. If they have exceeded the limit, they will have 21 days to pay or remove files before their account is cancelled.
 
 				break;
 			}
@@ -239,22 +252,14 @@ stripeWhRouter.post(
 					},
 				});
 
-				// Did the user just only update their payment method?
-				if (changes?.default_payment_method !== undefined) {
-					// TODO: Send email of payment method update confirmation
-				}
-
-				// Does the user want to cancel or resume their subscription?
-				// Either cancel or resume, we'll only need to update the subscription information
+				// Handle cancellation or resumption of subscription
 				if (changes?.cancel_at_period_end !== undefined) {
 					const cancelAtPeriodEnd = subscription.cancel_at_period_end;
 					await prisma.subscription.update({
 						where: {
 							stripeSubscriptionId: subscription.id
 						},
-						data: {
-							cancelAtPeriodEnd,
-						}
+						data: { cancelAtPeriodEnd }
 					});
 
 					await logActivity({
@@ -267,98 +272,89 @@ stripeWhRouter.post(
 					// TODO: Send email regarding subscription cancellation or resumption
 				}
 
-
-				// Did the user upgrade or downgrade subscription?
-				// If downgrade, the effect should take place at the end of the current period, not immediately.
-				if (changes?.items !== undefined) {
-					const previousPlanAmount = changes.items.data?.[0]?.price?.unit_amount;
-					const currentPlanAmount = subscription.items.data?.[0]?.price?.unit_amount;
-
-					const isUpgrade = previousPlanAmount && currentPlanAmount && previousPlanAmount < currentPlanAmount;
-					const isDowngrade = previousPlanAmount && currentPlanAmount && previousPlanAmount > currentPlanAmount;
-
-					// metadata for plan
+				// Handle subscription plan change
+				if (changes?.items !== undefined && !subscription.pending_update) {
+					// Plan details
+					const currentPrice = subscription.items.data[0].price;
 					const plan = subscription.items.data[0].plan.id;
-					const storageLimit = Number(subscription.items.data[0].metadata.storageLimit);
+					const storageLimit = Number(subscription.items.data[0].price.metadata?.storageLimit) || 5369;
 					const startDate = new Date(subscription.items.data[0].current_period_start * 1000);
 					const endDate = new Date(subscription.items.data[0].current_period_end * 1000);
 					const cancelAtPeriodEnd = subscription.cancel_at_period_end;
 					const storageUsed = user?.storageUsed || 0;
 					const hasExceededStorageLimit = storageUsed > storageLimit;
-					const gracePeriodExpiresAt = hasExceededStorageLimit ? new Date(Date.now() * 21 * 24 * 60 * 60 * 1000) : null; // 21 days from now or null if they haven't exceeded the limit
 
-					// If upgrade, the user will have paid the difference and immediately be upgraded.
-					if (isUpgrade) {
-						await prisma.user.update({
-							where: {
-								id: user?.id as string,
-							},
-							data: {
-								storageLimit,
-								hasExceededStorageLimit,
-								gracePeriodExpiresAt,
-								isInGracePeriod: hasExceededStorageLimit,
-							}
-						});
-						await prisma.subscription.upsert({
-							where: {
-								stripeSubscriptionId: subscription.id
-							},
-							update: {
-								plan,
-								startDate,
-								endDate,
-								cancelAtPeriodEnd,
-							},
-							create: {
-								userId: user?.id as string,
-								stripeSubscriptionId: subscription.id,
-								plan,
-								startDate,
-								endDate,
-								cancelAtPeriodEnd,
-							}
-						});
+					const gracePeriodExpiresAt = hasExceededStorageLimit ? new Date(subscription.items.data[0].current_period_end * 1000 + 21 * 24 * 60 * 60 * 1000) : null; // 21 days from the end of the current period or null if they haven't exceeded the limit
 
-						// Create transaction
-						await prisma.transaction.create({
-							data: {
-								userId: user?.id as string,
-								type: "Subscription upgrade",
-								amount: currentPlanAmount - previousPlanAmount,
-								subscriptionId: subscription.id,
-							}
-						});
 
-						await logActivity({
-							userId: user?.id as string,
-							action: "Subscription upgraded",
-							targetType: "subscription",
-						});
+					// Update subscription record
+					await prisma.subscription.update({
+						where: { stripeSubscriptionId: subscription.id },
+						data: {
+							priceId: currentPrice.id,
+							plan,
+							startDate,
+							endDate,
+							cancelAtPeriodEnd
+						}
+					});
 
-						// TODO: Send email regarding subscription upgrade
-					} else if (isDowngrade) {
-						// Just want to confirm the user is downgrading
-						// but I want to have a way to tell the user via UI that they are downgrading
-						// and that they will be downgraded at the end of the current period
-						// and that they will have 21 days to pay or remove files before their account is cancelled if the downgrade exceeds the storage limit.
-						// and that they will have to pay the difference.
-						// Im relying on invoice.paid to handle changes in storage limit and things when current period ends.
+					// Update user storage limit
+					await prisma.user.update({
+						where: { id: user?.id as string },
+						data: {
+							storageLimit,
+							hasExceededStorageLimit,
+							isInGracePeriod: hasExceededStorageLimit,
+							gracePeriodExpiresAt,
+						}
+					});
 
-						await logActivity({
-							userId: user?.id as string,
-							action: "Subscription downgraded",
-							targetType: "subscription",
-							targetId: subscription.id,
-							metadata: {
-								plan: subscription.items.data[0].plan.id,
-							}
-						});
+					await logActivity({
+						userId: user?.id as string,
+						action: "Subscription plan changed",
+						targetType: "subscription",
+						targetId: subscription.id,
+						metadata: {
+							new_plan: currentPrice.id,
+							storage_limit: storageLimit,
+						}
+					});
 
-						// TODO: Send email regarding subscription downgraded
-						// TODO: Setup a flag for pending downgrades in subscription table
-					}
 				}
+				break;
+			}
+
+			// Events for subscription schedule change. Should be triggered when user changes their billing cycle to monthly or yearly or downgrade.
+			case "subscription_schedule.created": {
+				const schedule = event.data.object as Stripe.SubscriptionSchedule;
+
+				const subscription = await stripe.subscriptions.retrieve(schedule.subscription as string);
+
+				console.log("NEW SUBSCRIPTION SCHEDULE", schedule);
+				console.log("SUBSCRIPTION", subscription);
+
+				break;
+			}
+
+			case "subscription_schedule.released": {
+				const schedule = event.data.object as Stripe.SubscriptionSchedule;
+
+				const subscription = await stripe.subscriptions.retrieve(schedule.subscription as string);
+
+				console.log("NEW SUBSCRIPTION SCHEDULE", schedule);
+				console.log("SUBSCRIPTION", subscription);
+
+				// This event is triggered when a scheduled downgrade takes effect
+
+				// The actual subscription update will be handled by customer.subscription.updated
+				await logActivity({
+					userId: subscription.metadata?.userId as string,
+					action: "Scheduled subscription change completed",
+					targetType: "subscription",
+					targetId: schedule.subscription as string,
+				});
+
 				break;
 			}
 

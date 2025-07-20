@@ -28,12 +28,12 @@ connectWhRouter.post(
 		switch (event.type) {
 			case "account.updated": {
 				const account = event.data.object;
-				const data = await prisma.user.update({
+				await prisma.user.update({
 					where: {
 						connectedAccountId: account.id,
 					},
 					data: {
-						isOnboarded: !(
+						isConnectedToStripe: !(
 							account.capabilities?.transfers === "pending" ||
 							account.capabilities?.transfers === "inactive"
 						),
