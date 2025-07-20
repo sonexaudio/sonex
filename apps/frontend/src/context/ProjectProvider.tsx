@@ -9,11 +9,12 @@ import {
 } from "react";
 import type { ProjectWithUserInfo } from "../types/projects";
 import type { SonexFile } from "../types/files";
-import type { ISonexFolder } from "../hooks/useFolders";
+import { useFolders, type ISonexFolder } from "../hooks/useFolders";
 import { useParams } from "react-router";
 import useProjects from "../hooks/useProjects";
-import api from "../lib/axios";
-import type { Client } from "../hooks/useClients";
+import { useClients, type Client } from "../hooks/useClients";
+import useFiles from "../hooks/useFiles";
+import { useComments } from "../hooks/useComments";
 
 type ProjectContextValue = {
     project: ProjectWithUserInfo | null;
@@ -52,193 +53,106 @@ export const useProjectContext = () => {
     return ctx;
 };
 
+// The ProjectProvider provides all data and functions pertaining to the current project
+// It is used to fetch and store all data pertaining to the current project
+// It uses all of the necessary hooks to fetch and store the data collectively in itself
+// This prevents having to call the same functions from different hooks repeatedly in different places
+// My aim is to prevent multiple calls to the api just to get the same data
+// This Context is ONLY provided around components that need the data of a single project
+
 export const ProjectProvider = ({ children }: { children: ReactNode; }) => {
     const { id } = useParams();
-    const {
-        getSingleProject,
-        state: { currentProject },
-        loading,
-    } = useProjects();
+
+    const projectValues = useProjects();
+    const clientValues = useClients();
+    const fileValues = useFiles();
+    const folderValues = useFolders();
+    const commentValues = useComments();
 
     const [hasFetched, setHasFetched] = useState(false);
 
-    // File state
-    const [files, setFiles] = useState<SonexFile[]>([]);
-    const [filesLoading, setFilesLoading] = useState(false);
-
-    // Client state
-    const [clients, setClients] = useState<Client[]>([]);
-    const [clientsLoading, setClientsLoading] = useState(false);
-
-    // Folder state
-    const [folders, setFolders] = useState<ISonexFolder[]>([]);
-    const [foldersLoading, setFoldersLoading] = useState(false);
-
-    const refreshProject = useCallback(async () => {
-        if (id) {
-            getSingleProject(id);
-        }
-    }, [id, getSingleProject]);
-
-    const refreshFiles = useCallback(async () => {
-        if (!id) return;
-
-        setFilesLoading(true);
-        try {
-            const {
-                data: { data },
-            } = await api.get("/files", { params: { projectId: id } });
-            setFiles(data.files);
-        } catch (error) {
-            console.error("Failed to fetch files:", error);
-        } finally {
-            setFilesLoading(false);
-        }
-    }, [id]);
-
-    const refreshClients = useCallback(async () => {
-        setClientsLoading(true);
-        try {
-            const {
-                data,
-            } = await api.get("/clients");
-            console.log("CLIENTS DATA", data);
-            if (data) {
-                setClients(data.clients);
-            }
-        } catch (error) {
-            console.error("Failed to fetch clients:", error);
-        } finally {
-            setClientsLoading(false);
-        }
-    }, []);
-
-    const refreshFolders = useCallback(async () => {
-        if (!id) return;
-
-        setFoldersLoading(true);
-        try {
-            const {
-                data: { data },
-            } = await api.get("/folders", { params: { projectId: id } });
-            setFolders(data.folders);
-        } catch (error) {
-            console.error("Failed to fetch folders:", error);
-        } finally {
-            setFoldersLoading(false);
-        }
-    }, [id]);
-
-    const addFileToState = useCallback((file: SonexFile) => {
-        setFiles((prev) => [...prev, file]);
-    }, []);
-
-    const deleteFileFromState = useCallback((id: string) => {
-        setFiles((prev) => prev.filter((file) => file.id !== id));
-    }, []);
-
-    const addClientToState = useCallback((client: Client) => {
-        setClients((prev) => [...prev, client]);
-    }, []);
-
-    const updateClientInState = useCallback(
-        (id: string, clientData: Partial<Client>) => {
-            setClients((prev) =>
-                prev.map((client) =>
-                    client.id === id ? { ...client, ...clientData } : client,
-                ),
-            );
-        },
-        [],
-    );
-
-    const deleteClientFromState = useCallback((id: string) => {
-        setClients((prev) => prev.filter((client) => client.id !== id));
-    }, []);
-
-    const addFolderToState = useCallback((folder: ISonexFolder) => {
-        setFolders((prev) => [...prev, folder]);
-    }, []);
-
-    const updateFolderInState = useCallback(
-        (id: string, folderData: Partial<ISonexFolder>) => {
-            setFolders((prev) =>
-                prev.map((folder) =>
-                    folder.id === id ? { ...folder, ...folderData } : folder,
-                ),
-            );
-        },
-        [],
-    );
-
-    const deleteFolderFromState = useCallback((id: string) => {
-        setFolders((prev) => prev.filter((folder) => folder.id !== id));
-    }, []);
-
+    // Get the details of the current project
     useEffect(() => {
         if (id && !hasFetched) {
-            refreshProject();
+            projectValues.fetchSingleProject(id);
+        }
+    }, [id, hasFetched, projectValues.currentProject?.id]);
+
+    // Fetch all details if their is a project
+    // Once this is done, set hasFetched to true
+    useEffect(() => {
+        if (projectValues.currentProject && !hasFetched) {
+            clientValues.fetchClients();
+            fileValues.fetchFiles();
+            folderValues.fetchFolders({});
+            commentValues.fetchComments();
             setHasFetched(true);
         }
-    }, [id, hasFetched, refreshProject]);
+    }, [id, hasFetched, projectValues.currentProject?.id]);
 
-    // Fetch files, clients, and folders when project changes
-    useEffect(() => {
-        if (currentProject?.id) {
-            refreshFiles();
-            refreshClients();
-            refreshFolders();
+
+    // Manipulate data to only provide project specific data
+    // This may be expensive, so I'll use useMemo to prevent unnecessary re-renders
+    const projectClients = useMemo(() => {
+        return clientValues.clients.filter(client => client.projectId === id);
+    }, [id, clientValues.clients]);
+
+    const projectFiles = useMemo(() => {
+        return fileValues.files.filter(file => file.projectId === id);
+    }, [id, fileValues.files]);
+
+    const projectFolders = useMemo(() => {
+        return folderValues.folders.filter(folder => folder.projectId === id);
+    }, [id, folderValues.folders]);
+
+    const projectComments = useMemo(() => {
+        return commentValues.comments.filter(comment => comment.fileId === fileValues.currentFile?.id);
+    }, [id, fileValues.currentFile?.id]);
+
+    // Functions to keep state up to date
+    const refreshProject = useCallback(async () => {
+        if (id) {
+            await projectValues.fetchSingleProject(id);
         }
-    }, [currentProject?.id, id]);
+    }, []);
 
-    const value = useMemo(
-        () => ({
-            project: currentProject as ProjectWithUserInfo | null,
-            loading,
-            refreshProject,
-            files,
-            filesLoading,
-            refreshFiles,
-            addFileToState,
-            deleteFileFromState,
-            clients,
-            clientsLoading,
-            refreshClients,
-            addClientToState,
-            updateClientInState,
-            deleteClientFromState,
-            folders,
-            foldersLoading,
-            refreshFolders,
-            addFolderToState,
-            updateFolderInState,
-            deleteFolderFromState,
-        }),
-        [
-            currentProject,
-            loading,
-            refreshProject,
-            files,
-            filesLoading,
-            refreshFiles,
-            addFileToState,
-            deleteFileFromState,
-            clients,
-            clientsLoading,
-            refreshClients,
-            addClientToState,
-            updateClientInState,
-            deleteClientFromState,
-            folders,
-            foldersLoading,
-            refreshFolders,
-            addFolderToState,
-            updateFolderInState,
-            deleteFolderFromState,
-        ],
-    );
+    const refreshFiles = useCallback(async () => {
+        if (id) {
+            await fileValues.fetchFiles();
+        }
+    }, []);
+
+    const values = useMemo(() => ({
+        // project data
+        project: projectValues.currentProject,
+        clients: projectClients,
+        files: projectFiles,
+        folders: projectFolders,
+        comments: projectComments,
+
+        // functions
+        refreshProject,
+        refreshFiles,
+
+        // loading states
+        projectLoading: projectValues.loading,
+        filesLoading: fileValues.loading,
+
+    }), [
+        projectValues.currentProject,
+        projectClients,
+        projectFiles,
+        projectFolders,
+        projectComments,
+        refreshProject,
+        refreshFiles,
+        projectValues.loading,
+        fileValues.loading,
+    ]);
 
     return (
-        <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>
+        <ProjectContext.Provider value={values}>
+            {children}
+        </ProjectContext.Provider>
     );
 };

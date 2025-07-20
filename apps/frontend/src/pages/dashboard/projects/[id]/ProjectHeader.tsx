@@ -14,9 +14,9 @@ const ProjectHeader = ({
 					{project?.dueDate ? `Due in ${formatDistanceToNow(project?.dueDate)}` : "No due date"}
 				</p>
 				<span>•</span>
-				<Badge>{project.status}</Badge>
+				<Badge>{project?.status}</Badge>
 				<span>•</span>
-				<Badge>{project.paymentStatus}</Badge>
+				<Badge>{project?.paymentStatus}</Badge>
 			</div>
 			{!isOwner && <p className="text-muted-foreground">Created by {project?.user?.firstName}</p>}
 		</div>

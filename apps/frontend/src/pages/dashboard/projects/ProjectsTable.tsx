@@ -45,7 +45,7 @@ interface ProjectTableData {
 }
 
 const ProjectsTable = () => {
-	const { state, getAllProjects, deleteProject, loading } = useProjects();
+	const { projects, fetchProjects, deleteProject, loading } = useProjects();
 	const navigate = useNavigate();
 
 	// State for table functionality
@@ -58,11 +58,11 @@ const ProjectsTable = () => {
 	const [itemsPerPage, setItemsPerPage] = useState(10);
 	const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
 
-	const projects = state.allProjects;
-	const pagination = state.pagination;
+	// const projects = state.allProjects;
+	// const pagination = state.pagination;
 
 	useEffect(() => {
-		getAllProjects({
+		fetchProjects({
 			page: currentPage,
 			limit: itemsPerPage,
 			search: searchTerm,
@@ -71,7 +71,7 @@ const ProjectsTable = () => {
 			sortField,
 			sortDirection,
 		});
-	}, [currentPage, itemsPerPage, searchTerm, statusFilter, paymentStatusFilter, sortField, sortDirection, getAllProjects]);
+	}, [currentPage, itemsPerPage, searchTerm, statusFilter, paymentStatusFilter, sortField, sortDirection]);
 
 	// Transform projects data for table
 	const tableData: ProjectTableData[] = useMemo(() => {
@@ -398,7 +398,7 @@ const ProjectsTable = () => {
 			</div>
 
 			{/* Pagination */}
-			{pagination && pagination.totalPages > 1 && (
+			{/* {pagination && pagination.totalPages > 1 && (
 				<div className="flex items-center justify-between mt-6">
 					<div className="text-sm text-muted-foreground">
 						Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.totalCount)} of {pagination.totalCount} projects
@@ -438,7 +438,7 @@ const ProjectsTable = () => {
 						</div>
 					</div>
 				</div>
-			)}
+			)} */}
 
 			{/* Empty State */}
 			{paginatedData.length === 0 && (

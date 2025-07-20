@@ -1,6 +1,7 @@
 import api from "../lib/axios";
 import type { SonexFile } from "../types/files";
 import { useProjectContext } from "../context/ProjectProvider";
+import { useState } from "react";
 
 export type ISonexFolder = {
     id: string;
@@ -21,32 +22,56 @@ type CreateFolderParams = {
 };
 
 export function useFolders() {
-    const { addFolderToState, updateFolderInState, deleteFolderFromState, refreshFolders } = useProjectContext();
+    const [folders, setFolders] = useState<ISonexFolder[]>([]);
+    const [loading, setLoading] = useState(false);
 
-    async function createFolder(folderData: CreateFolderParams): Promise<ISonexFolder> {
+    async function fetchFolders({ projectId, limit, page, sortBy }: { projectId?: string; limit?: string; page?: string; sortBy?: { name?: "asc" | "desc"; createdAt?: "asc" | "desc"; }; }) {
+        const params: Record<string, string> = {};
+
+        if (projectId) {
+            params.projectId = projectId;
+        }
+
+        if (limit) {
+            params.limit = limit;
+        }
+
+        if (page) {
+            params.page = page;
+        }
+
+        if (sortBy) {
+            params.sortBy = JSON.stringify(sortBy);
+        }
+
+        setLoading(true);
         try {
-            const { data: { data: folder } }: { data: { data: ISonexFolder; }; } = await api.post("/folders", folderData);
-
-            // Add to centralized state
-            addFolderToState(folder);
-
-            return folder;
+            const { data: { data } } = await api.get("/folders", { params });
+            setFolders(data.folders);
         } catch (error) {
             console.error(error);
-            throw error;
+        } finally {
+            setLoading(false);
         }
     }
 
-    async function updateFolder(folderData: Partial<CreateFolderParams>): Promise<ISonexFolder> {
+    async function createFolder(folderData: CreateFolderParams): Promise<void> {
+        setLoading(true);
         try {
-            const { data: { data: folder } }: { data: { data: ISonexFolder; }; } = await api.put(`/folders/${folderData.folderId}`);
+            await api.post("/folders", folderData);
+            await fetchFolders({ projectId: folderData.projectId });
+        } catch (error) {
+            console.error(error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    }
 
-            // Update centralized state
-            if (folderData.folderId) {
-                updateFolderInState(folderData.folderId, folder);
-            }
-
-            return folder;
+    async function updateFolder(folderData: Partial<CreateFolderParams>): Promise<void> {
+        try {
+            await api.put(`/folders/${folderData.folderId}`);
+            await fetchFolders({ projectId: folderData.projectId });
         } catch (error) {
             console.error(error);
             throw error;
@@ -58,8 +83,7 @@ export function useFolders() {
             const { data: { data } } = await api.put("/folders/move", { itemId, targetFolderId: targetFolderId ?? null, itemType });
 
             if (data.success) {
-                // Refresh folders to get updated structure
-                await refreshFolders();
+                // TODO: Find a way to update the folder structure in the state
                 return true;
             }
 
@@ -73,10 +97,7 @@ export function useFolders() {
     async function deleteFolder(id: string): Promise<boolean> {
         try {
             await api.delete(`/folders/${id}`);
-
-            // Remove from centralized state
-            deleteFolderFromState(id);
-
+            setFolders(folders.filter(folder => folder.id !== id));
             return true;
         } catch (error) {
             console.error(error);
@@ -85,6 +106,9 @@ export function useFolders() {
     }
 
     return {
+        folders,
+        loading,
+        fetchFolders,
         createFolder,
         updateFolder,
         deleteFolder,

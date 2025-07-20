@@ -26,10 +26,10 @@ folderRouter.post("/", async (req, res) => {
 folderRouter.get("/", async (req, res) => {
     let { projectId, limit, page, sortBy }: { projectId?: string, limit?: string | undefined, page?: string | undefined, sortBy?: { name?: "asc" | "desc"; createdAt?: "asc" | "desc"; }; } = req.query;
 
-    if (!projectId || typeof projectId !== "string") {
-        errorResponse(res, 400, "Project Id required");
-        return;
-    }
+    // if (!projectId || typeof projectId !== "string") {
+    //     errorResponse(res, 400, "Project Id required");
+    //     return;
+    // }
 
     const limitNum = Number.parseInt(limit as string) || 10;
     const pageNum = Number.parseInt(page as string) || 1;
