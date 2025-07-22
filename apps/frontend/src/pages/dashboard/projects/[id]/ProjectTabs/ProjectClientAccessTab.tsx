@@ -38,9 +38,8 @@ const ProjectClientAccessTab = () => {
     };
 
     const existingProjectClients = useMemo(() => {
-        return clients
-            .filter(client => client.projectId === project?.id)
-            .map(client => client.id);
+        return clients?.filter(client => client.projectId === project?.id)
+            .map(client => client.id) || [];
     }, [clients, project?.id]);
 
     const addExistingClientToProject = async () => {
@@ -83,7 +82,7 @@ const ProjectClientAccessTab = () => {
                 </CardHeader>
                 <CardContent>
                     <ClientAutoSuggestForm
-                        existingProjectClients={existingProjectClients} onAddExistingClient={addExistingClientToProject} onAddNewClient={showClientDialog}
+                        existingProjectClients={clients} onAddExistingClient={addExistingClientToProject} onAddNewClient={showClientDialog}
                     />
                 </CardContent>
             </Card>

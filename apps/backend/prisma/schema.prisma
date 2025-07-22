@@ -73,7 +73,7 @@ model Client {
   updatedAt DateTime @updatedAt
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project  Project   @relation(fields: [projectId], references: [id])
+  projects ClientProject[]
   comments Comment[]
 
   // Make sure same client is not added again to user
@@ -96,7 +96,8 @@ model Project {
   // Associations
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   files   File[]
-  clients Client[]
+  clients ClientProject[]
+  comments Comment[]
 
   // Prevent user from creating project with the same title
   @@unique([title, userId])
@@ -137,6 +138,9 @@ model Folder {
   files        File[]
   createdAt    DateTime @default(now())
   lastModified DateTime @updatedAt
+
+  // folder of same name can not exist on the same level
+  @@unique([name, parentId])
 }
 
 model FileVersion {
@@ -153,6 +157,7 @@ model FileVersion {
 model Comment {
   id        String  @id @default(cuid())
   fileId    String
+  projectId String?
   clientId  String?
   userId    String?
   parentId  String? // null for root comments
@@ -170,6 +175,7 @@ model Comment {
   user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent   Comment?  @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
   children Comment[] @relation("Thread")
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Subscription {
@@ -202,6 +208,7 @@ model Transaction {
   userId String
   type   String
   amount Float
+  projectId String?
   // paymentMethod TransactionPaymentMethod
 
   // Was the transaction a subscription?
@@ -232,6 +239,27 @@ model Activity {
   createdAt  DateTime @default(now())
 
   @@index([userId])
+}
+
+// Create a new model that links the many clients to the many projects they can be associated with
+// This will also store the permissions of that client's project
+model ClientProject {
+  id Int @id @default(autoincrement())
+  clientId String
+  projectId String
+  canView Boolean @default(true)
+  canComment Boolean @default(true)
+  canUpload Boolean @default(true)
+  canDownload Boolean @default(true)
+  isBlocked Boolean @default(false)
+
+  // DB Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Associations
+  client Client @relation(fields: [clientId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
 }
 
 model ClientAccess {

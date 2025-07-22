@@ -5,11 +5,11 @@ import { Eye, MessageCircle } from "lucide-react";
 import { useProjectContext } from "../../../../context/ProjectProvider";
 
 const ProjectClients = () => {
-	const { clients, clientsLoading } = useProjectContext();
+	const { clients: projectClients, isLoading } = useProjectContext();
 	const { id } = useParams();
-	const projectClients = clients.filter((client) => client.projectId === id);
 
-	if (clientsLoading) return <p>Loading clients...</p>;
+
+	if (isLoading) return <p>Loading clients...</p>;
 
 	return (
 		<Card>
@@ -18,7 +18,7 @@ const ProjectClients = () => {
 				<CardDescription>Clients with access to this project</CardDescription>
 			</CardHeader>
 			<CardContent>
-				{projectClients.map((client) => (
+				{projectClients?.map((client) => (
 					<ClientCard key={client.id} client={client} />
 				))}
 

@@ -24,21 +24,11 @@ import { useProjectContext } from "../../../../context/ProjectProvider";
 
 
 const CurrentProjectPage = () => {
-	const { currentUser } = useUser();
-	const { client, getClient } = useClientAuth();
-	const { project, loading, refreshProject } = useProjectContext();
+	const { project, loading, isOwner, authorizedClient } = useProjectContext();
+
+	console.log("AUTHORIZED CLIENT", authorizedClient);
 
 	const { id } = useParams();
-
-	console.log(project);
-
-	useEffect(() => {
-		if (!currentUser) {
-			getClient();
-		}
-	}, [id, currentUser?.id, client?.id]);
-
-	const isOwner = (!!currentUser && currentUser.id === project?.userId);
 
 	if (loading) return <p>Loading...</p>;
 
@@ -53,11 +43,11 @@ const CurrentProjectPage = () => {
 					{isOwner && (
 						<ProjectViewTabs />
 					)}
-					{client && (
+					{authorizedClient && (
 						<>
 							<FileUploadProvider
 								projectId={id as string}
-								uploaderId={client?.id as string}
+								uploaderId={authorizedClient?.id as string}
 								uploaderType="CLIENT"
 							>
 								<section className="border border-red-600 rounded-md size-full p-8 space-y-8">
@@ -66,7 +56,7 @@ const CurrentProjectPage = () => {
 								</section>
 							</FileUploadProvider>
 
-							<ProjectFiles isProjectOwner={false} />
+							<ProjectFileSystem />
 						</>
 					)}
 				</div>

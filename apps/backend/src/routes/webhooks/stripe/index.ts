@@ -389,7 +389,7 @@ stripeWhRouter.post(
 						user: true,
 						clients: {
 							where: {
-								id: clientId as string,
+								clientId: clientId as string,
 							}
 						}
 					}

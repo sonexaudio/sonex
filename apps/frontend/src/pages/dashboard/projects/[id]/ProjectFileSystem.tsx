@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFileSystem } from "../../../../hooks/useFileSystem";
 import { useFolders, type ISonexFolder } from "../../../../hooks/useFolders";
 import type { SonexFile } from "../../../../types/files";
@@ -13,6 +13,7 @@ import { Separator } from "../../../../components/ui/separator";
 import { formatDistanceToNow } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../../../components/ui/dropdown-menu";
 import useFiles from "../../../../hooks/useFiles";
+import { useProjectContext } from "../../../../context/ProjectProvider";
 
 
 const FileNode = ({ file, isInEditMode }: { file: SonexFile; isInEditMode: boolean; }) => {
@@ -90,6 +91,7 @@ const FileNode = ({ file, isInEditMode }: { file: SonexFile; isInEditMode: boole
 
 const FolderNode = ({ folder, isInEditMode }: { folder: ISonexFolder; isInEditMode: boolean; }) => {
     const [isOpen, setIsOpen] = useState(false);
+
     const { setNodeRef, isOver } = useDroppable({
         id: folder.id,
         data: {
@@ -108,7 +110,7 @@ const FolderNode = ({ folder, isInEditMode }: { folder: ISonexFolder; isInEditMo
         }
     };
 
-    const hasContent = folder.subfolders?.length || folder.files?.length;
+    const hasContent = folder.children?.length || folder.files?.length;
 
     const content = (
         <div
@@ -146,6 +148,13 @@ const FolderNode = ({ folder, isInEditMode }: { folder: ISonexFolder; isInEditMo
         </div>
     );
 
+    // if isInEditMode, automatically open the folder
+    useEffect(() => {
+        if (isInEditMode) {
+            setIsOpen(true);
+        }
+    }, [isInEditMode]);
+
     return (
         <div className="mb-2">
             {isInEditMode ? (
@@ -154,11 +163,11 @@ const FolderNode = ({ folder, isInEditMode }: { folder: ISonexFolder; isInEditMo
                 content
             )}
             {isOpen && (
-                <div className="pl-6">
+                <div className="pl-6 mt-1">
                     {folder.files?.map((file) => (
                         <FileNode key={file.id} file={file} isInEditMode={isInEditMode} />
                     ))}
-                    {folder.subfolders?.map((subfolder) => (
+                    {folder.children?.map((subfolder) => (
                         <FolderNode key={subfolder.id} folder={subfolder} isInEditMode={isInEditMode} />
                     ))}
                 </div>
@@ -168,7 +177,9 @@ const FolderNode = ({ folder, isInEditMode }: { folder: ISonexFolder; isInEditMo
 };
 
 const ProjectFileSystem = () => {
-    const { tree: fileTree, rootFiles, loading } = useFileSystem();
+    // const { tree: fileTree, rootFiles, loading } = useFileSystem();
+    const { fileTree, isLoading, refetchProject } = useProjectContext();
+
     const { setNodeRef: rootSetNodeRef, isOver: rootIsOver } = useDroppable({
         id: "ROOT",
         data: { type: "root" },
@@ -189,18 +200,20 @@ const ProjectFileSystem = () => {
         if (over?.data?.current?.type === "folder") {
             const targetFolderId = over.id as string;
             await moveItemIntoFolder(itemId, targetFolderId, itemType);
+            await refetchProject();
             return;
         }
 
         const isRootDrop = !over || over.data?.current?.type === "root";
         if (isRootDrop) {
             await moveItemIntoFolder(itemId, null, itemType);
+            await refetchProject();
             return;
         }
 
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <Card>
                 <CardContent className="p-6">
@@ -237,16 +250,14 @@ const ProjectFileSystem = () => {
                         >
                             {/* Top level folders */}
                             <div>
-                                {fileTree.map((folder) => (
+                                {fileTree._rootFolders.map((folder) => (
                                     <FolderNode key={folder.id} folder={folder} isInEditMode={isInEditMode} />
                                 ))}
                             </div>
                             {/* Root Level Files */}
-                            {rootFiles
-                                .filter((f) => !f.folderId)
-                                .map((file) => (
-                                    <FileNode key={file.id} file={file} isInEditMode={isInEditMode} />
-                                ))}
+                            {fileTree._rootFiles?.map((file) => (
+                                <FileNode key={file.id} file={file} isInEditMode={isInEditMode} />
+                            ))}
                         </div>
                     </DndContext>
                 ) : (
@@ -256,16 +267,14 @@ const ProjectFileSystem = () => {
                     >
                         {/* Top level folders */}
                         <div>
-                            {fileTree.map((folder) => (
+                            {fileTree._rootFolders?.map((folder) => (
                                 <FolderNode key={folder.id} folder={folder} isInEditMode={isInEditMode} />
                             ))}
                         </div>
                         {/* Root Level Files */}
-                        {rootFiles
-                            .filter((f) => !f.folderId)
-                            .map((file) => (
-                                <FileNode key={file.id} file={file} isInEditMode={isInEditMode} />
-                            ))}
+                        {fileTree._rootFiles?.map((file) => (
+                            <FileNode key={file.id} file={file} isInEditMode={isInEditMode} />
+                        ))}
                     </div>
                 )}
             </CardContent>

@@ -18,11 +18,11 @@ const UpdateProjectForm = ({ project }: { project: ProjectWithUserInfo; }) => {
 	} = useForm({
 		resolver: zodResolver(ProjectSchema),
 		defaultValues: {
-			title: project.title,
-			description: project.description || "",
-			amount: project.amount || 0,
-			paymentStatus: project.paymentStatus as "Free" | "Unpaid" | "Paid",
-			status: project.status as "Active" | "Complete" | "Archived" | "Private",
+			title: project?.title,
+			description: project?.description || "",
+			amount: project?.amount || 0,
+			paymentStatus: project?.paymentStatus as "Free" | "Unpaid" | "Paid",
+			status: project?.status as "Active" | "Complete" | "Archived" | "Private",
 		},
 	});
 	return (
@@ -69,7 +69,7 @@ const UpdateProjectForm = ({ project }: { project: ProjectWithUserInfo; }) => {
 					</Select>
 					<Select
 						{...register("paymentStatus")}
-						defaultValue={project.paymentStatus}
+						defaultValue={project?.paymentStatus}
 					>
 						<SelectTrigger className="w-full">
 							<SelectValue placeholder="Payment Status" />

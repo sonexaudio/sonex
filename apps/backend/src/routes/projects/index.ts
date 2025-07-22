@@ -163,34 +163,36 @@ projectRouter.post(
 	},
 );
 
-projectRouter.get("/:id", checkProjectAccess, async (req, res) => {
+projectRouter.get("/:id", async (req, res) => {
 	const { id } = req.params;
-	const access = req.session.projectAccess;
-
-	let project: any;
-
-	if (access?.type === "client") {
-		project = await prisma.project.findUnique({
-			where: { id },
-			include: {
-				user: {
-					select: {
-						id: true,
-						firstName: true,
-						email: true,
-					},
-				},
+	const project = await prisma.project.findUnique({
+		where: { id },
+		include: {
+			clients: {
+				include: {
+					client: true
+				}
 			},
-		});
-	} else {
-		project = await prisma.project.findUnique({
-			where: { id },
-		});
+			files: true,
+			user: {
+				select: {
+					email: true,
+					firstName: true,
+					lastName: true,
+				}
+			}
+		}
+	});
+
+	if (!project) {
+		errorResponse(res, 404, "Project not found");
+		return;
 	}
 
 	res.json({ data: { project } });
 });
 
+// Single poject route handling
 projectRouter.post("/:id/check-access", async (req, res) => {
 	const userId = req.user?.id as string;
 	const projectId = req.params.id as string;
@@ -267,6 +269,70 @@ projectRouter.post("/:id/check-access", async (req, res) => {
 	} catch (error) {
 		console.error(error);
 		errorResponse(res, 500, "Something went wrong");
+	}
+});
+
+projectRouter.get("/:id/folders", async (req, res) => {
+	const { id } = req.params;
+
+	try {
+		const folders = await prisma.folder.findMany({
+			where: {
+				projectId: id
+			}
+		});
+
+		successResponse(res, { folders });
+	} catch (error) {
+		errorResponse(res, 500, "Failed to fetch folders");
+	}
+
+});
+
+projectRouter.get("/:id/comments", async (req, res) => {
+	const { id } = req.params;
+	try {
+		const comments = await prisma.comment.findMany({
+			where: {
+				projectId: id
+			}
+		});
+
+		successResponse(res, { comments });
+	} catch (error) {
+		errorResponse(res, 500, "Failed to fetch comments");
+	}
+});
+
+projectRouter.get("/:id/transactions", async (req, res) => {
+	const { id } = req.params;
+
+	try {
+		const transactions = await prisma.transaction.findMany({
+			where: {
+				projectId: id
+			}
+		});
+
+		successResponse(res, { transactions });
+	} catch (error) {
+		errorResponse(res, 500, "Failed to fetch transactions");
+	}
+});
+
+projectRouter.get("/:id/activities", async (req, res) => {
+	const { id } = req.params;
+	try {
+		const activities = await prisma.activity.findMany({
+			where: {
+				targetId: id
+			}
+		});
+
+		successResponse(res, { activities });
+	} catch (error) {
+		console.error(error);
+		errorResponse(res, 500, (error as Error).message);
 	}
 });
 

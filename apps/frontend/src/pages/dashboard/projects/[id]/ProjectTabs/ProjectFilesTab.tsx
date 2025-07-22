@@ -17,7 +17,10 @@ const ProjectFilesTab = () => {
         <TabsContent value="files" className="mt-6">
             <div className="grid grid-col gap-6">
                 <div className="grid gap-6 md:grid-cols-2">
+                    {/* Quick settings: New folder, Quick modify file/folder */}
                     <NewFolderForm />
+
+                    {/* Upload files */}
                     <FileUploadProvider
                         projectId={id as string}
                         uploaderId={currentUser?.id as string}

@@ -15,19 +15,17 @@ import type { ProjectWithUserInfo } from "../../../../../types/projects";
 import ProjectActions from "../ProjectActions";
 import ProjectDangerZone from "../ProjectDangerZone";
 import UpdateProjectForm from "../UpdateProjectForm";
+import type { SonexFile } from "../../../../../types/files";
 
 const ProjectOverviewTab = () => {
-    const { project, files, clients, folders } = useProjectContext();
-    const { currentUser } = useUser();
-
-    const isOwner = !!currentUser && currentUser.id === project?.userId;
+    const { project, files, clients, folders, isLoading, isOwner } = useProjectContext();
 
     // Calculate storage usage
     const storageStats = useMemo(() => {
-        const totalSize = files.reduce((acc, file) => acc + (file.size || 0), 0);
-        const fileCount = files.length;
-        const clientCount = clients.length;
-        const folderCount = folders.length;
+        const totalSize = files?.reduce((acc: number, file: SonexFile) => acc + (file.size || 0), 0) || 0;
+        const fileCount = files?.length || 0;
+        const clientCount = clients?.length || 0;
+        const folderCount = folders?.length || 0;
 
         // Format file size
         const formatBytes = (bytes: number): string => {
@@ -52,6 +50,8 @@ const ProjectOverviewTab = () => {
             maxStorage: formatBytes(maxStorage),
         };
     }, [files, clients, folders]);
+
+    if (isLoading) return <p>Loading...</p>;
 
     return (
         <TabsContent value="overview" className="space-y-6">

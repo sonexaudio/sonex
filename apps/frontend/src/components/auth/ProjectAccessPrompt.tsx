@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import api from "../../lib/axios";
 
-const ProjectAccessPrompt = ({ projectId }: { projectId: string }) => {
+const ProjectAccessPrompt = ({ projectId }: { projectId: string; }) => {
 	const [email, setEmail] = useState("");
 	const navigate = useNavigate();
 
@@ -23,6 +23,7 @@ const ProjectAccessPrompt = ({ projectId }: { projectId: string }) => {
 
 			// TODO. Temporary. Remove when email responses arrive
 			localStorage.setItem("projectToken", data.token);
+			localStorage.setItem("clientEmail", email);
 			alert("Access request sent to the project creator!");
 
 			window.location.href = data.url;
