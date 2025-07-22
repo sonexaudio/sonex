@@ -10,6 +10,7 @@ import { Badge } from "../../../../components/ui/badge";
 import FileCommentSection from "../../../../components/FileCommentSection";
 import AudioPlayer from "../../../../components/AudioPlayer";
 import { useSingleFileContext } from "../../../../context/SingleFileContextProvider";
+import { useProjectContext } from "../../../../context/ProjectProvider";
 
 interface FileViewProps {
     onBack: () => void;
@@ -17,7 +18,7 @@ interface FileViewProps {
 
 const FileView = ({ onBack }: FileViewProps) => {
     const { downloadFile } = useFiles();
-    const { state: { currentProject } } = useProjects();
+    const { project: currentProject } = useProjectContext();
     const { fileId } = useParams();
     const { currentFile, loading, duration, formatTime } = useSingleFileContext();
 

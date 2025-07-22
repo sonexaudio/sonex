@@ -18,7 +18,7 @@ const publicRoutes = [
 const AuthLayout = ({ children }: PropsWithChildren) => {
 	const { user, loading, refetchUser } = useAuth();
 	const location = useLocation();
-	const { state: { allProjects }, getAllProjects } = useProjects();
+	const { fetchProjects, projects } = useProjects();
 	const [clients, setClients] = useState<Client[]>([]);
 	const [clientsLoading, setClientsLoading] = useState(false);
 	const [showOnboarding, setShowOnboarding] = useState(false);
@@ -41,13 +41,15 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 	}, [user]);
 
 	useEffect(() => {
-		if (user && allProjects.length === 0) getAllProjects();
-	}, [user, allProjects.length]);
+		if (user && projects.length === 0) fetchProjects();
+	}, [user, projects.length]);
 
 	useEffect(() => {
 		const prompt = localStorage.getItem("promptForOnboarding");
-		setShowOnboarding(!user?.isOnboarded || !!prompt);
-	}, [user]);
+		const shouldShow = !location.pathname.includes("/settings") &&
+			(!user?.isOnboarded || !!prompt);
+		setShowOnboarding(shouldShow);
+	}, [user, location.pathname]);
 
 	// remove promptForOnboarding from local storage if user is onboarded
 	useEffect(() => {
@@ -59,7 +61,7 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 	const handleOnboardingComplete = async () => {
 		if (!user?.isOnboarded) {
 			// Check if user is verified, has a connected account, has at least one project, and has at least one client
-			if (!user?.isVerified || !user?.isConnectedToStripe || allProjects.length === 0 || clients.length === 0) {
+			if (!user?.isVerified || !user?.isConnectedToStripe || projects.length === 0 || clients.length === 0) {
 				localStorage.setItem("promptForOnboarding", "true");
 			}
 			else {
@@ -95,7 +97,7 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 			<OnboardingDialog
 				open={showOnboarding}
 				user={user}
-				projects={allProjects}
+				projects={projects}
 				clients={clients}
 				onComplete={handleOnboardingComplete}
 			/>

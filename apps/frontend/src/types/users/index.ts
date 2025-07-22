@@ -5,6 +5,8 @@ export interface User {
 	email: string;
 	googleId: string;
 	avatarUrl?: string | null;
+	storageUsed: number;
+	storageLimit: number;
 
 	stripeCustomerId?: string | null;
 	connectedAccountId?: string | null;

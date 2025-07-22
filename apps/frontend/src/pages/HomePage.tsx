@@ -14,7 +14,7 @@ const HomePage = () => {
 		try {
 			const {
 				data: { data },
-			} = await api.post("/payments/create-checkout-session", {
+			} = await api.post("/payments/subscribe", {
 				priceId,
 			});
 
@@ -39,7 +39,7 @@ const HomePage = () => {
 				</label>
 
 				<div className="grid grid-cols-3 gap-4 items-center">
-					{PRICING_ORDER.map((planName) => {
+					{PRICING_ORDER.filter((planName) => planName !== "SonExperiment").map((planName) => {
 						const priceId = showYearlyPricing
 							? prices.yearly[planName]
 							: prices.monthly[planName];

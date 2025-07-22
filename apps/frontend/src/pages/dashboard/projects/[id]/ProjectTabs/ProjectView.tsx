@@ -1,15 +1,20 @@
-import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "../../../../../components/ui/tabs";
 import { FileText, Users } from "lucide-react";
 import ProjectOverviewTab from "./ProjectOverviewTab";
 import ProjectFilesTab from "./ProjectFilesTab";
 import ProjectClientAccessTab from "./ProjectClientAccessTab";
+import { useSearchParams } from "react-router";
 
 const ProjectViewTabs = () => {
-    const [activeTab, setActiveTab] = useState("overview");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get("tab") || "overview";
+
+    const handleTabChange = (tab: string) => {
+        setSearchParams({ ...Object.fromEntries(searchParams.entries()), tab });
+    };
 
     return (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="files">

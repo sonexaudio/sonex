@@ -1,3 +1,4 @@
+import type { Client } from "../../hooks/useClients";
 import type { User } from "../users";
 
 export const GET_ALL_PROJECTS = "getAllProjects";
@@ -23,6 +24,10 @@ export interface Project {
 
 export interface ProjectWithUserInfo extends Project {
 	user: Pick<User, "id" | "firstName" | "email">;
+}
+
+export interface DetailedProject extends Project {
+	clients: Client[];
 }
 
 export interface PaginationInfo {

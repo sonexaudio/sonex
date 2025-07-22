@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import api from "../lib/axios";
 import type { AxiosError } from "axios";
 
@@ -21,7 +21,7 @@ export function useClients() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchClients = useCallback(async () => {
+	const fetchClients = async () => {
 		setLoading(true);
 		try {
 			const { data: { data } } = await api.get("/clients");
@@ -35,9 +35,9 @@ export function useClients() {
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	};
 
-	const addClient = useCallback(async (clientData: Partial<Client>) => {
+	const addClient = async (clientData: Partial<Client>) => {
 		setLoading(true);
 		try {
 			const { data: { data } } = await api.post("/clients", clientData);
@@ -51,9 +51,9 @@ export function useClients() {
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	};
 
-	const updateClient = useCallback(async (id: string, clientData: Partial<Client>) => {
+	const updateClient = async (id: string, clientData: Partial<Client>) => {
 		if (Object.entries(clientData).length === 0) return;
 		setLoading(true);
 		try {
@@ -68,9 +68,9 @@ export function useClients() {
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	};
 
-	const removeClient = useCallback(async (id: string) => {
+	const removeClient = async (id: string) => {
 		setLoading(true);
 		try {
 			await api.delete(`/clients/${id}`);
@@ -82,9 +82,9 @@ export function useClients() {
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	};
 
-	const removeAllClients = useCallback(async (clientsToRemove: Client[]) => {
+	const removeAllClients = async (clientsToRemove: Client[]) => {
 		setLoading(true);
 		try {
 			const clientIds = clientsToRemove.map(client => client.id);
@@ -97,7 +97,7 @@ export function useClients() {
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	};
 
 	return {
 		clients,

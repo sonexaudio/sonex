@@ -16,6 +16,8 @@ import ClientsPage from "../pages/dashboard/clients/ClientsPage";
 import SingleFilePage from "../pages/dashboard/files/[name]/SingleFilePage";
 import { ProjectProvider } from "../context/ProjectProvider";
 import PaymentsPage from "../pages/dashboard/payments/PaymentsPage";
+import SubscriptionProvider from "../context/SubscriptionProvider";
+import SettingsPage from "../pages/dashboard/settings/SettingsPage";
 
 const RoutesLayout = () => {
 	return (
@@ -26,33 +28,64 @@ const RoutesLayout = () => {
 			<Route path="forgot-password" element={<ForgotPasswordPage />} />
 			<Route path="reset-password" element={<ResetPasswordPage />} />
 			<Route element={<DashboardLayout />}>
-				<Route path="overview" element={<ProjectProvider><OverviewPage /></ProjectProvider>} />
+				<Route path="overview" element={
+					<SubscriptionProvider>
+						<ProjectProvider>
+							<OverviewPage />
+						</ProjectProvider>
+					</SubscriptionProvider>
+				} />
 				<Route path="projects">
-					<Route index element={<ProjectsPage />} />
+					<Route index element={
+						<SubscriptionProvider>
+							<ProjectsPage />
+						</SubscriptionProvider>
+					} />
 					<Route path=":id">
 						<Route index element={
 							<ProjectProvider>
 								<CurrentProjectPage />
 							</ProjectProvider>
 						} />
-						<Route path="files/:fileId" element={<SingleFilePage />} />
+						<Route path="files/:fileId" element={
+							<SingleFilePage />
+						} />
 					</Route>
 				</Route>
-				<Route path="clients" element={<ClientsPage />} />
-				<Route path="files" element={
-					<ProjectProvider>
-						<FilesPage />
-					</ProjectProvider>
+				<Route path="clients" element={
+					<SubscriptionProvider>
+						<ClientsPage />
+					</SubscriptionProvider>
 				} />
-				<Route path="account" element={<AccountPage />} />
+				<Route path="files" element={
+					<SubscriptionProvider>
+						<ProjectProvider>
+							<FilesPage />
+						</ProjectProvider>
+					</SubscriptionProvider>
+				} />
+				<Route path="account" element={
+					<SubscriptionProvider>
+						<AccountPage />
+					</SubscriptionProvider>
+				} />
 				<Route path="payments">
-					<Route index element={<PaymentsPage />} />
+					<Route index element={
+						<SubscriptionProvider>
+							<PaymentsPage />
+						</SubscriptionProvider>
+					} />
 					<Route path="success" element={<SuccessPage />} />
 				</Route>
+				<Route path="settings" element={
+					<SubscriptionProvider>
+						<SettingsPage />
+					</SubscriptionProvider>
+				} />
 			</Route>
 
 			<Route path="*" element={<Error404 />} />
-		</Routes>
+		</Routes >
 	);
 };
 export default RoutesLayout;

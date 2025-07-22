@@ -110,6 +110,8 @@ router.post(
 			select: {
 				id: true,
 				userId: true,
+				paymentStatus: true,
+				status: true
 			},
 		});
 
@@ -144,6 +146,7 @@ router.post(
 							projectId,
 							uploaderId,
 							uploaderType,
+							isDownloadable: project?.paymentStatus !== "Unpaid" && project.status !== "Archived"
 						},
 					});
 				}),

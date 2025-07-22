@@ -2,8 +2,42 @@ import { Router } from "express";
 import { requireAuth } from "../../middleware/auth";
 import { prisma } from "../../lib/prisma";
 import { parseUserName, type UserDisplayName } from "../../utils";
+import { errorResponse, successResponse } from "../../utils/responses";
 
 const userRouter = Router();
+
+userRouter.get("/:id/subscription-status", async (req, res) => {
+	const { id } = req.params;
+	try {
+		const subscription = await prisma.subscription.findFirst({
+			where: {
+				userId: id,
+				startDate: {
+					// get the subscription that has started in the past 30 days
+					gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+					lt: new Date(),
+				},
+				isActive: true,
+			}
+		});
+
+		const user = await prisma.user.findUnique({
+			where: {
+				id,
+			}
+		});
+
+
+		const hasActiveSubscription = !!subscription;
+		const isActive = hasActiveSubscription || user?.subscriptionStatus === "free" || user?.isActive || !user?.hasExceededStorageLimit || user?.subscriptionStatus !== "past_due" || !user?.isInGracePeriod;
+
+		successResponse(res, { isActive });
+	} catch (error) {
+		console.error(error);
+		errorResponse(res, 500, "Failed to fetch subscription status");
+	}
+
+});
 
 userRouter.put("/:id", requireAuth, async (req, res) => {
 	const { id } = req.params;

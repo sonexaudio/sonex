@@ -61,8 +61,19 @@ async function main() {
 		},
 	});
 
+
+	console.log("Updating user info being that file is uploaded");
+	await prisma.user.update({
+		where: {
+			id: user.id,
+		},
+		data: {
+			storageUsed: user.storageUsed + (file.size / 1024 / 1024),
+		}
+	});
+
 	console.log("Creating comments for created file...");
-	const comments = await prisma.comment.createManyAndReturn({
+	await prisma.comment.createManyAndReturn({
 		data: [
 			{
 				clientId: clients[0].id,

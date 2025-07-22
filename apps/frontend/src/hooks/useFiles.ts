@@ -10,53 +10,41 @@ import {
 	type SonexFile,
 } from "../types/files";
 import api from "../lib/axios";
-import { useParams } from "react-router";
-import { useProjectContext } from "../context/ProjectProvider";
+// import { data, useParams } from "react-router";
+// import { useProjectContext } from "../context/ProjectProvider";
 
-const initialFiles: FileState = {
-	allFiles: [],
-	currentFile: null,
-};
+// const initialFiles: FileState = {
+// 	allFiles: [],
+// 	currentFile: null,
+// };
 
-function fileReducer(state: FileState, action: FileReducerAction) {
-	switch (action.type) {
-		case GET_ALL_FILES:
-			return { ...state, allFiles: action.payload.files };
-		case GET_CURRENT_FILE:
-			return { ...state, currentFile: { ...action.payload.file } };
-		case ADD_FILE:
-			return { ...state, allFiles: [...state.allFiles, action.payload.file] };
-		case DELETE_ALL_FILES:
-			return { ...state, allFiles: [], currentFile: null };
-		case DELETE_FILE:
-			return { ...state, allFiles: state.allFiles.filter(file => file.id !== action.payload.id) };
-		default:
-			return state;
-	}
-}
+// function fileReducer(state: FileState, action: FileReducerAction) {
+// 	switch (action.type) {
+// 		case GET_ALL_FILES:
+// 			return { ...state, allFiles: action.payload.files };
+// 		case GET_CURRENT_FILE:
+// 			return { ...state, currentFile: { ...action.payload.file } };
+// 		case ADD_FILE:
+// 			return { ...state, allFiles: [...state.allFiles, action.payload.file] };
+// 		case DELETE_ALL_FILES:
+// 			return { ...state, allFiles: [], currentFile: null };
+// 		case DELETE_FILE:
+// 			return { ...state, allFiles: state.allFiles.filter(file => file.id !== action.payload.id) };
+// 		default:
+// 			return state;
+// 	}
+// }
 
 export default function useFiles() {
-	const [files, dispatch] = useReducer(fileReducer, initialFiles);
+	const [files, setFiles] = useState<SonexFile[]>([]);
+	const [currentFile, setCurrentFile] = useState<SonexFile | null>(null);
 	const [loading, setLoading] = useState(true);
-	const { id: projectId } = useParams();
-	const {
-		files: projectFiles,
-		filesLoading,
-		refreshFiles,
-		addFileToState,
-		deleteFileFromState
-	} = useProjectContext();
 
-	function addFileToLocalState(file: SonexFile) {
-		dispatch({ type: ADD_FILE, payload: { file } });
-		addFileToState(file);
-	}
-
-	async function getAllFiles() {
+	async function fetchFiles() {
 		setLoading(true);
 		try {
-			await refreshFiles();
-			dispatch({ type: GET_ALL_FILES, payload: { files: projectFiles } });
+			const { data: { data } } = await api.get("/files");
+			setFiles(data.files);
 		} catch (error) {
 			console.error("Failed to fetch files:", error);
 		} finally {
@@ -76,7 +64,7 @@ export default function useFiles() {
 			const {
 				data: { data },
 			} = await api.get(fileUrl);
-			dispatch({ type: GET_CURRENT_FILE, payload: { file: data.file } });
+			setCurrentFile(data.file);
 		} catch (error) {
 			console.error("Failed to fetch current file:", error);
 		} finally {
@@ -88,8 +76,8 @@ export default function useFiles() {
 		setLoading(true);
 		try {
 			await api.delete(`/files/${id}`);
-			dispatch({ type: DELETE_FILE, payload: { id } });
-			deleteFileFromState(id);
+			setFiles(files.filter(file => file.id !== id));
+			setCurrentFile(null);
 		} catch (err) {
 			console.error(err);
 		} finally {
@@ -101,9 +89,8 @@ export default function useFiles() {
 		setLoading(true);
 		try {
 			await api.post("/files/delete-all", { fileIds: JSON.stringify(files) });
-			dispatch({ type: DELETE_ALL_FILES });
-			// Refresh files from context
-			await refreshFiles();
+			setFiles([]);
+			setCurrentFile(null);
 		} catch (err) {
 			console.error(err);
 		} finally {
@@ -122,9 +109,9 @@ export default function useFiles() {
 
 	return {
 		files,
-		loading: loading || filesLoading,
-		addFileToState: addFileToLocalState,
-		getAllFiles,
+		currentFile,
+		loading,
+		fetchFiles,
 		getCurrentFile,
 		downloadFile,
 		deleteAllFiles,

@@ -5,6 +5,7 @@ import {
 	DELETE_PROJECT,
 	GET_ALL_PROJECTS,
 	GET_SINGLE_PROJECT,
+	type ProjectWithUserInfo,
 	UPDATE_PROJECT,
 	type Project,
 	type ProjectReducerAction,
@@ -13,64 +14,67 @@ import {
 import type { AxiosError } from "axios";
 import type { AxiosResponseError } from "./useClients";
 
-const initialProjects: ProjectState = {
-	allProjects: [],
-	currentProject: null,
-	pagination: null,
-};
+// const initialProjects: ProjectState = {
+// 	allProjects: [],
+// 	currentProject: null,
+// 	pagination: null,
+// };
 
-function projectReducer(state: ProjectState, action: ProjectReducerAction) {
-	switch (action.type) {
-		case GET_ALL_PROJECTS:
-			return {
-				...state,
-				allProjects: [...action.payload.projects],
-				pagination: action.payload.pagination || null,
-			};
+// function projectReducer(state: ProjectState, action: ProjectReducerAction) {
+// 	switch (action.type) {
+// 		case GET_ALL_PROJECTS:
+// 			return {
+// 				...state,
+// 				allProjects: [...action.payload.projects],
+// 				pagination: action.payload.pagination || null,
+// 			};
 
-		case GET_SINGLE_PROJECT:
-			return { ...state, currentProject: { ...action.payload.project } };
+// 		case GET_SINGLE_PROJECT:
+// 			return { ...state, currentProject: { ...action.payload.project } };
 
-		case CREATE_PROJECT:
-			return {
-				...state,
-				allProjects: [action.payload.project, ...state.allProjects],
-				currentProject: action.payload.project,
-			};
+// 		case CREATE_PROJECT:
+// 			return {
+// 				...state,
+// 				allProjects: [action.payload.project, ...state.allProjects],
+// 				currentProject: action.payload.project,
+// 			};
 
-		case UPDATE_PROJECT:
-			return {
-				...state,
-				allProjects: state.allProjects.map((project) =>
-					project.id === action.payload.project.id
-						? action.payload.project
-						: project,
-				),
-				currentProject: action.payload.project,
-			};
+// 		case UPDATE_PROJECT:
+// 			return {
+// 				...state,
+// 				allProjects: state.allProjects.map((project) =>
+// 					project.id === action.payload.project.id
+// 						? action.payload.project
+// 						: project,
+// 				),
+// 				currentProject: action.payload.project,
+// 			};
 
-		case DELETE_PROJECT:
-			return {
-				...state,
-				allProjects: state.allProjects.filter(
-					(project) => project.id !== action.payload.id,
-				),
-				currentProject:
-					state.currentProject?.id === action.payload.id
-						? null
-						: state.currentProject,
-			};
+// 		case DELETE_PROJECT:
+// 			return {
+// 				...state,
+// 				allProjects: state.allProjects.filter(
+// 					(project) => project.id !== action.payload.id,
+// 				),
+// 				currentProject:
+// 					state.currentProject?.id === action.payload.id
+// 						? null
+// 						: state.currentProject,
+// 			};
 
-		default:
-			return state;
-	}
-}
+// 		default:
+// 			return state;
+// 	}
+// }
 
 export default function useProjects() {
-	const [state, dispatch] = useReducer(projectReducer, initialProjects);
+	// const [projects, dispatch] = useReducer(projectReducer, initialProjects);
+	const [projects, setProjects] = useState<ProjectWithUserInfo[]>([]);
+	const [currentProject, setCurrentProject] =
+		useState<ProjectWithUserInfo | null>(null);
 	const [loading, setLoading] = useState(true);
 
-	const getAllProjects = useCallback(async (params?: {
+	const fetchProjects = async (params?: {
 		page?: number;
 		limit?: number;
 		search?: string;
@@ -86,81 +90,80 @@ export default function useProjects() {
 			} = await api.get("/projects", { params });
 
 			if (data) {
-				dispatch({
-					type: GET_ALL_PROJECTS,
-					payload: data,
-				});
+				setProjects(data.projects);
 			}
 		} catch (error) {
 			console.error(error);
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	};
 
-	const getSingleProject = useCallback(async (id: string) => {
+	const fetchSingleProject = async (id: string) => {
 		setLoading(true);
 		try {
 			const {
 				data: { data },
 			} = await api.get(`/projects/${id}`);
 			if (data) {
-				dispatch({ type: GET_SINGLE_PROJECT, payload: data });
+				setCurrentProject(data.project);
 			}
 		} catch (error) {
 			console.error(error);
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	};
 
-	const createProject = useCallback(async (projectData: Partial<Project>) => {
+	const createProject = async (projectData: Partial<Project>) => {
 		setLoading(true);
 		try {
 			const {
 				data: { data },
 			} = await api.post("/projects", projectData);
-			dispatch({ type: CREATE_PROJECT, payload: data });
-			getAllProjects();
+			setProjects([data.project, ...projects]);
 		} catch (error) {
 			console.error(error);
 			throw (error as AxiosError<AxiosResponseError>).response?.data.error;
 		} finally {
 			setLoading(false);
 		}
-	}, [getAllProjects]);
+	};
 
-	const updateProject = useCallback(async (id: string, projectData: Partial<Project>) => {
+	const updateProject = async (id: string, projectData: Partial<Project>) => {
 		setLoading(true);
 		try {
 			const {
 				data: { data },
 			} = await api.put(`/projects/${id}`, projectData);
-			dispatch({ type: UPDATE_PROJECT, payload: data });
+			setProjects(projects.map(project => project.id === id ? data.project : project));
+			setCurrentProject(data.project);
 		} catch (error) {
 			console.error(error);
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	};
 
-	const deleteProject = useCallback(async (id: string) => {
+	const deleteProject = async (id: string) => {
 		setLoading(true);
 		try {
 			await api.delete(`/projects/${id}`);
-			dispatch({ type: DELETE_PROJECT, payload: { id } });
+			setProjects(projects.filter(project => project.id !== id));
+			setCurrentProject(null);
 		} catch (error) {
 			console.error(error);
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	};
 
 	return {
-		state,
+		projects,
+		currentProject,
 		loading,
-		getAllProjects,
-		getSingleProject,
+		fetchProjects,
+		fetchSingleProject,
 		createProject,
 		updateProject,
 		deleteProject,

@@ -22,13 +22,13 @@ export const useComments = () => {
     const [comments, setComments] = useState<ISonexComment[]>([]);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (user?.id || client?.id) {
-            getComments();
-        }
-    }, [user?.id, client?.id, fileId]);
+    // useEffect(() => {
+    //     if (user?.id || client?.id) {
+    //         fetchComments();
+    //     }
+    // }, [user?.id, client?.id, fileId]);
 
-    const getComments = async () => {
+    const fetchComments = async () => {
         setLoading(true);
         try {
             const params = fileId ? { fileId: fileId as string } : {};
@@ -61,7 +61,7 @@ export const useComments = () => {
             } = await api.post("/comments", newComment);
 
             if (data) {
-                getComments();
+                fetchComments();
             }
         } catch (error) {
             console.error(error);
@@ -90,7 +90,7 @@ export const useComments = () => {
                 } = await api.post("/comments/reply", newReply);
 
                 if (data.comment) {
-                    await getComments();
+                    await fetchComments();
                 }
             } catch (error) {
                 console.error(error);
@@ -152,6 +152,7 @@ export const useComments = () => {
 
     return {
         comments,
+        fetchComments,
         postComment,
         postReply,
         deleteComment,

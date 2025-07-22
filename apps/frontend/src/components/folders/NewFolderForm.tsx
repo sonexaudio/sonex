@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Folder } from "lucide-react";
+import { useProjectContext } from "../../context/ProjectProvider";
 
 interface NewFolderFormProps {
     onClose?: () => void;
@@ -13,6 +14,8 @@ interface NewFolderFormProps {
 const NewFolderForm = ({ onClose }: NewFolderFormProps) => {
     const { id: projectId } = useParams();
     const { createFolder } = useFolders();
+    const { refetchFolders } = useProjectContext();
+
     const [folderInputData, setFolderInputData] = useState<{ name: string, parentId?: string | null; }>({
         name: "",
         parentId: "",
@@ -35,6 +38,7 @@ const NewFolderForm = ({ onClose }: NewFolderFormProps) => {
             };
 
             const newFolder = await createFolder(folderData);
+            await refetchFolders();
 
             if (onClose) {
                 onClose();
@@ -58,7 +62,7 @@ const NewFolderForm = ({ onClose }: NewFolderFormProps) => {
                 <CardDescription>Your new folder will be added to your <em>Files</em> section.</CardDescription>
             </CardHeader>
             <CardContent>
-                <form className="flex flex-col gap-2">
+                <form className="flex flex-col gap-2" onSubmit={handleCreateFolder}>
                     <Input
                         type="text"
                         name="name"
@@ -74,7 +78,6 @@ const NewFolderForm = ({ onClose }: NewFolderFormProps) => {
                     <Button
                         type="submit"
                         disabled={loading}
-                        onClick={handleCreateFolder}
                     >Create New Folder
                     </Button>
                 </form>
