@@ -54,7 +54,7 @@ type ProviderProps = {
 
 export const SingleFileContextProvider = ({ children }: ProviderProps) => {
     const {
-        files: { currentFile },
+        currentFile,
         getCurrentFile,
         loading,
     } = useFiles();

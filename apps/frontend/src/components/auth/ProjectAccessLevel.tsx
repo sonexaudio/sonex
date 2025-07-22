@@ -66,7 +66,7 @@ const ProjectAccessGate = ({ children }: { children: ReactNode; }) => {
 			</PageLayout>
 		);
 
-	if (isOwner || (!authorizedClient?.isBlocked)) return <>{children}</>;
+	if (isOwner || (authorizedClient && !authorizedClient?.isBlocked)) return <>{children}</>;
 
 	if (isUnauthorized) {
 		return <ProjectAccessDenied />;

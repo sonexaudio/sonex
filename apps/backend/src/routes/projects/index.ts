@@ -336,6 +336,31 @@ projectRouter.get("/:id/activities", async (req, res) => {
 	}
 });
 
+// create a client for a project
+projectRouter.post("/:id/clients", async (req, res) => {
+	const { id } = req.params;
+	const { email, name, userId } = req.body;
+	try {
+		const client = await prisma.client.create({
+			data: {
+				email,
+				name,
+				projectId: id,
+				userId,
+			}
+		});
+		await prisma.clientProject.create({
+			data: {
+				projectId: id,
+				clientId: client.id,
+			}
+		});
+		successResponse(res, { client });
+	} catch (error) {
+		errorResponse(res, 500, (error as Error).message);
+	}
+});
+
 projectRouter.post("/:id/request-access", async (req, res) => {
 	const { email } = req.body;
 	const projectId = req.params.id;

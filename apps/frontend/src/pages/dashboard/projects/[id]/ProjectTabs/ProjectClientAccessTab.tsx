@@ -20,9 +20,8 @@ import {
 import useUser from "../../../../../hooks/useUser";
 
 const ProjectClientAccessTab = () => {
-    const { project, clients } = useProjectContext();
+    const { project, clients, addClientToProject } = useProjectContext();
     const { currentUser } = useUser();
-    const { addClient } = useClients();
     const [showDialog, setShowDialog] = useState(false);
     const [newClientEmail, setNewClientEmail] = useState("");
     const [newClientName, setNewClientName] = useState("");
@@ -37,10 +36,6 @@ const ProjectClientAccessTab = () => {
 
     };
 
-    const existingProjectClients = useMemo(() => {
-        return clients?.filter(client => client.projectId === project?.id)
-            .map(client => client.id) || [];
-    }, [clients, project?.id]);
 
     const addExistingClientToProject = async () => {
         alert("Adding Existing Client to Project");
@@ -52,7 +47,7 @@ const ProjectClientAccessTab = () => {
     };
 
     const handleAddNewClientToProject = async () => {
-        await addClient({ email: newClientEmail, name: newClientName, userId: currentUser?.id, projectId: project?.id });
+        await addClientToProject({ email: newClientEmail, name: newClientName, userId: currentUser?.id, projectId: project?.id });
         setShowDialog(false);
         setNewClientEmail("");
         setNewClientName("");

@@ -411,7 +411,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode; }> = ({
             try {
                 const {
                     data: { data },
-                } = await api.post("/clients", clientData);
+                } = await api.post(`/projects/${projectId}/clients`, clientData);
                 if (data?.client) {
                     setProject((prev) => ({
                         ...prev,
