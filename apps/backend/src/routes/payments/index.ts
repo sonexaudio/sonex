@@ -290,6 +290,8 @@ paymentRouter.post("/client", async (req, res) => {
 		return;
 	}
 
+	const projectAmount = Number(amount);
+
 	try {
 		// retrive details of the project
 		// clientId must be a client of the project
@@ -306,36 +308,45 @@ paymentRouter.post("/client", async (req, res) => {
 				user: true,
 				clients: {
 					where: {
-						id: clientId,
-					},
+						client: {
+							id: clientId
+						}
+					}
 				},
 			},
 		});
+
+		// PROJECT
+		console.log("PROJECT", project);
 		if (!project) {
 			errorResponse(res, 404, "Project not found");
 			return;
 		}
 
 		if (project.paymentStatus === "Paid") {
+			console.error("PROJECT IS PAID");
 			errorResponse(res, 400, "Project is already paid");
 			return;
 		}
 
-		if (project.user.id !== userId) {
+		if (project.userId !== userId) {
+			console.error("USERID ERROR");
 			errorResponse(res, 403, "User is not the project owner");
 			return;
 		}
-		if (project.clients.length === 0 || project.clients[0].id !== clientId) {
-			errorResponse(res, 403, "Client not associated with project");
-			return;
-		}
+		// if (project.clients.length === 0 || project.clients[0].id !== clientId) {
+		// 	console.error("CLIENTID ERROR");
+		// 	errorResponse(res, 403, "Client not associated with project");
+		// 	return;
+		// }
 
-		if (project.amount !== amount) {
+		if (Number(project?.amount) !== projectAmount) {
+			console.error("AMOUNT ERROR");
 			errorResponse(res, 400, "Amount does not match project's total amount");
 			return;
 		}
 
-		const amountInCents = Math.round(Number(project.amount) * 100);
+		const amountInCents = Math.round(projectAmount * 100);
 		const isFreeUser = project.user.subscriptionStatus !== "subscribed";
 		const applicationFee = isFreeUser ? Math.round(amountInCents * 0.05) : 0;
 

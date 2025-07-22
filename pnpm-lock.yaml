@@ -207,6 +207,12 @@ importers:
       '@sonex/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
+      '@stripe/react-stripe-js':
+        specifier: ^3.7.0
+        version: 3.7.0(@stripe/stripe-js@7.5.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@stripe/stripe-js':
+        specifier: ^7.5.0
+        version: 7.5.0
       '@tailwindcss/vite':
         specifier: ^4.1.5
         version: 4.1.11(vite@6.3.5(@types/node@22.16.4)(jiti@2.4.2)(lightningcss@1.30.1))
@@ -1821,6 +1827,17 @@ packages:
 
   '@standard-schema/utils@0.3.0':
     resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
+
+  '@stripe/react-stripe-js@3.7.0':
+    resolution: {integrity: sha512-PYls/2S9l0FF+2n0wHaEJsEU8x7CmBagiH7zYOsxbBlLIHEsqUIQ4MlIAbV9Zg6xwT8jlYdlRIyBTHmO3yM7kQ==}
+    peerDependencies:
+      '@stripe/stripe-js': '>=1.44.1 <8.0.0'
+      react: '>=16.8.0 <20.0.0'
+      react-dom: '>=16.8.0 <20.0.0'
+
+  '@stripe/stripe-js@7.5.0':
+    resolution: {integrity: sha512-Cq3KKe+G1o7PSBMbmrgpT2JgBeyH2THHr3RdIX2MqF7AnBuspIMgtZ3ktcCgP7kZsTMvnmWymr7zZCT1zeWbMw==}
+    engines: {node: '>=12.16'}
 
   '@tailwindcss/node@4.1.11':
     resolution: {integrity: sha512-yzhzuGRmv5QyU9qLNg4GTlYI6STedBWRE7NjxP45CsFYYq9taI0zJXZBMqIC/c8fViNLhmrbpSFS57EoxUmD6Q==}
@@ -5855,6 +5872,15 @@ snapshots:
   '@socket.io/component-emitter@3.1.2': {}
 
   '@standard-schema/utils@0.3.0': {}
+
+  '@stripe/react-stripe-js@3.7.0(@stripe/stripe-js@7.5.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@stripe/stripe-js': 7.5.0
+      prop-types: 15.8.1
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+
+  '@stripe/stripe-js@7.5.0': {}
 
   '@tailwindcss/node@4.1.11':
     dependencies:
