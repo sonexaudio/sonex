@@ -6,6 +6,7 @@ const config = {
 	environment: process.env.NODE_ENV || "development",
 	auth: {
 		sessionSecret: process.env.SESSION_SECRET!,
+		clientTokenSecret: process.env.CLIENT_TOKEN_SECRET!,
 		google: {
 			clientId: process.env.GOOGLE_CLIENT_ID!,
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET!,

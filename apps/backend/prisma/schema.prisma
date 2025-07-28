@@ -98,6 +98,7 @@ model Project {
   files   File[]
   clients ClientProject[]
   comments Comment[]
+  clientAccessTokens ClientAccess[]
 
   // Prevent user from creating project with the same title
   @@unique([title, userId])
@@ -195,7 +196,7 @@ model Subscription {
   isActive Boolean @default(true)
 
   // Associations
-  user         User          @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
   // DB Timestamps
@@ -220,8 +221,8 @@ model Transaction {
   refundReason String?
 
   // Associations
-  user         User          @relation(fields: [userId], references: [id])
-  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   // DB Timestamps
   createdAt DateTime @default(now())
@@ -258,8 +259,8 @@ model ClientProject {
   updatedAt DateTime @updatedAt
 
   // Associations
-  client Client @relation(fields: [clientId], references: [id])
-  project Project @relation(fields: [projectId], references: [id])
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model ClientAccess {
@@ -270,6 +271,9 @@ model ClientAccess {
   expires    DateTime
   acceptedAt DateTime?
   createdAt  DateTime  @default(now())
+
+  // Associations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([email, projectId])
 }
