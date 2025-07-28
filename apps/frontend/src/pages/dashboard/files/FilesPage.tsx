@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { Plus, FolderPlus, Upload, Grid, List, Search, Filter, MoreHorizontal } from "lucide-react";
+import { FolderPlus, Upload, Grid, List, Search, Filter, MoreHorizontal } from "lucide-react";
 import PageLayout from "../../../components/PageLayout";
 import FilesViewTable from "./FilesViewTable";
 import AuthLayout from "../../../components/AuthLayout";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Card, CardContent } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
-import { useProjectData } from "../../../hooks/useProjectData";
-import { useFileSystem } from "../../../hooks/useFileSystem";
 import { formatFileSize } from "../../../utils/files";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogTrigger, DialogContent } from "../../../components/ui/dialog";
@@ -18,6 +16,8 @@ import { FileUploadProvider } from "../../../context/FileUploadProvider";
 import FileDropzone from "../../../components/files/FileDropzone";
 import FileUploadViewer from "../../../components/files/FileUploadViewer";
 import useUser from "../../../hooks/useUser";
+import useFiles from "../../../hooks/useFiles";
+import { useFolders } from "../../../hooks/useFolders";
 
 const FilesPage = () => {
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -27,8 +27,9 @@ const FilesPage = () => {
 	const [showUploadDialog, setShowUploadDialog] = useState(false);
 
 	const { currentUser } = useUser();
-	const { files, folders, loading } = useProjectData();
-	const { tree: folderTree } = useFileSystem();
+	const { files, deleteAllFiles, deleteFile, loading: filesLoading, downloadFile, fetchFiles } = useFiles();
+	const { folders, loading: foldersLoading, fetchFolders, } = useFolders();
+
 
 	// Filter files based on search query and selected folder
 	const filteredFiles = files.filter(file => {
