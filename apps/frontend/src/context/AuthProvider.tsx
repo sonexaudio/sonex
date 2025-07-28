@@ -1,6 +1,6 @@
 import { createContext, useEffect, useState, type ReactNode } from "react";
 
-import api, { setSessionExpiredHandler } from "../lib/axios";
+import api from "../lib/axios";
 import { useNavigate } from "react-router";
 import type { AxiosError } from "axios";
 import type { AuthContextType, User } from "../types/users";
@@ -52,16 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 			fetchUser(); // Safe to always call
 		}
 	}, []);
-
-	useEffect(() => {
-		setSessionExpiredHandler((message) => {
-			setUser(null); // clear state
-			navigate("/login", {
-				replace: true,
-				state: { message },
-			});
-		});
-	}, [navigate]);
 
 	const loginWithEmail = async (email: string, password: string) => {
 		try {

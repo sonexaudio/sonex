@@ -5,34 +5,23 @@ const api = axios.create({
 	withCredentials: true,
 });
 
-let onSessionExpired: ((message: string) => void) | null = null;
+// Check for a client token in the cookies and set it as bearer token if it exists
+api.interceptors.request.use((config) => {
+	const clientToken = localStorage.getItem("clientAccess");
+	if (clientToken) {
+		console.log("Setting client token for API requests");
+		config.headers = config.headers || {};
+		config.headers.Authorization = `Bearer ${clientToken}`;
+	}
+	return config;
+});
 
-export const setSessionExpiredHandler = (
-	handler: (message: string) => void,
-) => {
-	onSessionExpired = handler;
-};
-
-// Using an interceptor to handle response errors
-// 401 - should redirect to login/clear current user context, etc.
-api.interceptors.response.use(
-	(res) => {
-		return res;
-	},
-	(err) => {
-		const message = err.response?.data?.message;
-
-		if (
-			err.response?.status === 401 &&
-			message === "Session expired or user no longer exists."
-		) {
-			if (onSessionExpired) {
-				onSessionExpired(message);
-			}
-		}
-
-		return Promise.reject(err);
-	},
-);
+// Handle logout and clear client token
+api.interceptors.response.use((response) => {
+	if (response.data?.logout) {
+		localStorage.removeItem("clientAccess");
+	}
+	return response;
+});
 
 export default api;
