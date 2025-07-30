@@ -1,11 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useLocation, useParams } from "react-router";
 import api from "../../lib/axios";
 import ProjectAccessPrompt from "./ProjectAccessPrompt";
 import ProjectAccessDenied from "./ProjectAccessDenied";
 import PageLayout from "../PageLayout";
-import { useProjectContext } from "../../context/ProjectProvider";
-import useClientAuth from "../../hooks/useClientAuth";
+import { useProjectContext } from "../../hooks/projects/useProjectContext";
+
 
 export type ProjectAccessGateState =
 	| "loading"
@@ -16,67 +16,81 @@ export type ProjectAccessGateState =
 const ProjectAccessGate = ({ children }: { children: ReactNode; }) => {
 	const { id: projectId } = useParams();
 	const { search } = useLocation();
+	const code = new URLSearchParams(search).get("code");
 
-	const { accessLevel, isLoading, isOwner, authorizedClient, isUnauthorized } = useProjectContext();
-	const { loading: clientAuthLoading } = useClientAuth();
+	const { isUnauthorized, isUnknown, clientLoading, userLoading, projectData: { isLoading }, isOwner, isClient, currentClient, changeAccessLevel } = useProjectContext();
+
+	const canAccess = isOwner || isClient;
+	const loading = userLoading || clientLoading || isLoading;
 
 	useEffect(() => {
-		// first check if the visitor has a token in the search params
-		// This will mean that the user is trying to access the project as a client
-		// They are automatically authorized to access the project if the token is valid
+		// const clientView = new URLSearchParams(search).get("clientView");
+		// const userViewingAsClient = isOwner && clientView && clientView === "true";
 
-		console.log("ACCESS LEVEL", accessLevel);
-		const hasValidClientAccessToken = async (token: string | null) => {
-			try {
-				const { data: { data } } = await api.post(`/projects/${projectId}/check-access`, { accessToken: token });
+		// No need to do anything if there is already a user or authorized client
+		// First check if the user is viewing as a client
+		// if (userViewingAsClient || canAccess) return;
+		if (isLoading) return;
 
-				if (data.authorized) {
-					return data.email;
-				}
 
-				return null;
-			} catch (error) {
-				return null;
-			}
-		};
 
-		const getClientAccessToken = (): string | null => {
-			const accessToken = localStorage.getItem("projectToken") || new URLSearchParams(search).get("token") || null;
-			return accessToken;
-		};
-
-		// first check if the user is trying to access the project via a client access token
-		const accessToken = getClientAccessToken();
-		if (accessToken) {
-			hasValidClientAccessToken(accessToken).then(email => {
-				if (email) {
-					localStorage.setItem("projectToken", accessToken);
-					localStorage.setItem("projectAccessType", "client");
-					localStorage.setItem("clientEmail", email);
-				}
-			});
+		if (!code && !canAccess) {
+			changeAccessLevel("UNAUTHORIZED");
 			return;
 		}
-	}, [projectId, search, accessLevel]);
 
-	if (isLoading)
+		// Validate code and get a JWT token
+		// api.post("/auth/client/validate-code", { code, projectId })
+		// 	.then(({ data: { data } }) => {
+
+		// 		if (data) {
+		// 			localStorage.setItem("accessToken", data.clientToken);
+		// 			localStorage.setItem("clientEmail", data.email);
+		// 			// setTimeout(() => window.location.replace(`/projects/${projectId}`), 3500);
+		// 		}
+
+		// 	})
+		// 	.catch((e) => {
+		// 		console.log("COULD NOT VALIDATE", e);
+		// 		localStorage.removeItem("accessToken");
+		// 		localStorage.removeItem("clientEmail");
+		// 	});
+	}, [search, projectId, loading, isOwner, isClient, changeAccessLevel, code]);
+
+
+
+	if (loading) {
 		return (
 			<PageLayout>
 				<div>Checking access...</div>
 			</PageLayout>
 		);
-
-	if (isOwner || (authorizedClient && !authorizedClient?.isBlocked)) return <>{children}</>;
-
-	if (isUnauthorized) {
-		return <ProjectAccessDenied />;
 	}
 
-	return (
-		<PageLayout>
-			<ProjectAccessPrompt projectId={projectId!} />
-		</PageLayout>
-	);
+
+	if (!loading && isUnknown) {
+		return (
+			<PageLayout>
+				<ProjectAccessPrompt projectId={projectId!} code={code!} />
+			</PageLayout>
+		);
+	}
+
+	if (isOwner || (currentClient && !currentClient?.isBlocked)) {
+		return <>{children}</>;
+	}
+
+	if (isUnauthorized) {
+		return (
+			<PageLayout>
+				<ProjectAccessDenied />
+			</PageLayout>
+		);
+
+	}
+
+
+
 };
 
 export default ProjectAccessGate;

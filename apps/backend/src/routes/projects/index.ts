@@ -129,16 +129,13 @@ projectRouter.post(
 		const id = req.user?.id;
 		const projectData = req.body;
 
-		// if (!projectData.title) {
-		// 	res.status(422).json({ error: "Project title is required" });
-		// 	return;
-		// }
-
 		try {
+			const shareCode = generateClientAccessToken();
 			const newProject = await prisma.project.create({
 				data: {
 					userId: id,
 					...projectData,
+					shareCode,
 				},
 			});
 
@@ -345,7 +342,6 @@ projectRouter.post("/:id/clients", async (req, res) => {
 			data: {
 				email,
 				name,
-				projectId: id,
 				userId,
 			}
 		});

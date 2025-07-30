@@ -29,17 +29,11 @@ const RoutesLayout = () => {
 			<Route path="reset-password" element={<ResetPasswordPage />} />
 			<Route element={<DashboardLayout />}>
 				<Route path="overview" element={
-					<SubscriptionProvider>
-						<ProjectProvider>
-							<OverviewPage />
-						</ProjectProvider>
-					</SubscriptionProvider>
+					<OverviewPage />
 				} />
 				<Route path="projects">
 					<Route index element={
-						<SubscriptionProvider>
-							<ProjectsPage />
-						</SubscriptionProvider>
+						<ProjectsPage />
 					} />
 					<Route path=":id">
 						<Route index element={
@@ -53,34 +47,24 @@ const RoutesLayout = () => {
 					</Route>
 				</Route>
 				<Route path="clients" element={
-					<SubscriptionProvider>
-						<ClientsPage />
-					</SubscriptionProvider>
+					<ClientsPage />
 				} />
 				<Route path="files" element={
-					<SubscriptionProvider>
-						<ProjectProvider>
-							<FilesPage />
-						</ProjectProvider>
-					</SubscriptionProvider>
+					<FilesPage />
 				} />
 				<Route path="account" element={
-					<SubscriptionProvider>
-						<AccountPage />
-					</SubscriptionProvider>
+
+					<AccountPage />
+
 				} />
-				<Route path="payments">
+				<Route path="payments" >
 					<Route index element={
-						<SubscriptionProvider>
-							<PaymentsPage />
-						</SubscriptionProvider>
+						<PaymentsPage />
 					} />
 					<Route path="success" element={<SuccessPage />} />
 				</Route>
 				<Route path="settings" element={
-					<SubscriptionProvider>
-						<SettingsPage />
-					</SubscriptionProvider>
+					<SettingsPage />
 				} />
 			</Route>
 

@@ -11,6 +11,7 @@ import passport from "passport";
 import pg from "pg";
 import pgSession from "connect-pg-simple";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 
 const { frontendUrl, auth, dbUrl, environment } = config;
 
@@ -28,6 +29,9 @@ export default function createServer() {
 	const app = express();
 
 	// Establish middleware
+	// Parse cookies
+	app.use(cookieParser());
+
 	// Set security headers
 	app.use(
 		helmet({

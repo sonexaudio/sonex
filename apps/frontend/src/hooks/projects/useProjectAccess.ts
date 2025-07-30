@@ -2,7 +2,7 @@
 This hook determines the Access Level of a User, Client, or undetermined Visitor. Will even check if a Client and even User is unauthorized (via being blocked).
 */
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { DetailedProject } from "../../types/projects";
 
 interface ProjectAccessParams {
@@ -13,25 +13,47 @@ interface ProjectAccessParams {
 
 export type AccessLevel = "OWNER" | "CLIENT" | "UNAUTHORIZED" | "UNKNOWN";
 
-export function useProjectAccess(params: ProjectAccessParams): AccessLevel {
+export function useProjectAccess(params: ProjectAccessParams) {
     const { userId, clientEmail, project } = params;
 
-    const accessLevel: AccessLevel = useMemo(() => {
+    const [accessLevel, setAccessLevel] = useState<AccessLevel>("UNKNOWN");
+
+    const determineAccessLevel = () => {
         if (!project) {
-            return "UNAUTHORIZED";
+            return "UNKNOWN";
         }
 
-        if (userId === project.userId) {
+        if (userId === project?.userId) {
             return "OWNER";
         }
 
-        if (clientEmail && project.clients?.some((client => client.email === clientEmail))) {
+        const clientEmails = project.clients.map(client => client.client.email);
+        console.log("CLIENT EMAILS", clientEmails);
+
+        if (clientEmail && clientEmails.includes(clientEmail)) {
+            console.log("CLIENT EMAIL MATCHES PROJECT CLIENTS", { clientEmail, projectClients: project.clients });
             return "CLIENT";
         }
 
         // Can't determine access level, return UNKNOWN for prompting the user to log in or access the project
         return "UNKNOWN";
-    }, [userId, clientEmail, project]);
+    };
 
-    return accessLevel;
+    // const accessLevel: AccessLevel = useMemo(() => {
+    //     return determineAccessLevel();
+    // }, [userId, clientEmail, project]);
+
+    // Change access level function
+    const changeAccessLevel = useCallback((level: AccessLevel) => {
+        setAccessLevel(level);
+    }, []);
+
+    // set access level upon load
+    useEffect(() => {
+        console.log("Checking access level:", { project, userId, clientEmail });
+        if (!project) return;
+        setAccessLevel(determineAccessLevel());
+    }, [project, userId, clientEmail]);
+
+    return { accessLevel, determineAccessLevel, changeAccessLevel };
 }
