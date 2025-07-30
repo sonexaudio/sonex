@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useComments } from "../../../hooks/useComments";
-import { useProjectData } from "../../../hooks/useProjectData";
+// import { useProjectData } from "../../../hooks/useProjectData";
 import useUser from "../../../hooks/useUser";
 import { useTransactions } from "../../../hooks/useTransactions";
 import useProjects from "../../../hooks/useProjects";
@@ -10,13 +10,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Plus, Upload, Users, Folder, FileText, MessageCircle } from "lucide-react";
 import type { Project } from "../../../types/projects";
 import AuthLayout from "../../../components/AuthLayout";
+import { useProjectData } from "../../../hooks/projects/useProjectData";
+import { useClients } from "../../../hooks/useClients";
+import useFiles from "../../../hooks/useFiles";
 
 const OverviewPage = () => {
 	const { currentUser } = useUser();
-	const { files, clients } = useProjectData();
+	const { projects, loading: projectsLoading } = useProjects();
+	const { clients, loading: clientsLoading } = useClients();
+	const { files, loading: filesLoading } = useFiles();
 	const { comments, loading: commentsLoading } = useComments();
 	const { transactions, loading: paymentsLoading } = useTransactions();
-	const { state: { allProjects }, loading: projectsLoading } = useProjects();
 
 	const quickActions = [
 		{ icon: <Plus />, label: "New Project", onClick: () => {/* route to new project */ } },
@@ -25,7 +29,7 @@ const OverviewPage = () => {
 	];
 
 	const stats = [
-		{ icon: <Folder />, label: "Projects", value: allProjects.length },
+		{ icon: <Folder />, label: "Projects", value: projects.length },
 		{ icon: <Users />, label: "Clients", value: clients.length },
 		{ icon: <FileText />, label: "Files", value: files.length },
 		{ icon: <MessageCircle />, label: "Comments", value: comments.length },

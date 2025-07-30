@@ -1,5 +1,6 @@
 import express from "express";
 import authRoutes from "./auth";
+import clientAuthRoutes from "./auth/client";
 import userRoutes from "./users";
 import paymentRoutes from "./payments";
 import accountRoutes from "./accounts";
@@ -21,6 +22,7 @@ router.use("/webhooks/stripe-connect", stripeConnectWebhook);
 router.use(express.json());
 router.use(checkUserStillExists);
 router.use("/auth", authRoutes);
+router.use("/auth/client", clientAuthRoutes);
 router.use("/users", userRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/accounts", accountRoutes);

@@ -1,6 +1,5 @@
 import api from "../lib/axios";
 import type { SonexFile } from "../types/files";
-import { useProjectContext } from "../context/ProjectProvider";
 import { useState } from "react";
 
 export type ISonexFolder = {

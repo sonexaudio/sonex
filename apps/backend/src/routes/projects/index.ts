@@ -10,7 +10,7 @@ import {
 	generateClientAccessToken,
 	generateTokenHash,
 } from "../../utils/token";
-import { checkProjectAccess } from "../../middleware/projectAccess";
+import { requireProjectAccess } from "../../middleware/projectAccess";
 
 const projectRouter = Router();
 
@@ -129,16 +129,13 @@ projectRouter.post(
 		const id = req.user?.id;
 		const projectData = req.body;
 
-		// if (!projectData.title) {
-		// 	res.status(422).json({ error: "Project title is required" });
-		// 	return;
-		// }
-
 		try {
+			const shareCode = generateClientAccessToken();
 			const newProject = await prisma.project.create({
 				data: {
 					userId: id,
 					...projectData,
+					shareCode,
 				},
 			});
 
@@ -163,7 +160,7 @@ projectRouter.post(
 	},
 );
 
-projectRouter.get("/:id", async (req, res) => {
+projectRouter.get("/:id", requireProjectAccess, async (req, res) => {
 	const { id } = req.params;
 	const project = await prisma.project.findUnique({
 		where: { id },
@@ -193,84 +190,84 @@ projectRouter.get("/:id", async (req, res) => {
 });
 
 // Single poject route handling
-projectRouter.post("/:id/check-access", async (req, res) => {
-	const userId = req.user?.id as string;
-	const projectId = req.params.id as string;
-	const token =
-		req.body.accessToken || (req.query?.token as string | undefined);
+// projectRouter.post("/:id/check-access", async (req, res) => {
+// 	const userId = req.user?.id as string;
+// 	const projectId = req.params.id as string;
+// 	const token =
+// 		req.body.accessToken || (req.query?.token as string | undefined);
 
-	const project = await prisma.project.findUnique({
-		where: { id: projectId },
-	});
+// 	const project = await prisma.project.findUnique({
+// 		where: { id: projectId },
+// 	});
 
-	try {
-		if (userId) {
-			if (project?.userId === userId) {
-				req.session.projectAccess = { type: "user", projectId };
-				successResponse(res, { authorized: true, accessType: "user" });
-				return;
-			}
-		}
+// 	try {
+// 		if (userId) {
+// 			if (project?.userId === userId) {
+// 				req.session.projectAccess = { type: "user", projectId };
+// 				successResponse(res, { authorized: true, accessType: "user" });
+// 				return;
+// 			}
+// 		}
 
-		if (token) {
-			const hashed = generateTokenHash(token);
-			const clientAccess = await prisma.clientAccess.findFirst({
-				where: {
-					token: hashed,
-					projectId,
-					expires: { gte: new Date() },
-				},
-			});
+// 		if (token) {
+// 			const hashed = generateTokenHash(token);
+// 			const clientAccess = await prisma.clientAccess.findFirst({
+// 				where: {
+// 					token: hashed,
+// 					projectId,
+// 					expires: { gte: new Date() },
+// 				},
+// 			});
 
-			if (clientAccess) {
-				req.session.projectAccess = {
-					type: "client",
-					projectId,
-					clientEmail: clientAccess.email,
-					accessGrantedAt: clientAccess.createdAt,
-				};
+// 			if (clientAccess) {
+// 				req.session.projectAccess = {
+// 					type: "client",
+// 					projectId,
+// 					clientEmail: clientAccess.email,
+// 					accessGrantedAt: clientAccess.createdAt,
+// 				};
 
-				await prisma.clientAccess.update({
-					where: { id: clientAccess.id },
-					data: {
-						acceptedAt: new Date(),
-					},
-				});
+// 				await prisma.clientAccess.update({
+// 					where: { id: clientAccess.id },
+// 					data: {
+// 						acceptedAt: new Date(),
+// 					},
+// 				});
 
-				await prisma.activity.create({
-					data: {
-						action: `${clientAccess.email} accessed project '${project?.title}'`,
-						targetType: "authorization",
-						userId: project?.userId as string,
-						targetId: clientAccess.id,
-					},
-				});
+// 				await prisma.activity.create({
+// 					data: {
+// 						action: `${clientAccess.email} accessed project '${project?.title}'`,
+// 						targetType: "authorization",
+// 						userId: project?.userId as string,
+// 						targetId: clientAccess.id,
+// 					},
+// 				});
 
-				successResponse(res, {
-					authorized: true,
-					accessType: "client",
-					email: clientAccess.email,
-				});
-				return;
-			}
+// 				successResponse(res, {
+// 					authorized: true,
+// 					accessType: "client",
+// 					email: clientAccess.email,
+// 				});
+// 				return;
+// 			}
 
-			successResponse(res, {
-				authorized: false,
-				reason: "invalid_token",
-			});
+// 			successResponse(res, {
+// 				authorized: false,
+// 				reason: "invalid_token",
+// 			});
 
-			return;
-		}
+// 			return;
+// 		}
 
-		successResponse(res, {
-			authorized: false,
-			reason: "unauthenticated",
-		});
-	} catch (error) {
-		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
-	}
-});
+// 		successResponse(res, {
+// 			authorized: false,
+// 			reason: "unauthenticated",
+// 		});
+// 	} catch (error) {
+// 		console.error(error);
+// 		errorResponse(res, 500, "Something went wrong");
+// 	}
+// });
 
 projectRouter.get("/:id/folders", async (req, res) => {
 	const { id } = req.params;
@@ -345,7 +342,6 @@ projectRouter.post("/:id/clients", async (req, res) => {
 			data: {
 				email,
 				name,
-				projectId: id,
 				userId,
 			}
 		});
@@ -358,45 +354,6 @@ projectRouter.post("/:id/clients", async (req, res) => {
 		successResponse(res, { client });
 	} catch (error) {
 		errorResponse(res, 500, (error as Error).message);
-	}
-});
-
-projectRouter.post("/:id/request-access", async (req, res) => {
-	const { email } = req.body;
-	const projectId = req.params.id;
-
-	if (!email || !projectId) {
-		errorResponse(res, 400, "Missing email or projectId");
-		return;
-	}
-
-	try {
-		const token = generateClientAccessToken();
-		const hashed = generateTokenHash(token);
-
-		await prisma.clientAccess.upsert({
-			where: {
-				email_projectId: { email, projectId },
-			},
-			update: {
-				token: hashed,
-				expires: new Date(Date.now() + INVITE_EXPIRATION_DATE), // 3 days
-			},
-			create: {
-				email,
-				projectId,
-				token: hashed,
-				expires: new Date(Date.now() + INVITE_EXPIRATION_DATE),
-			},
-		});
-
-		successResponse(res, {
-			token,
-			url: `${req.baseUrl}/${projectId}?token=${token}`,
-		}); // for dev, will update to email
-	} catch (error) {
-		console.error(error);
-		errorResponse(res, 500, "Failed to create client access");
 	}
 });
 

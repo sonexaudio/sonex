@@ -2,7 +2,7 @@ import { createContext, useEffect, useState } from "react";
 import useUser from "../hooks/useUser";
 import api from "../lib/axios";
 
-interface Subscription {
+export interface Subscription {
     id: string;
     userId: string;
     stripeSubscriptionId: string;
@@ -18,6 +18,7 @@ export type SubscriptionContextType = {
     loading: boolean;
     error: string | null;
     refetchSubscription: () => void;
+    getProjectOwnerSubscription: (userId: string) => Promise<void>;
 };
 
 export const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
@@ -34,6 +35,12 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode; }) => {
         setSubscription(data.subscription);
     };
 
+    // Used for fetching the owner's subscription without needing an authenticated user
+    const getProjectOwnerSubscription = async (userId: string) => {
+        const { data: { data } } = await api.get(`/payments/subscription/${userId}`);
+        setSubscription(data.subscription);
+    };
+
     useEffect(() => {
         if (currentUser) {
             setLoading(true);
@@ -45,6 +52,8 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode; }) => {
             } finally {
                 setLoading(false);
             }
+        } else {
+            setLoading(false);
         }
     }, [currentUser?.id]);
 
@@ -52,7 +61,7 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode; }) => {
     if (error) return <div>Error: {error}</div>;
 
     return (
-        <SubscriptionContext.Provider value={{ subscription, loading, error, refetchSubscription: fetchSubscription }}>
+        <SubscriptionContext.Provider value={{ subscription, loading, error, refetchSubscription: fetchSubscription, getProjectOwnerSubscription }}>
             {children}
         </SubscriptionContext.Provider>
     );

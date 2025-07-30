@@ -6,26 +6,6 @@ import { parseUserName } from "../../utils";
 
 const clientRouter = Router();
 
-clientRouter.get("/auth", async (req, res) => {
-	const email = req.query.email as string;
-
-	if (!email) {
-		errorResponse(res, 400, "Client email not provided");
-		return;
-	}
-
-	const client = await prisma.client.findFirst({
-		where: { email }
-	});
-
-	if (!client) {
-		errorResponse(res, 404, "Client not found");
-		return;
-	}
-
-	successResponse(res, { client });
-});
-
 clientRouter.get("/", requireAuth, async (req, res) => {
 	const userId = req.user?.id;
 
@@ -62,7 +42,6 @@ clientRouter.post("/", requireAuth, async (req, res) => {
 				targetType: "client",
 				metadata: {
 					email: client.email,
-					projectTitle: client.projectId,
 				},
 				targetId: client.id,
 			},
@@ -121,7 +100,6 @@ clientRouter.post("/delete-all", requireAuth, async (req, res) => {
 						targetId: client.id,
 						metadata: {
 							email: client.email,
-							projectId: client.projectId,
 						},
 					},
 				}),
@@ -168,7 +146,6 @@ clientRouter.put("/:id", requireAuth, async (req, res) => {
 				targetType: "client",
 				metadata: {
 					email: updatedClient.email,
-					projectTitle: updatedClient.projectId,
 				},
 				targetId: updatedClient.id,
 			},
@@ -209,7 +186,6 @@ clientRouter.delete("/:id", requireAuth, async (req, res) => {
 				targetType: "client",
 				metadata: {
 					email: client.email,
-					projectTitle: client.projectId,
 				},
 				targetId: client.id,
 			},

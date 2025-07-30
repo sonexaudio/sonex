@@ -2,9 +2,7 @@ import { useParams } from "react-router";
 import useFiles from "../../../../hooks/useFiles";
 import type { SonexFile } from "../../../../types/files";
 import { formatFileSize } from "../../../../utils/files";
-import useUser from "../../../../hooks/useUser";
-import useClientAuth from "../../../../hooks/useClientAuth";
-import { useProjectContext } from "../../../../context/ProjectProvider";
+import { useProjectContext } from "../../../../hooks/projects/useProjectContext";
 
 interface SonexFileExtended extends SonexFile {
     isFileOwner: boolean;
@@ -33,18 +31,12 @@ const ProjectFile = ({ file }: { file: SonexFileExtended; }) => {
 };
 
 const ProjectFiles = ({ isProjectOwner }: { isProjectOwner: boolean; }) => {
-    const { files, filesLoading } = useProjectContext();
+    const { projectData: { files, isLoading }, currentClient, currentUser } = useProjectContext();
     const { id: projectId } = useParams();
-    const { currentUser } = useUser();
-    const { client, getClient } = useClientAuth();
+
 
     const userId = currentUser?.id as string;
-    const clientId = client?.id as string;
-
-    // Only get client if not already loaded
-    if (!client) {
-        getClient();
-    }
+    const clientId = currentClient?.id as string;
 
     const projectFiles = files
         .filter(file => file.projectId === projectId)
@@ -53,7 +45,7 @@ const ProjectFiles = ({ isProjectOwner }: { isProjectOwner: boolean; }) => {
             isFileOwner: file.uploaderId === userId || file.uploaderId === clientId || isProjectOwner
         })) || [];
 
-    if (filesLoading) return <p>Loading...</p>;
+    if (isLoading) return <p>Loading...</p>;
 
     return (
         <div className="border rounded-md p-6 my-8">

@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import api from "../../lib/axios";
 
-const ProjectAccessPrompt = ({ projectId }: { projectId: string; }) => {
+const ProjectAccessPrompt = ({ projectId, code }: { projectId: string; code?: string; }) => {
 	const [email, setEmail] = useState("");
+	const [name, setName] = useState("");
 	const navigate = useNavigate();
 
 	const handleLoginRedirect = () => {
@@ -19,14 +20,14 @@ const ProjectAccessPrompt = ({ projectId }: { projectId: string; }) => {
 		try {
 			const {
 				data: { data },
-			} = await api.post(`/projects/${projectId}/request-access`, { email });
+			} = await api.post("/auth/client/validate", { code, email, projectId, name });
 
-			// TODO. Temporary. Remove when email responses arrive
-			localStorage.setItem("projectToken", data.token);
-			localStorage.setItem("clientEmail", email);
-			alert("Access request sent to the project creator!");
+			if (data) {
+				// Tokens have been set in cookies. Reload?
+				console.log("Access granted, reloading page...", data);
+				// window.location.reload();
+			}
 
-			window.location.href = data.url;
 		} catch (error) {
 			alert("Request failed!");
 			console.error(error);
@@ -45,10 +46,10 @@ const ProjectAccessPrompt = ({ projectId }: { projectId: string; }) => {
 					</button>
 				</div>
 				<div className="border p-4 rounded-lg">
-					<h3>Want to get in?</h3>
+					<h3>Enter your name and email only</h3>
 					<p>
-						If you have not received an email from us, provide your email, and
-						we'll notify the creator
+						So that we know who you are, and can grant you access to the project
+						<br />
 					</p>
 					<div>
 						<input
@@ -56,8 +57,13 @@ const ProjectAccessPrompt = ({ projectId }: { projectId: string; }) => {
 							onChange={(e) => setEmail(e.target.value)}
 							placeholder="Enter your email"
 						/>
+						<input
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Enter your name"
+						/>
 						<button type="submit" onClick={handleRequestAccess}>
-							Request Access
+							View Project
 						</button>
 					</div>
 				</div>

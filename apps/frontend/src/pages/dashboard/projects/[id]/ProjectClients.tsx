@@ -2,10 +2,11 @@ import { useParams } from "react-router";
 import ClientCard from "../../clients/ClientCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
 import { Eye, MessageCircle } from "lucide-react";
-import { useProjectContext } from "../../../../context/ProjectProvider";
+import { useProjectContext } from "../../../../hooks/projects/useProjectContext";
+
 
 const ProjectClients = () => {
-	const { clients: projectClients, isLoading } = useProjectContext();
+	const { projectData: { clients: projectClients, isLoading } } = useProjectContext();
 	const { id } = useParams();
 
 

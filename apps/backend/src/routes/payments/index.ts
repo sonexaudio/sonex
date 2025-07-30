@@ -13,7 +13,7 @@ const paymentRouter = Router();
 // get current user subscription
 paymentRouter.get("/subscription", requireAuth, async (req, res) => {
 	if (!req.user?.stripeCustomerId) {
-		res.status(400).json({ error: "User does not have subscription" });
+		successResponse(res, { subscription: null, message: "User has not created a subscription" });
 		return;
 	}
 
@@ -28,6 +28,28 @@ paymentRouter.get("/subscription", requireAuth, async (req, res) => {
 	});
 
 	res.json({ data: { subscription } });
+});
+
+// get project owner subscription
+paymentRouter.get("/subscription/:userId", async (req, res) => {
+	const { userId } = req.params;
+
+	if (!userId) {
+		return errorResponse(res, 400, "User ID is required");
+	}
+
+	const subscription = await prisma.subscription.findFirst({
+		where: {
+			userId,
+			isActive: true,
+			endDate: {
+				gte: new Date(),
+			},
+		},
+	});
+
+	// If no subscription found, return null
+	successResponse(res, { subscription });
 });
 
 // create checkout session link to subscribe to a plan

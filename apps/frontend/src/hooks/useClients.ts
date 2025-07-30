@@ -3,6 +3,7 @@ import api from "../lib/axios";
 import type { AxiosError } from "axios";
 
 export interface Client {
+	isBlocked: boolean;
 	id: string;
 	name: string;
 	email: string;
@@ -53,6 +54,17 @@ export function useClients() {
 		}
 	};
 
+	const addClientToProject = async (projectId: string, clientData: Partial<Client>): Promise<Client | null> => {
+		try {
+			const { data: { data } } = await api.post(`/projects/${projectId}/clients`, clientData);
+
+			return data?.client || null;
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
 	const updateClient = async (id: string, clientData: Partial<Client>) => {
 		if (Object.entries(clientData).length === 0) return;
 		setLoading(true);
@@ -84,6 +96,20 @@ export function useClients() {
 		}
 	};
 
+	const removeClientFromProject = async (projectId: string, clientId: string) => {
+		setLoading(true);
+		try {
+			await api.delete(`/projects/${projectId}/clients/${clientId}`);
+			setClients(prev => prev.filter(client => client.id !== clientId));
+			setError(null);
+		} catch (error) {
+			console.error(error);
+			setError((error as AxiosError<AxiosResponseError>)?.response?.data?.error ?? "Failed to remove client from project");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const removeAllClients = async (clientsToRemove: Client[]) => {
 		setLoading(true);
 		try {
@@ -103,10 +129,12 @@ export function useClients() {
 		clients,
 		fetchClients,
 		addClient,
+		addClientToProject,
 		updateClient,
 		removeClient,
+		removeClientFromProject,
 		removeAllClients,
 		loading,
 		error,
 	};
-}
+};

@@ -20,9 +20,9 @@ import ProjectFiles from "./ProjectFiles";
 import NewFolderForm from "../../../../components/folders/NewFolderForm";
 import ProjectFileSystem from "./ProjectFileSystem";
 import ProjectViewTabs from "./ProjectTabs/ProjectView";
-import { useProjectContext } from "../../../../context/ProjectProvider";
 import { ClientPaymentProvider, useClientPayment } from "../../../../context/ClientPaymentProvider";
 import { Button } from "../../../../components/ui/button";
+import { useProjectContext } from "../../../../hooks/projects/useProjectContext";
 
 
 const PayForProjectButton = ({ disabled }: { disabled?: boolean; }) => {
@@ -39,47 +39,41 @@ const PayForProjectButton = ({ disabled }: { disabled?: boolean; }) => {
 };
 
 const CurrentProjectPage = () => {
-	const { project, loading, isOwner, authorizedClient } = useProjectContext();
-
-	console.log("AUTHORIZED CLIENT", authorizedClient);
-
 	const { id } = useParams();
-
-	if (loading) return <p>Loading...</p>;
-
-	const isValidProject = (p: any): p is ProjectWithUserInfo => !!p && typeof p === 'object' && 'id' in p && 'userId' in p && 'amount' in p;
-	const isValidClient = (c: any): c is Client => !!c && typeof c === 'object' && 'id' in c && 'email' in c;
+	const { projectData: { isLoading, project }, isOwner, isClient, currentClient } = useProjectContext();
 
 	const shouldShowPayment =
-		isValidProject(project) &&
-		isValidClient(authorizedClient) &&
-		(project as ProjectWithUserInfo).paymentStatus !== "Paid" &&
-		!!(project as ProjectWithUserInfo).amount &&
-		!!(project as ProjectWithUserInfo).userId;
+		project &&
+		isClient &&
+		!isOwner &&
+		project?.paymentStatus !== "Paid" &&
+		project?.amount &&
+		project?.userId;
+
+	if (isLoading) return <p>Loading...</p>;
 
 	return (
 		<ProjectAccessGate>
 			<PageLayout>
 				<div className="flex flex-col gap-6 p-6">
 					<div className="flex items-center justify-between">
-						{isValidProject(project) && (
-							<ProjectHeader project={project} isOwner={isOwner} />
-						)}
+
+						<ProjectHeader project={project} isOwner={isOwner} />
 					</div>
 					{isOwner && (
 						<ProjectViewTabs />
 					)}
-					{shouldShowPayment && isValidProject(project) && isValidClient(authorizedClient) ? (
+					{shouldShowPayment ? (
 						<ClientPaymentProvider
 							project={{
-								id: (project as ProjectWithUserInfo).id,
-								userId: (project as ProjectWithUserInfo).userId,
-								amount: (project as ProjectWithUserInfo).amount!,
-								paymentStatus: (project as ProjectWithUserInfo).paymentStatus,
+								id: project?.id,
+								userId: project?.userId,
+								amount: project?.amount!,
+								paymentStatus: project?.paymentStatus,
 							}}
 							client={{
-								id: (authorizedClient as Client).id,
-								email: (authorizedClient as Client).email,
+								id: currentClient?.id as string,
+								email: currentClient?.email as string,
 							}}
 						>
 							<div className="mb-4">
@@ -87,7 +81,7 @@ const CurrentProjectPage = () => {
 							</div>
 							<FileUploadProvider
 								projectId={id as string}
-								uploaderId={(authorizedClient as Client).id}
+								uploaderId={currentClient?.id as string}
 								uploaderType="CLIENT"
 							>
 								<section className="border rounded-md size-full p-8 space-y-8">
@@ -98,11 +92,11 @@ const CurrentProjectPage = () => {
 							<ProjectFileSystem />
 						</ClientPaymentProvider>
 					) : (
-						isValidClient(authorizedClient) && (
+						!!currentClient && (
 							<>
 								<FileUploadProvider
 									projectId={id as string}
-									uploaderId={(authorizedClient as Client).id}
+									uploaderId={currentClient?.id as string}
 									uploaderType="CLIENT"
 								>
 									<section className="border rounded-md size-full p-8 space-y-8">

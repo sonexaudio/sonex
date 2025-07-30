@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Folder } from "lucide-react";
-import { useProjectContext } from "../../context/ProjectProvider";
+import { useProjectContext } from "../../hooks/projects/useProjectContext";
+
 
 interface NewFolderFormProps {
     onClose?: () => void;
@@ -14,7 +15,7 @@ interface NewFolderFormProps {
 const NewFolderForm = ({ onClose }: NewFolderFormProps) => {
     const { id: projectId } = useParams();
     const { createFolder } = useFolders();
-    const { refetchFolders } = useProjectContext();
+    const { projectData: { refetchFolders } } = useProjectContext();
 
     const [folderInputData, setFolderInputData] = useState<{ name: string, parentId?: string | null; }>({
         name: "",
