@@ -52,6 +52,8 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode; }) => {
             } finally {
                 setLoading(false);
             }
+        } else {
+            setLoading(false);
         }
     }, [currentUser?.id]);
 

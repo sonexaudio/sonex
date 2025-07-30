@@ -42,7 +42,7 @@ export async function validateClientCode(code: string, projectId: string) {
     const hashedToken = generateTokenHash(code);
     const access = await prisma.clientAccess.findUnique({ where: { token: hashedToken, projectId } });
 
-    if (!access || access.projectId !== projectId || access.acceptedAt || access.expires < new Date()) {
+    if (!access || access.projectId !== projectId || access.expires < new Date()) {
         return null;
     }
 
@@ -52,6 +52,8 @@ export async function validateClientCode(code: string, projectId: string) {
     const clientToken = jwt.sign({
         projectId, email: access.email
     }, config.auth.clientTokenSecret);
+
+    console.log("CLIENT TOKEN", clientToken);
 
     return clientToken;
 }

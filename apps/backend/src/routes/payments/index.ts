@@ -13,7 +13,7 @@ const paymentRouter = Router();
 // get current user subscription
 paymentRouter.get("/subscription", requireAuth, async (req, res) => {
 	if (!req.user?.stripeCustomerId) {
-		res.status(400).json({ error: "User does not have subscription" });
+		successResponse(res, { subscription: null, message: "User has not created a subscription" });
 		return;
 	}
 
