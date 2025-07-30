@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../../components/ui/card";
 import { Input } from "../../../../../components/ui/input";
 import { TabsContent } from "../../../../../components/ui/tabs";
@@ -6,9 +6,7 @@ import { Button } from "../../../../../components/ui/button";
 import { Check, Copy } from "lucide-react";
 // import NewClientForm from "../../../clients/NewClientForm";
 import ProjectClients from "../ProjectClients";
-import { useProjectContext } from "../../../../../context/ProjectProvider";
 import ClientAutoSuggestForm from "../../../../../components/ClientAutoSuggestForm";
-import { useClients } from "../../../../../hooks/useClients";
 import {
     Dialog,
     DialogContent,
@@ -18,16 +16,17 @@ import {
     DialogDescription,
 } from "../../../../../components/ui/dialog";
 import useUser from "../../../../../hooks/useUser";
+import { useProjectContext } from "../../../../../hooks/projects/useProjectContext";
 
 const ProjectClientAccessTab = () => {
-    const { project, clients, addClientToProject } = useProjectContext();
+    const { projectData: { project, clients }, addClient } = useProjectContext();
     const { currentUser } = useUser();
     const [showDialog, setShowDialog] = useState(false);
     const [newClientEmail, setNewClientEmail] = useState("");
     const [newClientName, setNewClientName] = useState("");
     const [copied, setCopied] = useState(false);
 
-    const shareLink = `${import.meta.env.VITE_FRONTEND_URL}/projects/${project?.id}?shareToken=${crypto.randomUUID()}`;
+    const shareLink = `${import.meta.env.VITE_FRONTEND_URL}/projects/${project?.id}?code=${project?.shareCode}`;
 
     const copyShareLink = () => {
         navigator.clipboard.writeText(shareLink);
@@ -35,7 +34,6 @@ const ProjectClientAccessTab = () => {
         setTimeout(() => setCopied(false), 2000);
 
     };
-
 
     const addExistingClientToProject = async () => {
         alert("Adding Existing Client to Project");
@@ -47,7 +45,7 @@ const ProjectClientAccessTab = () => {
     };
 
     const handleAddNewClientToProject = async () => {
-        await addClientToProject({ email: newClientEmail, name: newClientName, userId: currentUser?.id, projectId: project?.id });
+        await addClient(project?.id as string, { email: newClientEmail, name: newClientName, userId: currentUser?.id });
         setShowDialog(false);
         setNewClientEmail("");
         setNewClientName("");

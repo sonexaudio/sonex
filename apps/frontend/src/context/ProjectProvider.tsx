@@ -1,7 +1,6 @@
 import type React from "react";
 import {
     createContext,
-    useContext,
     useCallback,
     useEffect,
 } from "react";
@@ -11,17 +10,14 @@ import { useClients, type Client } from "../hooks/useClients";
 import { useAuth } from "../hooks/useAuth";
 import useClientAuth from "../hooks/useClientAuth";
 import { useProjectData, type SingleProjectViewData } from "../hooks/projects/useProjectData";
-import { useProjectAccess } from "../hooks/projects/useProjectAccess";
+import { useProjectAccess, type AccessLevel } from "../hooks/projects/useProjectAccess";
 import { useBuildFileTree } from "../hooks/projects/useBuildFileTree";
-import type { SonexFile } from "../types/files";
-import type { ISonexFolder } from "../hooks/useFolders";
 
 interface ProjectContextType {
-    projectData: SingleProjectViewData;
-    files: SonexFile[];
-    folders: ISonexFolder[];
+    projectData: SingleProjectViewData | undefined;
     fileTree: ReturnType<typeof useBuildFileTree>;
-    accessLevel: string;
+    accessLevel: AccessLevel;
+    changeAccessLevel: (level: AccessLevel) => void;
     addClient: (projectId: string, clientData: Partial<Client>) => Promise<Client | null>;
     removeClient: (projectId: string, clientId: string) => Promise<void>;
     isOwner: boolean;
@@ -30,15 +26,17 @@ interface ProjectContextType {
     isUnknown: boolean;
     currentUser: ReturnType<typeof useAuth>["user"];
     currentClient: ReturnType<typeof useClientAuth>["client"];
+    userLoading: boolean;
+    clientLoading: boolean;
 }
 
 export const ProjectContext = createContext<ProjectContextType | null>(null);
 
 export const PROJECT_ACCESS_LEVELS = {
-    OWNER: "owner",
-    CLIENT: "client",
-    UNAUTHORIZED: "unauthorized",
-    UNKNOWN: "unknown",
+    OWNER: "OWNER",
+    CLIENT: "CLIENT",
+    UNAUTHORIZED: "UNAUTHORIZED",
+    UNKNOWN: "UNKNOWN",
 };
 
 // The ProjectProvider provides all data and functions pertaining to the current project
@@ -50,11 +48,12 @@ export const PROJECT_ACCESS_LEVELS = {
 export const ProjectProvider: React.FC<{ children: React.ReactNode; }> = ({
     children,
 }) => {
-    const { user } = useAuth();
-    const { client } = useClientAuth();
+    const { user, loading: userLoading } = useAuth();
+    const { client, loading: clientLoading } = useClientAuth();
+    console.log("CLIENT IN PROJECT PROVIDER", client);
     const { id: projectId } = useParams();
     const projectData = useProjectData(projectId);
-    const accessLevel = useProjectAccess({ userId: user?.id, clientEmail: client?.email, project: projectData?.project as DetailedProject | null });
+    const { accessLevel, changeAccessLevel } = useProjectAccess({ userId: user?.id, clientEmail: client?.email, project: projectData?.project as DetailedProject | null });
     const fileTree = useBuildFileTree(projectData?.files || [], projectData?.folders || []);
     const { addClientToProject, removeClientFromProject } = useClients();
 
@@ -92,15 +91,15 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode; }> = ({
     const isUnauthorized = accessLevel === PROJECT_ACCESS_LEVELS.UNAUTHORIZED;
     const isUnknown = accessLevel === PROJECT_ACCESS_LEVELS.UNKNOWN;
 
+
     // Load initial data
     useEffect(() => {
         if (!projectId || projectData?.isLoading) return;
-
-        projectData?.fetchAllProjectData().then(() => console.log("Fetched all project data"));
+        projectData?.fetchAllProjectData();
     }, [projectId]);
 
     const contextValues = {
-        ...projectData,
+        projectData,
         currentUser: user,
         currentClient: client,
         fileTree,
@@ -110,7 +109,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode; }> = ({
         isOwner,
         isClient,
         isUnauthorized,
-        isUnknown
+        isUnknown,
+        changeAccessLevel,
+        userLoading,
+        clientLoading,
     };
 
     return (

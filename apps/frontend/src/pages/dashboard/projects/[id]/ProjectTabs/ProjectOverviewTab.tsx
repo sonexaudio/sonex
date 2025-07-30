@@ -7,18 +7,17 @@ import {
     CardTitle,
 } from "../../../../../components/ui/card";
 
-import { useProjectContext } from "../../../../../context/ProjectProvider";
 import { HardDrive, FileText, Users, Folder } from "lucide-react";
 import { useMemo } from "react";
-import useUser from "../../../../../hooks/useUser";
 import type { ProjectWithUserInfo } from "../../../../../types/projects";
 import ProjectActions from "../ProjectActions";
 import ProjectDangerZone from "../ProjectDangerZone";
 import UpdateProjectForm from "../UpdateProjectForm";
 import type { SonexFile } from "../../../../../types/files";
+import { useProjectContext } from "../../../../../hooks/projects/useProjectContext";
 
 const ProjectOverviewTab = () => {
-    const { project, files, clients, folders, isLoading, isOwner } = useProjectContext();
+    const { projectData: { project, files, clients, folders, isLoading }, isOwner } = useProjectContext();
 
     // Calculate storage usage
     const storageStats = useMemo(() => {

@@ -1,16 +1,15 @@
-import { Trash2Icon, Folder, Eye, EyeOff } from "lucide-react";
+import { Trash2Icon, Eye, EyeOff } from "lucide-react";
 import type { SonexUploadFile } from "../../context/FileUploadProvider";
 import { useFileUpload } from "../../hooks/useFileUpload";
 import FileThumbnail from "./FileUploadThumbnail";
-import FileUploadProgressBar from "./FileUploadProgressBar";
 import { useEffect, useState } from "react";
 import FileUploadCircularProgress from "./FileUploadCircularProgress";
 import { formatFileSize } from "../../utils/files";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { useProjectData } from "../../hooks/useProjectData";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
+import { useProjectContext } from "../../hooks/projects/useProjectContext";
 
 const FileUploadCard = ({
 	file,
@@ -21,7 +20,7 @@ const FileUploadCard = ({
 	isPublic = true,
 }: SonexUploadFile) => {
 	const { removeFile, updateFileSettings } = useFileUpload();
-	const { folders } = useProjectData();
+	const { projectData: { folders } } = useProjectContext();
 
 	const [uploadProgress, setUploadProgress] = useState(0);
 

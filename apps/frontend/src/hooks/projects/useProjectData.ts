@@ -172,6 +172,7 @@ export function useProjectData(projectId: string | undefined): SingleProjectView
             setClients(projectClients);
             setFiles(data.project.files || []);
 
+            console.log("Got the project details!");
             updateLoadingState("project", LOADING_STATES.SUCCESS);
             updateLoadingState("clients", LOADING_STATES.SUCCESS);
             updateLoadingState("files", LOADING_STATES.SUCCESS);
@@ -182,6 +183,8 @@ export function useProjectData(projectId: string | undefined): SingleProjectView
             updateLoadingState("project", LOADING_STATES.ERROR);
             console.error("Error fetching project data:", error);
             throw error;
+        } finally {
+            console.error("Finished fetching project data");
         }
     },
         [

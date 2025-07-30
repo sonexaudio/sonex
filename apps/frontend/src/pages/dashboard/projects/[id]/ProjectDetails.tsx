@@ -1,16 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
-import { useProjectContext } from "../../../../context/ProjectProvider";
-import useUser from "../../../../hooks/useUser";
+import { useProjectContext } from "../../../../hooks/projects/useProjectContext";
 import type { ProjectWithUserInfo } from "../../../../types/projects";
 import ProjectActions from "./ProjectActions";
 import ProjectDangerZone from "./ProjectDangerZone";
 import UpdateProjectForm from "./UpdateProjectForm";
 
 const ProjectDetails = () => {
-	const { project } = useProjectContext();
-	const { currentUser } = useUser();
+	const { projectData: { project }, isOwner } = useProjectContext();
 
-	const isOwner = !!currentUser && currentUser.id === project?.userId;
 
 	return (
 		<div className="grid md:grid-cols-2 gap-6">

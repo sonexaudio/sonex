@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from "date-fns";
-import type { ProjectWithUserInfo } from "../../../../types/projects";
+import type { DetailedProject } from "../../../../types/projects";
 import { Badge } from "../../../../components/ui/badge";
 import { Button } from "../../../../components/ui/button";
 import { LockIcon } from "lucide-react";
@@ -7,7 +7,7 @@ import { LockIcon } from "lucide-react";
 const ProjectHeader = ({
 	project,
 	isOwner,
-}: { project: ProjectWithUserInfo; isOwner: boolean; }) => {
+}: { project: DetailedProject | null; isOwner: boolean; }) => {
 	return (
 		<div className="flex justify-between items-center w-full">
 			<div>

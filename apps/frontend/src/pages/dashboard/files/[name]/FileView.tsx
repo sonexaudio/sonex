@@ -5,12 +5,11 @@ import { useParams } from "react-router";
 import { formatDistanceToNow } from "date-fns";
 import { formatFileSize } from "../../../../utils/files";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
-import useProjects from "../../../../hooks/useProjects";
 import { Badge } from "../../../../components/ui/badge";
 import FileCommentSection from "../../../../components/FileCommentSection";
 import AudioPlayer from "../../../../components/AudioPlayer";
 import { useSingleFileContext } from "../../../../context/SingleFileContextProvider";
-import { useProjectContext } from "../../../../context/ProjectProvider";
+import { useProjectContext } from "../../../../hooks/projects/useProjectContext";
 
 interface FileViewProps {
     onBack: () => void;
@@ -18,7 +17,7 @@ interface FileViewProps {
 
 const FileView = ({ onBack }: FileViewProps) => {
     const { downloadFile } = useFiles();
-    const { project: currentProject } = useProjectContext();
+    const { projectData: { project: currentProject } } = useProjectContext();
     const { fileId } = useParams();
     const { currentFile, loading, duration, formatTime } = useSingleFileContext();
 

@@ -1,8 +1,9 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import api from "../lib/axios";
 import type { AxiosError } from "axios";
 
 export interface Client {
+	isBlocked: boolean;
 	id: string;
 	name: string;
 	email: string;
