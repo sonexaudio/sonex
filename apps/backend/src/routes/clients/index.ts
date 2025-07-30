@@ -42,7 +42,6 @@ clientRouter.post("/", requireAuth, async (req, res) => {
 				targetType: "client",
 				metadata: {
 					email: client.email,
-					projectTitle: client.projectId,
 				},
 				targetId: client.id,
 			},
@@ -101,7 +100,6 @@ clientRouter.post("/delete-all", requireAuth, async (req, res) => {
 						targetId: client.id,
 						metadata: {
 							email: client.email,
-							projectId: client.projectId,
 						},
 					},
 				}),
@@ -148,7 +146,6 @@ clientRouter.put("/:id", requireAuth, async (req, res) => {
 				targetType: "client",
 				metadata: {
 					email: updatedClient.email,
-					projectTitle: updatedClient.projectId,
 				},
 				targetId: updatedClient.id,
 			},
@@ -189,7 +186,6 @@ clientRouter.delete("/:id", requireAuth, async (req, res) => {
 				targetType: "client",
 				metadata: {
 					email: client.email,
-					projectTitle: client.projectId,
 				},
 				targetId: client.id,
 			},

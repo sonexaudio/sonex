@@ -61,11 +61,7 @@ model Client {
   id        String  @id @default(cuid())
   name      String?
   email     String
-  projectId String
   userId    String
-
-  // Flags
-  projectPermissions Json? // { "projectId": string, "canComment": boolean, canView: boolean, canUpload: boolean }
   isBlocked          Boolean @default(false)
 
   // Database Timestamps
@@ -78,7 +74,7 @@ model Client {
 
   // Make sure same client is not added again to user
   // However, same client can be added to multiple users
-  @@unique([email, projectId, userId])
+  @@unique([email, userId])
 }
 
 model Project {
@@ -89,6 +85,7 @@ model Project {
   amount        Decimal?
   dueDate       DateTime?
   status        ProjectStatus        @default(Active) // active, complete, archived, private
+  shareCode   String? @unique
   paymentStatus ProjectPaymentStatus @default(Unpaid) // free, unpaid, paid
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
@@ -261,6 +258,11 @@ model ClientProject {
   // Associations
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Make sure same client is not added again to project
+  @@unique([clientId, projectId])
+  @@index([projectId])
+  @@index([clientId])
 }
 
 model ClientAccess {

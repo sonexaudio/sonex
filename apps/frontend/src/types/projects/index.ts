@@ -20,14 +20,30 @@ export interface Project {
 	updatedAt?: string | Date | undefined;
 	fileCount?: number;
 	clientCount?: number;
+	shareCode: string;
 }
 
 export interface ProjectWithUserInfo extends Project {
 	user: Pick<User, "id" | "firstName" | "email">;
 }
 
+interface ProjectClient {
+	id: string;
+	clientId: string;
+	projectId: string;
+	canView: boolean;
+	canComment: boolean;
+	canUpload: boolean;
+	canDownload: boolean;
+	isBlocked: boolean;
+	createdAt: string | Date;
+	updatedAt: string | Date;
+	client: Client;
+}
+
 export interface DetailedProject extends Project {
-	clients: Client[];
+	// gonna be
+	clients: ProjectClient[];
 }
 
 export interface PaginationInfo {
