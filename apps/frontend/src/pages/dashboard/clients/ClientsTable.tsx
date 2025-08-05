@@ -17,10 +17,10 @@ interface ClientsTableProps {
 }
 
 const ClientsTable = ({ clients }: ClientsTableProps) => {
-    const { removeClient } = useClients();
+    const { deleteClient } = useClients();
 
-    const handleRemoveClient = async (clientId: string) => {
-        await removeClient(clientId);
+    const handleDeleteClient = async (clientId: string) => {
+        await deleteClient({ id: clientId });
     };
 
     if (clients.length === 0) {
@@ -43,7 +43,7 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
                 <CardTitle>All Clients</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-2">
                     {clients.map((client) => (
                         <div
                             key={client.id}
@@ -73,7 +73,7 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem
-                                            onClick={() => handleRemoveClient(client.id)}
+                                            onClick={() => handleDeleteClient(client.id)}
                                             className="text-destructive"
                                         >
                                             <Trash2 className="h-4 w-4 mr-2" />
