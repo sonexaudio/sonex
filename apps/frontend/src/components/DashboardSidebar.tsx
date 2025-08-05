@@ -26,7 +26,7 @@ const DashboardSidebar = () => {
     const handleOnboardingTrigger = () => {
         localStorage.setItem("promptForOnboarding", "true");
         setTriggered(true);
-        window.location.reload(); // Ensures AuthLayout picks up the change
+        window.location.reload(); // Ensures ProtectedRoute picks up the change
     };
 
     return (

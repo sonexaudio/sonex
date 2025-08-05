@@ -15,7 +15,7 @@ const publicRoutes = [
 	"/reset-password",
 ];
 
-const AuthLayout = ({ children }: PropsWithChildren) => {
+const ProtectedRoute = ({ children }: PropsWithChildren) => {
 	const { user, loading, refetchUser } = useAuth();
 	const location = useLocation();
 	const { projects } = useProjects();
@@ -102,4 +102,4 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 		{children}
 	</>;
 };
-export default AuthLayout;
+export default ProtectedRoute;

@@ -1,4 +1,4 @@
-import { useReducer, useState } from "react";
+import { useState } from "react";
 import type { SonexFile } from "../types/files";
 import api from "../lib/axios";
 

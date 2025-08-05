@@ -1,28 +1,15 @@
-import { useEffect } from "react";
 import PageLayout from "../../../../components/PageLayout";
-import useProjects from "../../../../hooks/useProjects";
 import { useParams } from "react-router";
-import useUser from "../../../../hooks/useUser";
-import ProjectActions from "./ProjectActions";
 import ProjectHeader from "./ProjectHeader";
-import UpdateProjectForm from "./UpdateProjectForm";
-import ProjectDangerZone from "./ProjectDangerZone";
-import type { ProjectWithUserInfo } from "../../../../types/projects";
-import type { Client } from "../../../../hooks/useClients";
 import FileDropzone from "../../../../components/files/FileDropzone";
 import { FileUploadProvider } from "../../../../context/FileUploadProvider";
 import FileUploadViewer from "../../../../components/files/FileUploadViewer";
-import NewClientForm from "../../clients/NewClientForm";
-import ProjectClients from "./ProjectClients";
-import ProjectAccessGate from "../../../../components/auth/ProjectAccessLevel";
-import useClientAuth from "../../../../hooks/useClientAuth";
-import ProjectFiles from "./ProjectFiles";
-import NewFolderForm from "../../../../components/folders/NewFolderForm";
 import ProjectFileSystem from "./ProjectFileSystem";
 import ProjectViewTabs from "./ProjectTabs/ProjectView";
 import { ClientPaymentProvider, useClientPayment } from "../../../../context/ClientPaymentProvider";
 import { Button } from "../../../../components/ui/button";
 import { useProjectContext } from "../../../../hooks/projects/useProjectContext";
+import ProjectAccessGate from "../../../../components/auth/ProjectAccessLevel";
 
 
 const PayForProjectButton = ({ disabled }: { disabled?: boolean; }) => {

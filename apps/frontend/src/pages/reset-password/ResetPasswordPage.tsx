@@ -1,5 +1,4 @@
 import { Navigate, useSearchParams } from "react-router";
-import AuthLayout from "../../components/AuthLayout";
 import PageLayout from "../../components/PageLayout";
 import ResetPasswordForm from "./ResetPasswordForm";
 
@@ -14,11 +13,10 @@ const ResetPasswordPage = () => {
 	}
 
 	return (
-		<AuthLayout>
-			<PageLayout>
-				<ResetPasswordForm token={token as string} />
-			</PageLayout>
-		</AuthLayout>
+
+		<PageLayout>
+			<ResetPasswordForm token={token as string} />
+		</PageLayout>
 	);
 };
 export default ResetPasswordPage;

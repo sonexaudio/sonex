@@ -9,15 +9,19 @@ import { Button } from "../../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
 import { Plus, Upload, Users, Folder, FileText, MessageCircle } from "lucide-react";
 import type { Project } from "../../../types/projects";
-import AuthLayout from "../../../components/AuthLayout";
 import { useClients } from "../../../hooks/useClients";
 import useFiles from "../../../hooks/useFiles";
 import NoProjects from "../../../components/empty-state/NoProjects";
+import { useNavigate } from "react-router";
+import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 
 const OverviewPage = () => {
+	useDocumentTitle("My Sonex | Overview");
+
+	const navigate = useNavigate();
 	const { currentUser } = useUser();
 	const { projects, projectsLoading } = useProjects();
-	const { clients, loading: clientsLoading, fetchClients } = useClients();
+	const { clients, clientsLoading } = useClients();
 	const { files, loading: filesLoading, fetchFiles } = useFiles();
 	const { comments, loading: commentsLoading, fetchComments } = useComments();
 	const { transactions, loading: paymentsLoading, fetchTransactions } = useTransactions();
@@ -28,14 +32,15 @@ const OverviewPage = () => {
 		if (!currentUser) {
 			return;
 		}
-		// Fetch any initial data if needed
-		// fetchProjects();
-		// fetchClients();
 		fetchFiles();
 		fetchComments();
 		fetchTransactions();
 
 	}, [currentUser]);
+
+	const handleGoToProject = (id: string) => {
+		return navigate(`/projects/${id}`);
+	};
 
 	const quickActions = [
 		{ icon: <Plus />, label: "New Project", onClick: () => {/* route to new project */ } },
@@ -63,40 +68,35 @@ const OverviewPage = () => {
 		</Card>
 	);
 
-	console.log(projects.length, clients.length, files.length, comments.length, transactions.length);
-
 	if (projectsLoading || clientsLoading || filesLoading || commentsLoading || paymentsLoading) {
 		return (
-			<AuthLayout>
-				<PageLayout>
-					<div className="flex items-center justify-center h-full">
-						<p>Loading...</p>
-					</div>
-				</PageLayout>
-			</AuthLayout>
+
+			<PageLayout>
+				<div className="flex items-center justify-center h-full">
+					<p>Loading...</p>
+				</div>
+			</PageLayout>
 		);
 	}
 
 	return (
-		<AuthLayout>
-			<PageLayout>
-				{/* If there are no projects, clients, files, comments, or transactions, return a call to action to create a project to get started */}
-				{isEmpty ? (
-					<NoProjects />
-				) : (<div
-					className="grid gap-3"
-					style={{
-						display: 'grid',
-						gridTemplateColumns: 'repeat(6, 1fr)',
-						gridTemplateRows: 'repeat(3, minmax(120px, auto))',
-						gridTemplateAreas: `
-						  'main main main activity activity activity'
-						  'projects revenue comments comments unique unique'
-						  'flexible flexible payments payments status status'
-						`,
-					}}
+
+		<PageLayout>
+			{/* If there are no projects, clients, files, comments, or transactions, return a call to action to create a project to get started */}
+			{isEmpty ? (
+				<NoProjects />
+			) : (
+				<div
+					className="
+						mt-6
+						grid gap-3
+						grid-cols-6
+						grid-rows-3
+						[grid-template-areas:'main_main_main_activity_activity_activity''projects_revenue_comments_comments_unique_unique''flexible_flexible_payments_payments_status_status']
+						[min-h-[120px]]
+					"
 				>
-					{/* Main Board/Quick Actions/Stats */}
+
 					<Card className="col-span-3 row-span-1" style={{ gridArea: 'main' }}>
 						<CardHeader>
 							<CardTitle>Welcome{currentUser ? `, ${currentUser.firstName}` : ""}!</CardTitle>
@@ -129,7 +129,7 @@ const OverviewPage = () => {
 						</CardHeader>
 						<CardContent>
 							<ul className="space-y-2">
-								{/* Replace with real activities */}
+								{/* TODO: Replace with real activities */}
 								<li>No recent activities yet.</li>
 							</ul>
 						</CardContent>
@@ -145,7 +145,7 @@ const OverviewPage = () => {
 								{projects.slice(0, 4).map((project: Project) => (
 									<li key={project.id} className="flex items-center justify-between">
 										<span>{project.title}</span>
-										<Button size="sm" variant="link">Go to Project</Button>
+										<Button size="sm" variant="link" onClick={() => handleGoToProject(project.id)}>Go to Project</Button>
 									</li>
 								))}
 							</ul>
@@ -220,8 +220,7 @@ const OverviewPage = () => {
 					</Card>
 				</div>)}
 
-			</PageLayout>
-		</AuthLayout>
+		</PageLayout>
 	);
 };
 
