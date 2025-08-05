@@ -6,17 +6,24 @@ import { AuthProvider } from "./context/AuthProvider.tsx";
 import { BrowserRouter } from "react-router";
 import { ClientAuthProvider } from "./context/ClientAuthProvider.tsx";
 import SubscriptionProvider from "./context/SubscriptionProvider.tsx";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { queryClient } from "./utils/react-query.ts";
+
 
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>
-		<BrowserRouter>
-			<AuthProvider>
-				<ClientAuthProvider>
-					<SubscriptionProvider>
-						<App />
-					</SubscriptionProvider>
-				</ClientAuthProvider>
-			</AuthProvider>
-		</BrowserRouter>
+		<QueryClientProvider client={queryClient}>
+			<BrowserRouter>
+				<AuthProvider>
+					<ClientAuthProvider>
+						<SubscriptionProvider>
+							<App />
+						</SubscriptionProvider>
+					</ClientAuthProvider>
+				</AuthProvider>
+			</BrowserRouter>
+			<ReactQueryDevtools initialIsOpen={false} />
+		</QueryClientProvider>
 	</StrictMode>,
 );

@@ -88,3 +88,5 @@ txRouter.delete("/:id", requireAuth, async (req, res) => {
 
 	res.sendStatus(204);
 });
+
+export default txRouter;
