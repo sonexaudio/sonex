@@ -24,10 +24,6 @@ export function useTransactions() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchTransactions();
-    }, []);
-
     async function fetchTransactions() {
         setLoading(true);
         try {

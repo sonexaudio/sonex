@@ -14,7 +14,7 @@ interface NewClientFormProps {
 const NewClientForm = ({ onClose }: NewClientFormProps) => {
 	const { currentUser } = useUser();
 	const { id: projectId } = useParams();
-	const { addClient } = useClients();
+	const { createClient } = useClients();
 	const [clientData, setClientData] = useState({
 		name: "",
 		email: "",
@@ -32,13 +32,13 @@ const NewClientForm = ({ onClose }: NewClientFormProps) => {
 
 		try {
 			const data = {
-				name: clientData.name,
-				email: clientData.email,
+				name: clientData.name.trim(),
+				email: clientData.email.trim(),
 				projectId,
 				userId: currentUser?.id,
 			};
 
-			await addClient(data);
+			await createClient(data);
 			setClientData({ name: "", email: "" });
 			onClose();
 		} catch (error) {

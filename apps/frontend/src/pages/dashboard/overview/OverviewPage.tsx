@@ -10,17 +10,32 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Plus, Upload, Users, Folder, FileText, MessageCircle } from "lucide-react";
 import type { Project } from "../../../types/projects";
 import AuthLayout from "../../../components/AuthLayout";
-import { useProjectData } from "../../../hooks/projects/useProjectData";
 import { useClients } from "../../../hooks/useClients";
 import useFiles from "../../../hooks/useFiles";
+import NoProjects from "../../../components/empty-state/NoProjects";
 
 const OverviewPage = () => {
 	const { currentUser } = useUser();
-	const { projects, loading: projectsLoading } = useProjects();
-	const { clients, loading: clientsLoading } = useClients();
-	const { files, loading: filesLoading } = useFiles();
-	const { comments, loading: commentsLoading } = useComments();
-	const { transactions, loading: paymentsLoading } = useTransactions();
+	const { projects, projectsLoading } = useProjects();
+	const { clients, loading: clientsLoading, fetchClients } = useClients();
+	const { files, loading: filesLoading, fetchFiles } = useFiles();
+	const { comments, loading: commentsLoading, fetchComments } = useComments();
+	const { transactions, loading: paymentsLoading, fetchTransactions } = useTransactions();
+
+	const isEmpty = projects.length === 0 && clients.length === 0 && files.length === 0 && comments.length === 0 && transactions.length === 0;
+
+	useEffect(() => {
+		if (!currentUser) {
+			return;
+		}
+		// Fetch any initial data if needed
+		// fetchProjects();
+		// fetchClients();
+		fetchFiles();
+		fetchComments();
+		fetchTransactions();
+
+	}, [currentUser]);
 
 	const quickActions = [
 		{ icon: <Plus />, label: "New Project", onClick: () => {/* route to new project */ } },
@@ -29,10 +44,10 @@ const OverviewPage = () => {
 	];
 
 	const stats = [
-		{ icon: <Folder />, label: "Projects", value: projects.length },
-		{ icon: <Users />, label: "Clients", value: clients.length },
-		{ icon: <FileText />, label: "Files", value: files.length },
-		{ icon: <MessageCircle />, label: "Comments", value: comments.length },
+		{ icon: <Folder />, label: "Projects", value: projects?.length },
+		{ icon: <Users />, label: "Clients", value: clients?.length },
+		{ icon: <FileText />, label: "Files", value: files?.length },
+		{ icon: <MessageCircle />, label: "Comments", value: comments?.length },
 	];
 
 	const ChartPlaceholder = ({ title }: { title: string; }) => (
@@ -48,11 +63,28 @@ const OverviewPage = () => {
 		</Card>
 	);
 
+	console.log(projects.length, clients.length, files.length, comments.length, transactions.length);
+
+	if (projectsLoading || clientsLoading || filesLoading || commentsLoading || paymentsLoading) {
+		return (
+			<AuthLayout>
+				<PageLayout>
+					<div className="flex items-center justify-center h-full">
+						<p>Loading...</p>
+					</div>
+				</PageLayout>
+			</AuthLayout>
+		);
+	}
+
 	return (
 		<AuthLayout>
 			<PageLayout>
-				<div
-					className="grid gap-6"
+				{/* If there are no projects, clients, files, comments, or transactions, return a call to action to create a project to get started */}
+				{isEmpty ? (
+					<NoProjects />
+				) : (<div
+					className="grid gap-3"
 					style={{
 						display: 'grid',
 						gridTemplateColumns: 'repeat(6, 1fr)',
@@ -110,7 +142,7 @@ const OverviewPage = () => {
 						</CardHeader>
 						<CardContent>
 							<ul className="space-y-2">
-								{allProjects.slice(0, 4).map((project: Project) => (
+								{projects.slice(0, 4).map((project: Project) => (
 									<li key={project.id} className="flex items-center justify-between">
 										<span>{project.title}</span>
 										<Button size="sm" variant="link">Go to Project</Button>
@@ -186,7 +218,8 @@ const OverviewPage = () => {
 							</div>
 						</CardContent>
 					</Card>
-				</div>
+				</div>)}
+
 			</PageLayout>
 		</AuthLayout>
 	);

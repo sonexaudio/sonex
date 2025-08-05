@@ -1,23 +1,22 @@
 import { useForm } from "react-hook-form";
-import useProjects from "../../../hooks/useProjects";
+import useProjects from "../../hooks/useProjects";
 import { ProjectSchema } from "@sonex/schemas/project";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import type { Project } from "../../../types/projects";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Textarea } from "../../../components/ui/textarea";
-import { Label } from "../../../components/ui/label";
-import { DialogHeader, DialogTitle, DialogContent, DialogFooter } from "../../../components/ui/dialog";
+import type { Project } from "../../types/projects";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
+import { Label } from "../ui/label";
+import { DialogHeader, DialogTitle, DialogContent, DialogFooter, DialogTrigger, DialogDescription } from "../ui/dialog";
+import { Dialog } from "@radix-ui/react-dialog";
 
-interface NewProjectFormProps {
-	onClose?: () => void;
-}
 
-const NewProjectForm = ({ onClose }: NewProjectFormProps) => {
+const NewProjectForm = () => {
 	const { createProject } = useProjects();
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [showNewProjectForm, setShowNewProjectForm] = useState(false);
 
 	const {
 		register,
@@ -40,7 +39,7 @@ const NewProjectForm = ({ onClose }: NewProjectFormProps) => {
 		try {
 			await createProject(data);
 			reset();
-			onClose?.();
+			setShowNewProjectForm(false);
 		} catch (error) {
 			setSubmitError(error as string);
 		} finally {
@@ -50,27 +49,28 @@ const NewProjectForm = ({ onClose }: NewProjectFormProps) => {
 
 	const handleCancel = () => {
 		reset();
-		onClose?.();
+		setShowNewProjectForm(false);
 	};
 
 	return (
-		<>
-			<DialogHeader>
-				<DialogTitle>Create New Project</DialogTitle>
-			</DialogHeader>
-			<DialogContent>
+		<Dialog open={showNewProjectForm} onOpenChange={setShowNewProjectForm}>
+			<DialogTrigger asChild>
+				<Button onClick={() => setShowNewProjectForm(true)}>New Project</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-[425px]">
+				<DialogHeader className="mb-4">
+					<DialogTitle>Project Details</DialogTitle>
+					<DialogDescription>
+						Add a new music project to collaborate on with clients.
+					</DialogDescription>
+				</DialogHeader>
 				<form onSubmit={handleSubmit((data) => handleSubmitProject(data))} className="space-y-6">
 					<div className="space-y-4">
-						<p className="text-sm text-muted-foreground">
-							Add a new music project to collaborate on with clients.
-						</p>
-
 						{submitError && (
 							<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
 								{submitError}
 							</div>
 						)}
-
 						<div className="space-y-2">
 							<Label htmlFor="title">Project Title</Label>
 							<Input
@@ -84,7 +84,6 @@ const NewProjectForm = ({ onClose }: NewProjectFormProps) => {
 								<p className="text-sm text-red-600">{errors.title.message}</p>
 							)}
 						</div>
-
 						<div className="space-y-2">
 							<Label htmlFor="description">Description</Label>
 							<Textarea
@@ -122,8 +121,10 @@ const NewProjectForm = ({ onClose }: NewProjectFormProps) => {
 						</Button>
 					</DialogFooter>
 				</form>
+
 			</DialogContent>
-		</>
+
+		</Dialog>
 	);
 };
 
