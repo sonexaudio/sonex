@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import type { ISonexComment } from "../types/comments";
-import api from "../lib/axios";
 import { useAuth } from "./useAuth";
 import useClientAuth from "./useClientAuth";
 import { useParams } from "react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteComment, fetchComments, postComment, postReply, updateComment } from "./query-functions/comments";
 
 
 export interface NewCommentData {
@@ -19,111 +20,54 @@ export const useComments = () => {
     const { client } = useClientAuth();
     const { fileId } = useParams();
 
-    const [comments, setComments] = useState<ISonexComment[]>([]);
-    const [loading, setLoading] = useState(false);
+    const queryClient = useQueryClient();
 
-    // useEffect(() => {
-    //     if (user?.id || client?.id) {
-    //         fetchComments();
-    //     }
-    // }, [user?.id, client?.id, fileId]);
-
-    const fetchComments = async () => {
-        setLoading(true);
-        try {
-            const params = fileId ? { fileId: fileId as string } : {};
-            const {
-                data: { data },
-            } = await api.get("/comments", { params });
-            setComments(data.comments);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const postComment = useCallback(async (commentData: NewCommentData) => {
-        setLoading(true);
-        try {
-            const newComment: Partial<ISonexComment> = {
-                clientId: client?.id || null,
-                userId: user?.id || null,
-                fileId: fileId as string,
-                content: commentData.content,
-                timestamp: commentData.isRevision
-                    ? (commentData.audioTimestamp as number)
-                    : null,
-            };
-
-            const {
-                data: { data },
-            } = await api.post("/comments", newComment);
-
-            if (data) {
-                fetchComments();
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    const postReply = useCallback(
-        async (parentId: string, replyData: NewCommentData) => {
-            setLoading(true);
-            try {
-                const newReply: Partial<ISonexComment> = {
-                    clientId: client?.id || null,
-                    userId: user?.id || null,
-                    fileId: fileId as string,
-                    content: replyData.content,
-                    timestamp: replyData.isRevision
-                        ? (replyData.audioTimestamp as number)
-                        : null,
-                    parentId,
-                };
-
-                const {
-                    data: { data },
-                } = await api.post("/comments/reply", newReply);
-
-                if (data.comment) {
-                    await fetchComments();
-                }
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        },
-        [],
+    // helper to add user/client info to comment data
+    const withUserClientInfo = useCallback((data: NewCommentData) => ({
+        ...data,
+        userId: user?.id || null,
+        clientId: client?.id || null,
+    }), [user, client]
     );
 
-    const deleteComment = useCallback(async (id: string) => {
-        setLoading(true);
-        try {
-            await api.delete(`/comments/${id}`);
-            setComments((prev) =>
-                prev
-                    .filter((comment) => comment.id !== id)
-                    .map((comment) => ({
-                        ...comment,
-                        replies: comment.replies.filter((reply) => reply.id !== id),
-                    })),
-            );
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
+    // get all comments
+    const fetchAll = useQuery({
+        queryKey: ["comments", fileId],
+        queryFn: ({ queryKey }) => fetchComments(queryKey[1] as string | undefined)
+    });
+
+    const create = useMutation({
+        mutationFn: (commentData: NewCommentData) => postComment(withUserClientInfo(commentData)),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["comments"] });
         }
-    }, []);
+    });
 
-    const threads = useMemo(() => {
-        if (!fileId) return [];
+    const update = useMutation({
+        mutationFn: ({ id, commentData }: { id: string; commentData: NewCommentData; }) => updateComment(id, withUserClientInfo(commentData)),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["comments"] });
+        }
+    });
 
-        // Build a map of comments
+    const deleteSingleComment = useMutation({
+        mutationFn: (id: string) => deleteComment(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["comments"] });
+        }
+    });
+
+    const reply = useMutation({
+        mutationFn: ({ parentId, replyData }: { parentId: string; replyData: NewCommentData; }) => postReply(parentId, replyData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["comments"] });
+        }
+    });
+
+    const loading = fetchAll.isLoading || create.isPending || update.isPending || deleteSingleComment.isPending || reply.isPending;
+
+    // build threads from comments
+    const buildCommentThreads = useCallback((comments: ISonexComment[]) => {
         const commentMap = new Map<
             string,
             ISonexComment & { replies: ISonexComment[]; }
@@ -148,14 +92,21 @@ export const useComments = () => {
         });
 
         return roots;
-    }, [comments, fileId]);
+    }, []);
+
+    const threads = useMemo(() => {
+        if (!fileId || !fetchAll.data) return [];
+
+        // Build threads from comments
+        return buildCommentThreads(fetchAll.data);
+    }, [fetchAll.data, fileId, buildCommentThreads]);
+
 
     return {
-        comments,
-        fetchComments,
-        postComment,
-        postReply,
-        deleteComment,
+        comments: fetchAll.data || [],
+        postComment: create.mutateAsync,
+        postReply: reply.mutateAsync,
+        deleteComment: deleteSingleComment.mutateAsync,
         loading,
         threads,
     };
