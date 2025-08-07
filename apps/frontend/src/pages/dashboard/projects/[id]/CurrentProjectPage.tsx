@@ -27,7 +27,7 @@ const PayForProjectButton = ({ disabled }: { disabled?: boolean; }) => {
 
 const CurrentProjectPage = () => {
 	const { id } = useParams();
-	const { projectData: { isLoading, project }, isOwner, isClient, currentClient } = useProjectContext();
+	const { projectData: { isLoading, project }, isOwner, isClient, currentClient, currentUser } = useProjectContext();
 
 	const shouldShowPayment =
 		project &&
@@ -42,60 +42,57 @@ const CurrentProjectPage = () => {
 	return (
 		<ProjectAccessGate>
 			<PageLayout>
-				<div className="flex flex-col gap-6 p-6">
-					<div className="flex items-center justify-between">
+				<FileUploadProvider
+					projectId={id as string}
+					uploaderId={isOwner ? currentUser?.id as string : currentClient?.id as string}
+					uploaderType={isOwner ? "USER" : "CLIENT"}
+				>
+					<div className="flex flex-col gap-6 p-6">
+						<div className="flex items-center justify-between">
 
-						<ProjectHeader project={project} isOwner={isOwner} />
-					</div>
-					{isOwner && (
-						<ProjectViewTabs />
-					)}
-					{shouldShowPayment ? (
-						<ClientPaymentProvider
-							project={{
-								id: project?.id,
-								userId: project?.userId,
-								amount: project?.amount!,
-								paymentStatus: project?.paymentStatus,
-							}}
-							client={{
-								id: currentClient?.id as string,
-								email: currentClient?.email as string,
-							}}
-						>
-							<div className="mb-4">
-								<PayForProjectButton />
-							</div>
-							<FileUploadProvider
-								projectId={id as string}
-								uploaderId={currentClient?.id as string}
-								uploaderType="CLIENT"
+							<ProjectHeader project={project} isOwner={isOwner} />
+						</div>
+						{isOwner && (
+							<ProjectViewTabs />
+						)}
+						{shouldShowPayment ? (
+							<ClientPaymentProvider
+								project={{
+									id: project?.id,
+									userId: project?.userId,
+									amount: project?.amount!,
+									paymentStatus: project?.paymentStatus,
+								}}
+								client={{
+									id: currentClient?.id as string,
+									email: currentClient?.email as string,
+								}}
 							>
+								<div className="mb-4">
+									<PayForProjectButton />
+								</div>
+
 								<section className="border rounded-md size-full p-8 space-y-8">
 									<FileDropzone />
 									<FileUploadViewer />
 								</section>
-							</FileUploadProvider>
-							<ProjectFileSystem />
-						</ClientPaymentProvider>
-					) : (
-						!!currentClient && (
-							<>
-								<FileUploadProvider
-									projectId={id as string}
-									uploaderId={currentClient?.id as string}
-									uploaderType="CLIENT"
-								>
-									<section className="border rounded-md size-full p-8 space-y-8">
-										<FileDropzone />
-										<FileUploadViewer />
-									</section>
-								</FileUploadProvider>
+
 								<ProjectFileSystem />
-							</>
-						)
-					)}
-				</div>
+							</ClientPaymentProvider>
+						) : (
+							!!currentClient && (
+								<>
+										<section className="border rounded-md size-full p-8 space-y-8">
+											<FileDropzone />
+											<FileUploadViewer />
+										</section>
+
+									<ProjectFileSystem />
+								</>
+							)
+						)}
+					</div>
+				</FileUploadProvider>
 			</PageLayout>
 		</ProjectAccessGate>
 	);

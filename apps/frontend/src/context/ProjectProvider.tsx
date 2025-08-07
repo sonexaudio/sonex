@@ -50,7 +50,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode; }> = ({
 }) => {
     const { user, loading: userLoading } = useAuth();
     const { client, loading: clientLoading } = useClientAuth();
-    console.log("CLIENT IN PROJECT PROVIDER", client);
     const { id: projectId } = useParams();
     const projectData = useProjectData(projectId);
     const { accessLevel, changeAccessLevel } = useProjectAccess({ userId: user?.id, clientEmail: client?.email, project: projectData?.project as DetailedProject | null });

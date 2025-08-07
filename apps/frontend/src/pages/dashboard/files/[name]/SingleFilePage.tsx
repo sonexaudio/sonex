@@ -12,7 +12,7 @@ const SingleFilePage = () => {
             <ProjectProvider>
                 <SingleFileContextProvider>
                     <FileView
-                        onBack={() => navigate(`/projects/${id as string}`)}
+                        onBack={() => navigate(`/projects/${id as string}?tab=files`)}
                     />
                 </SingleFileContextProvider>
             </ProjectProvider>

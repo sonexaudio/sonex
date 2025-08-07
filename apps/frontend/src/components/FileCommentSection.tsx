@@ -4,18 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { MessageSquare } from "lucide-react";
 import CommentForm from "./CommentForm";
 import CommentItem from "./CommentItem";
-import { useSingleFileContext } from "../context/SingleFileContextProvider";
+import { useAudioContext, useFileContext } from "../context/SingleFileContextProvider";
 import useClientAuth from "../hooks/useClientAuth";
 import useUser from "../hooks/useUser";
+import type { ISonexComment } from "../types/comments";
+import { useEffect } from "react";
 
 
 const FileCommentSection: React.FC = () => {
     const { client } = useClientAuth();
+    const { seekToTime } = useAudioContext();
     const { currentUser } = useUser();
     const { comments, postComment, postReply, threads } = useComments();
-    const { currentFile, seekToTime } = useSingleFileContext();
-
-    console.log("COMMENT THREADS", threads);
+    const { currentFile } = useFileContext();
 
     const handleNewComment = async (content: string, isRevision: boolean, audioTimestamp?: number) => {
         await postComment({ content, isRevision, audioTimestamp });
@@ -25,12 +26,11 @@ const FileCommentSection: React.FC = () => {
         await postReply(parentId, { content, isRevision, audioTimestamp, clientId: client?.id || null, userId: currentUser?.id || null });
     };
 
-    const handleTimestampClick = (time: number) => {
-        seekToTime(time);
-    };
+    // If you need timestamp seeking, use useAudioContext in the component that needs it
+    const handleTimestampClick = (time: number) => seekToTime(time);
 
 
-    const fileComments = comments.filter((comment) => comment.fileId === currentFile?.id);
+    const fileComments = comments.filter((comment: ISonexComment) => comment.fileId === currentFile?.id);
 
     return (
         <Card>
@@ -38,7 +38,7 @@ const FileCommentSection: React.FC = () => {
                 <CardTitle>
                     <div className="flex items-center gap-x-2">
                         <MessageSquare className="size-5" />
-                        <span>Comments ({fileComments.length === 0 ? 0 : fileComments?.reduce((total, comment) => total + 1 + (comment.replies?.length ?? 0), 0)})</span>
+                        <span>Comments ({fileComments.length === 0 ? 0 : fileComments?.reduce((total: number, comment: ISonexComment) => total + 1 + (comment.replies?.length ?? 0), 0)})</span>
                     </div>
                 </CardTitle>
             </CardHeader>

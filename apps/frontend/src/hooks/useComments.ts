@@ -66,8 +66,9 @@ export const useComments = () => {
 
     const loading = fetchAll.isLoading || create.isPending || update.isPending || deleteSingleComment.isPending || reply.isPending;
 
-    // build threads from comments
-    const buildCommentThreads = useCallback((comments: ISonexComment[]) => {
+
+    // Move buildCommentThreads outside the hook to avoid new function identity each render
+    function buildCommentThreads(comments: ISonexComment[]) {
         const commentMap = new Map<
             string,
             ISonexComment & { replies: ISonexComment[]; }
@@ -92,14 +93,12 @@ export const useComments = () => {
         });
 
         return roots;
-    }, []);
+    }
 
     const threads = useMemo(() => {
         if (!fileId || !fetchAll.data) return [];
-
-        // Build threads from comments
         return buildCommentThreads(fetchAll.data);
-    }, [fetchAll.data, fileId, buildCommentThreads]);
+    }, [fetchAll.data, fileId]);
 
 
     return {
