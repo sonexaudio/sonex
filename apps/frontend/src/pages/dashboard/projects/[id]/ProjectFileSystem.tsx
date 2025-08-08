@@ -11,13 +11,12 @@ import { Button } from "../../../../components/ui/button";
 import { Separator } from "../../../../components/ui/separator";
 import { formatDistanceToNow } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../../../components/ui/dropdown-menu";
-import useFiles from "../../../../hooks/useFiles";
 import { useProjectContext } from "../../../../hooks/projects/useProjectContext";
 
 
 const FileNode = ({ file, isInEditMode }: { file: SonexFile; isInEditMode: boolean; }) => {
     const navigate = useNavigate();
-    const { deleteFile } = useFiles();
+    const { deleteProjectFile } = useProjectContext();
     const projectId = file.projectId;
 
     const handleClick = () => {
@@ -28,7 +27,7 @@ const FileNode = ({ file, isInEditMode }: { file: SonexFile; isInEditMode: boole
     };
 
     const handleDeleteFile = async () => {
-        await deleteFile(file.id);
+        await deleteProjectFile(file.id);
     };
 
     const content = (
@@ -89,7 +88,7 @@ const FileNode = ({ file, isInEditMode }: { file: SonexFile; isInEditMode: boole
 };
 
 const FolderNode = ({ folder, isInEditMode }: { folder: ISonexFolder; isInEditMode: boolean; }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(true);
 
     const { setNodeRef, isOver } = useDroppable({
         id: folder.id,
@@ -177,13 +176,13 @@ const FolderNode = ({ folder, isInEditMode }: { folder: ISonexFolder; isInEditMo
 
 const ProjectFileSystem = () => {
     // const { tree: fileTree, rootFiles, loading } = useFileSystem();
-    const { fileTree, projectData: { isLoading, refetchFolders, }, isOwner } = useProjectContext();
+    const { fileTree, isLoading, isOwner, moveItemIntoFolder } = useProjectContext();
 
     const { setNodeRef: rootSetNodeRef, isOver: rootIsOver } = useDroppable({
         id: "ROOT",
         data: { type: "root" },
     });
-    const { moveItemIntoFolder } = useFolders();
+
 
     const [isInEditMode, setIsInEditMode] = useState(false);
 
@@ -198,15 +197,14 @@ const ProjectFileSystem = () => {
 
         if (over?.data?.current?.type === "folder") {
             const targetFolderId = over.id as string;
-            await moveItemIntoFolder(itemId, targetFolderId, itemType);
-            await refetchFolders();
+            await moveItemIntoFolder({ itemId, targetFolderId, itemType });
             return;
         }
 
         const isRootDrop = !over || over.data?.current?.type === "root";
         if (isRootDrop) {
-            await moveItemIntoFolder(itemId, null, itemType);
-            await refetchFolders();
+            const targetFolderId = null; // Move to root
+            await moveItemIntoFolder({ itemId, targetFolderId, itemType });
             return;
         }
 

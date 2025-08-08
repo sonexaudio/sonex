@@ -2,7 +2,7 @@ import { useState } from "react";
 import api from "../lib/axios";
 import type { AxiosError } from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addClientToProject, createClient, deleteClient, fetchClients } from "./query-functions/clients";
+import { addClientToProject, createClient, deleteClient, fetchClients, removeClientFromProject as removeClientFromProjectApi } from "./query-functions/clients";
 
 export interface Client {
 	isBlocked: boolean;
@@ -37,7 +37,21 @@ export function useClients() {
 		clientData: Partial<Client>;
 	}, unknown, { projectId: string; clientData: Partial<Client>; }>({
 		mutationFn: ({ projectId, clientData }) => addClientToProject(projectId, clientData),
-		onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clients"] }); }
+		onSuccess: (_data, variables) => {
+			// should invalidate the current project, so that everything is refreshed
+			queryClient.invalidateQueries({ queryKey: ["project", variables.projectId] });
+			queryClient.invalidateQueries({ queryKey: ["clients"] });
+		}
+	});
+
+	const removeFromProject = useMutation({
+		mutationFn: (clientId: string) => removeClientFromProjectApi(clientId),
+		onSuccess: (_data, clientId) => {
+			// Invalidate both the clients and project queries
+			queryClient.invalidateQueries({ queryKey: ["clients"] });
+			// If you have projectId available, also:
+			// queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+		}
 	});
 
 	const deleteById = useMutation<string, unknown, { id: string; }>({
@@ -122,7 +136,8 @@ export function useClients() {
 		// Mutations
 		createClient: create.mutateAsync,
 		deleteClient: deleteById.mutateAsync,
-		addClientToProject: addToProject.mutateAsync,
+		addToProject: addToProject.mutateAsync,
+		removeFromProject: removeFromProject.mutateAsync,
 
 		// loading state
 		clientsLoading: clientsQuery.isLoading || create.isPending || deleteById.isPending,

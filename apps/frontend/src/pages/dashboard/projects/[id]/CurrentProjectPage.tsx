@@ -27,7 +27,11 @@ const PayForProjectButton = ({ disabled }: { disabled?: boolean; }) => {
 
 const CurrentProjectPage = () => {
 	const { id } = useParams();
-	const { projectData: { isLoading, project }, isOwner, isClient, currentClient, currentUser } = useProjectContext();
+	const { project, isLoading, client: currentClient, user: currentUser, isOwner, isClient } = useProjectContext();
+
+	console.log(isLoading)
+
+
 
 	const shouldShowPayment =
 		project &&

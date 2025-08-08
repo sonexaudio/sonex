@@ -46,7 +46,21 @@ export default function useFiles(options?: { includeStreamUrl?: boolean; }) {
 		mutationFn: (fileId: string) => getFileBlob(fileId),
 	});
 
-	const isLoading = fetchAll.isLoading || getSingle.isPending || deleteSingle.isPending || deleteAll.isPending || download.isPending;
+	const isLoading =
+		fetchAll.isLoading ||
+		(fileId ? getSingle.isPending : false) ||
+		deleteSingle.isPending ||
+		deleteAll.isPending ||
+		download.isPending;
+
+	const error =
+		fetchAll.error ||
+		getSingle.error ||
+		deleteSingle.error ||
+		deleteAll.error ||
+		download.error
+
+
 
 	return {
 		files: fetchAll.data || [],
@@ -55,5 +69,6 @@ export default function useFiles(options?: { includeStreamUrl?: boolean; }) {
 		downloadFile: download.mutateAsync,
 		deleteAllFiles: deleteAll.mutateAsync,
 		deleteFile: deleteSingle.mutateAsync,
+		error
 	};
 }

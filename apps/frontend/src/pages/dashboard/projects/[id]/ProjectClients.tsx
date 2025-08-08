@@ -6,8 +6,7 @@ import { useProjectContext } from "../../../../hooks/projects/useProjectContext"
 
 
 const ProjectClients = () => {
-	const { projectData: { clients: projectClients, isLoading } } = useProjectContext();
-	const { id } = useParams();
+	const { project: { clients: projectClients }, isLoading } = useProjectContext();
 
 
 	if (isLoading) return <p>Loading clients...</p>;

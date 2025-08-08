@@ -18,26 +18,29 @@ export function useProjectAccess(params: ProjectAccessParams) {
 
     const [accessLevel, setAccessLevel] = useState<AccessLevel>("UNKNOWN");
 
-    const determineAccessLevel = () => {
+    const determineAccessLevel = useCallback(() => {
         if (!project) {
             return "UNKNOWN";
         }
 
         if (userId === project?.userId) {
+            console.log("User is owner")
             return "OWNER";
         }
 
         const clientEmails = project.clients.map(client => client.client.email);
-        console.log("CLIENT EMAILS", clientEmails);
 
         if (clientEmail && clientEmails.includes(clientEmail)) {
-            console.log("CLIENT EMAIL MATCHES PROJECT CLIENTS", { clientEmail, projectClients: project.clients });
+            const clientObj = project.clients.find(c => c.client.email === clientEmail);
+            if (clientObj?.client.isBlocked) {
+                return "UNAUTHORIZED";
+            }
             return "CLIENT";
         }
 
         // Can't determine access level, return UNKNOWN for prompting the user to log in or access the project
         return "UNKNOWN";
-    };
+    }, [userId, clientEmail, project]);
 
     // const accessLevel: AccessLevel = useMemo(() => {
     //     return determineAccessLevel();
@@ -55,5 +58,5 @@ export function useProjectAccess(params: ProjectAccessParams) {
         setAccessLevel(determineAccessLevel());
     }, [project, userId, clientEmail]);
 
-    return { accessLevel, determineAccessLevel, changeAccessLevel };
+    return { accessLevel, changeAccessLevel };
 }

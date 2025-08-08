@@ -19,7 +19,7 @@ import useUser from "../../../../../hooks/useUser";
 import { useProjectContext } from "../../../../../hooks/projects/useProjectContext";
 
 const ProjectClientAccessTab = () => {
-    const { projectData: { project, clients }, addClient } = useProjectContext();
+    const { project, clients, addClientToProject } = useProjectContext();
     const { currentUser } = useUser();
     const [showDialog, setShowDialog] = useState(false);
     const [newClientEmail, setNewClientEmail] = useState("");
@@ -45,7 +45,7 @@ const ProjectClientAccessTab = () => {
     };
 
     const handleAddNewClientToProject = async () => {
-        await addClient(project?.id as string, { email: newClientEmail, name: newClientName, userId: currentUser?.id });
+        await addClientToProject(project?.id as string, { email: newClientEmail, name: newClientName, userId: currentUser?.id });
         setShowDialog(false);
         setNewClientEmail("");
         setNewClientName("");

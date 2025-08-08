@@ -16,6 +16,11 @@ export async function fetchProjects(params?: ProjectQueryParams) {
     return data.data; // returns {projects, pagination info}
 };
 
+export async function fetchProjectById(projectId: string) {
+    const { data } = await api.get(`/projects/${projectId}`);
+    return data.data.project;
+}
+
 export async function createProject(projectData: Partial<Project>) {
     const { data } = await api.post("/projects", projectData);
     return data.data.project as Project;

@@ -18,7 +18,7 @@ interface FileViewProps {
 const FileView = ({ onBack }: FileViewProps) => {
     const { currentFile } = useFileContext();
     const { downloadFile, isLoading } = useFiles();
-    const { projectData: { project: currentProject } } = useProjectContext();
+    const { project: currentProject } = useProjectContext();
     const { fileId } = useParams();
     const { duration, formatTime } = useAudioContext();
 

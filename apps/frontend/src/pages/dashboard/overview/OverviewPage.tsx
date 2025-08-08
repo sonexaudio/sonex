@@ -22,21 +22,11 @@ const OverviewPage = () => {
 	const { currentUser } = useUser();
 	const { projects, projectsLoading } = useProjects();
 	const { clients, clientsLoading } = useClients();
-	const { files, loading: filesLoading, fetchFiles } = useFiles();
-	const { comments, loading: commentsLoading, fetchComments } = useComments();
-	const { transactions, loading: paymentsLoading, fetchTransactions } = useTransactions();
+	const { files, isLoading: filesLoading } = useFiles();
+	const { comments, loading: commentsLoading } = useComments();
+	const { transactions, isLoading: paymentsLoading } = useTransactions();
 
 	const isEmpty = projects.length === 0 && clients.length === 0 && files.length === 0 && comments.length === 0 && transactions.length === 0;
-
-	useEffect(() => {
-		if (!currentUser) {
-			return;
-		}
-		fetchFiles();
-		fetchComments();
-		fetchTransactions();
-
-	}, [currentUser]);
 
 	const handleGoToProject = (id: string) => {
 		return navigate(`/projects/${id}`);

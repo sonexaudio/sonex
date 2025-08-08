@@ -64,7 +64,19 @@ export const useComments = () => {
         }
     });
 
-    const loading = fetchAll.isLoading || create.isPending || update.isPending || deleteSingleComment.isPending || reply.isPending;
+    const loading =
+        fetchAll.isLoading ||
+        create.isPending ||
+        update.isPending ||
+        deleteSingleComment.isPending ||
+        reply.isPending;
+
+    const error =
+        fetchAll.error ||
+        create.error ||
+        update.error ||
+        deleteSingleComment.error ||
+        reply.error
 
 
     // Move buildCommentThreads outside the hook to avoid new function identity each render
@@ -107,6 +119,7 @@ export const useComments = () => {
         postReply: reply.mutateAsync,
         deleteComment: deleteSingleComment.mutateAsync,
         loading,
+        error,
         threads,
     };
 };

@@ -1,8 +1,6 @@
 import { useState, type ReactNode, createContext, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/axios";
-import { useProjectContext } from "../hooks/projects/useProjectContext";
-import { fetchFiles } from "../hooks/query-functions/files";
 
 export type SonexUploadFile = {
 	file: File;
@@ -52,7 +50,6 @@ export const FileUploadProvider = ({
 		throw new Error("ProjectId, UploaderId, and/or UploaderType missing");
 
 	const [filesToUpload, setFilesToUpload] = useState<SonexUploadFile[]>([]);
-	const { projectData: { refetchProject } } = useProjectContext();
 	const queryClient = useQueryClient();
 
 	// Track abort controllers for each upload
@@ -164,7 +161,7 @@ export const FileUploadProvider = ({
 			delete abortControllers.current[file.id];
 			// Refresh files using react-query
 			await queryClient.invalidateQueries({ queryKey: ["files"] });
-			await refetchProject();
+			await queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
 		},
 		onError: (error, file) => {
 			if ((error as any)?.name === "CanceledError") {

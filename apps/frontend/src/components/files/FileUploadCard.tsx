@@ -20,7 +20,7 @@ const FileUploadCard = ({
 	isPublic = true,
 }: SonexUploadFile) => {
 	const { removeFile, updateFileSettings, cancelUpload } = useFileUpload();
-	const { projectData: { folders } } = useProjectContext();
+	const { folders } = useProjectContext();
 
 	const [uploadProgress, setUploadProgress] = useState(0);
 

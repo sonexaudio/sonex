@@ -6,7 +6,7 @@ import ProjectDangerZone from "./ProjectDangerZone";
 import UpdateProjectForm from "./UpdateProjectForm";
 
 const ProjectDetails = () => {
-	const { projectData: { project }, isOwner } = useProjectContext();
+	const { project, isOwner } = useProjectContext();
 
 
 	return (
