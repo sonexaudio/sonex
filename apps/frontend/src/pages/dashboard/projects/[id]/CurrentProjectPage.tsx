@@ -29,10 +29,6 @@ const CurrentProjectPage = () => {
 	const { id } = useParams();
 	const { project, isLoading, client: currentClient, user: currentUser, isOwner, isClient } = useProjectContext();
 
-	console.log(isLoading)
-
-
-
 	const shouldShowPayment =
 		project &&
 		isClient &&

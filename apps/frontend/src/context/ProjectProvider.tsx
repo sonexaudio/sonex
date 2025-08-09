@@ -66,9 +66,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode; }> = ({
     const { createFolder, deleteFolder, moveItemIntoFolder: moveItemIntoFolderApi } = useFolders();
     const { deleteFile: deleteFileApi } = useFiles();
 
-    const files = projectData.files.files;
-    const folders = projectData.folders.folders;
+    const { files, folders } = projectData
+
     const fileTree = useBuildFileTree(files, folders);
+
+    console.log("Project Data", projectData);
+    console.log("FILE TREE", fileTree)
 
     // ======== Functions ======
 

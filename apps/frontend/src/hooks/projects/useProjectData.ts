@@ -66,7 +66,6 @@ export interface SingleProjectViewData {
 }
 
 export function useProjectData(projectId: string | undefined) {
-    const files = useFiles();
     const folders = useFolders();
     const activities = useActivities(projectId!);
     const comments = useComments();
@@ -90,26 +89,15 @@ export function useProjectData(projectId: string | undefined) {
 
     const isLoading =
         projectQuery.isLoading ||
-        files.isLoading ||
         folders.isLoading ||
         comments.loading ||
         transactions.isLoading ||
         userLoading ||
         clientLoading ||
-        subscriptionLoading
-
-    console.log("Project is loading", projectQuery.isLoading);
-    console.log("Files are loading", files.isLoading);
-    console.log("Folders are loading", folders.isLoading);
-    console.log("Comments are loading", comments.loading);
-    console.log("Transactions are loading", transactions.isLoading);
-    console.log("User is loading", userLoading);
-    console.log("Client is loading", clientLoading);
-    console.log("Subscription is loading", subscriptionLoading)
+        subscriptionLoading;
 
     const error =
         projectQuery.error ||
-        files.error ||
         folders.error ||
         comments.error ||
         transactions.error
@@ -122,8 +110,8 @@ export function useProjectData(projectId: string | undefined) {
 
         // Project resources (state + functions for project provider)
         clients: projectQuery.data?.clients || [],
-        files,
-        folders,
+        files: projectQuery.data?.files || [],
+        folders: folders.folders || [],
         comments,
         transactions,
 

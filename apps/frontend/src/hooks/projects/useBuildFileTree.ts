@@ -4,7 +4,7 @@
 
 import { useCallback, useMemo } from "react";
 import type { SonexFile } from "../../types/files";
-import type { ISonexFolder } from "../useFolders";
+import type { ISonexFolder } from "../query-functions/folders";
 
 type FolderNode = ISonexFolder & { subfolders: FolderNode[]; files: SonexFile[]; };
 type FileTree = { _rootFolders?: FolderNode[]; _rootFiles?: SonexFile[]; };
