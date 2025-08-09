@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import { useComments } from "../../../../hooks/useComments";
-import { useParams } from "react-router";
 import type { ISonexComment } from "../../../../types/comments";
 
 export const CommentCard = ({ comment }: { comment: ISonexComment; }) => {
@@ -20,12 +18,7 @@ export const CommentCard = ({ comment }: { comment: ISonexComment; }) => {
 
 
 const CommentView = () => {
-    const { fileId } = useParams();
-    const { comments: { allComments }, loading, getComments } = useComments();
-
-    useEffect(() => {
-        getComments(fileId);
-    }, [fileId]);
+    const { comments, loading } = useComments();
 
     if (loading) return <p>Loading Comments...</p>;
 
@@ -33,8 +26,8 @@ const CommentView = () => {
         <div className="border shadow rounded p-4">
             <h3 className="text-lg font-semibold">Comments</h3>
             {
-                allComments.length > 0 ? (
-                    allComments.map(comment => (
+                comments.length > 0 ? (
+                    comments.map(comment => (
                         <CommentCard key={comment.id} comment={comment} />
                     ))
                 ) : (

@@ -13,6 +13,7 @@ export interface NewCommentData {
     audioTimestamp?: number | null;
     userId?: string | null;
     clientId?: string | null;
+    fileId?: string | null;
 }
 
 export const useComments = () => {
@@ -32,14 +33,17 @@ export const useComments = () => {
 
     // get all comments
     const fetchAll = useQuery({
-        queryKey: ["comments", fileId],
-        queryFn: ({ queryKey }) => fetchComments(queryKey[1] as string | undefined)
+        queryKey: ["comments", fileId, user?.id],
+        queryFn: ({ queryKey }) => {
+            const [_, fileId] = queryKey;
+            return fetchComments(fileId);
+        }
     });
 
     const create = useMutation({
         mutationFn: (commentData: NewCommentData) => postComment(withUserClientInfo(commentData)),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["comments"] });
+            queryClient.invalidateQueries({ queryKey: ["comments", fileId, user?.id] });
         }
     });
 
@@ -60,7 +64,7 @@ export const useComments = () => {
     const reply = useMutation({
         mutationFn: ({ parentId, replyData }: { parentId: string; replyData: NewCommentData; }) => postReply(parentId, replyData),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["comments"] });
+            queryClient.invalidateQueries({ queryKey: ["comments", fileId, user?.id] });
         }
     });
 

@@ -19,11 +19,12 @@ const FileCommentSection: React.FC = () => {
     const { currentFile } = useFileContext();
 
     const handleNewComment = async (content: string, isRevision: boolean, audioTimestamp?: number) => {
-        await postComment({ content, isRevision, audioTimestamp });
+        await postComment({ content, isRevision, audioTimestamp, fileId: currentFile?.id || null });
     };
 
     const handleReply = async (parentId: string, content: string, isRevision: boolean, audioTimestamp?: number) => {
-        await postReply(parentId, { content, isRevision, audioTimestamp, clientId: client?.id || null, userId: currentUser?.id || null });
+        const replyData = { content, isRevision, audioTimestamp, clientId: client?.id || null, userId: currentUser?.id || null, fileId: currentFile?.id || null };
+        await postReply({ parentId, replyData });
     };
 
     // If you need timestamp seeking, use useAudioContext in the component that needs it

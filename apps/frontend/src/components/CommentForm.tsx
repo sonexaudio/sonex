@@ -74,7 +74,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
                     )}
                 </div>
 
-                <Button type="submit" disabled={!content.trim() || content.length <= 5}>
+                <Button type="submit" disabled={!content.trim()}>
                     <Send className={compact ? "size-3" : "size-4"} />
                     <span>{buttonText}</span>
                 </Button>

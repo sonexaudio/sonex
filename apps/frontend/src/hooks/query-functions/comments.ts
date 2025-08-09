@@ -16,8 +16,7 @@ export async function fetchComments(fileId?: string) {
 
     const { data } = await api.get("/comments", {
         params,
-    }
-    );
+    });
 
     return data.data.comments; // returns the comments
 }

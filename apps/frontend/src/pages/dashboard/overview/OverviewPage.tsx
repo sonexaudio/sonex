@@ -14,6 +14,8 @@ import useFiles from "../../../hooks/useFiles";
 import NoProjects from "../../../components/empty-state/NoProjects";
 import { useNavigate } from "react-router";
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
+import { useActivities } from "../../../hooks/useActivities";
+import { formatRelative } from "date-fns"
 
 const OverviewPage = () => {
 	useDocumentTitle("My Sonex | Overview");
@@ -25,6 +27,9 @@ const OverviewPage = () => {
 	const { files, isLoading: filesLoading } = useFiles();
 	const { comments, loading: commentsLoading } = useComments();
 	const { transactions, isLoading: paymentsLoading } = useTransactions();
+	const { activities } = useActivities();
+
+	console.log("COMMENTS", comments);
 
 	const isEmpty = projects.length === 0 && clients.length === 0 && files.length === 0 && comments.length === 0 && transactions.length === 0;
 
@@ -120,7 +125,15 @@ const OverviewPage = () => {
 						<CardContent>
 							<ul className="space-y-2">
 								{/* TODO: Replace with real activities */}
-								<li>No recent activities yet.</li>
+									{activities.length > 0 ? activities.slice(0, 4).map((activity) => (
+										<li key={activity.id} className="flex items-center justify-between">
+											{/* TODO - create a render activity metadata function */}
+											<span>{activity.action}</span>
+											<span>{formatRelative(new Date(activity.createdAt), new Date())}</span>
+										</li>
+									)) : (
+											<li>No recent activities yet.</li>
+									)}
 							</ul>
 						</CardContent>
 					</Card>
