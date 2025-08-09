@@ -19,29 +19,29 @@ const FileUploadCard = ({
 	folderId,
 	isPublic = true,
 }: SonexUploadFile) => {
-	const { removeFile, updateFileSettings } = useFileUpload();
-	const { projectData: { folders } } = useProjectContext();
+	const { removeFile, updateFileSettings, cancelUpload } = useFileUpload();
+	const { folders } = useProjectContext();
 
 	const [uploadProgress, setUploadProgress] = useState(0);
 
-	// To use with setting an interval time to delete file while uploading
-	// or finished uploading
-	// TODO: set up an abort controller
-	useEffect(() => {
-		if (uploadStatus === "completed") {
-			let progressValue = 0;
-			const interval = setInterval(() => {
-				progressValue += 3;
-				setUploadProgress((prev) => prev + 3);
-				if (progressValue >= 100) {
-					removeFile(id);
-					clearInterval(interval);
-				}
-			}, 50);
+	// // To use with setting an interval time to delete file while uploading
+	// // or finished uploading
+	// // TODO: set up an abort controller
+	// useEffect(() => {
+	// 	if (uploadStatus === "completed") {
+	// 		let progressValue = 0;
+	// 		const interval = setInterval(() => {
+	// 			progressValue += 3;
+	// 			setUploadProgress((prev) => prev + 3);
+	// 			if (progressValue >= 100) {
+	// 				removeFile(id);
+	// 				clearInterval(interval);
+	// 			}
+	// 		}, 50);
 
-			return () => clearInterval(interval);
-		}
-	}, [id, removeFile, uploadStatus]);
+	// 		return () => clearInterval(interval);
+	// 	}
+	// }, [id, removeFile, uploadStatus]);
 
 	function handleRemoveFile() {
 		removeFile(id);
@@ -69,7 +69,12 @@ const FileUploadCard = ({
 			</div>
 
 			{uploadStatus === "uploading" ? (
-				<FileUploadCircularProgress progress={uploadProgress} />
+				<>
+					<FileUploadCircularProgress progress={progress} />
+					<Button variant="outline" onClick={() => cancelUpload(id)}>
+						Cancel
+					</Button>
+				</>
 			) : (
 				<div className="flex items-center space-x-2">
 					{/* Folder Selection */}

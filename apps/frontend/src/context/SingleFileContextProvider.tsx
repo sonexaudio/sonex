@@ -2,21 +2,27 @@ import type React from "react";
 import {
     createContext,
     useContext,
-    useEffect,
     useRef,
     type ReactNode,
 } from "react";
 import useFiles from "../hooks/useFiles";
-import { useParams } from "react-router";
 import { useAudioPlayback } from "../hooks/useAudioPlayer";
 
-type SingleFileContextProps = {
-    // File-related properties
-    currentFile: any; // Replace 'any' with your actual file type
-    getCurrentFile: (id: string, includeStream?: boolean) => void;
-    loading: boolean;
 
-    // Audio playback properties
+// Split context: File info
+type FileContextProps = {
+    currentFile: any;
+    loading: boolean;
+};
+const FileContext = createContext<FileContextProps | undefined>(undefined);
+export const useFileContext = () => {
+    const ctx = useContext(FileContext);
+    if (!ctx) throw new Error("useFileContext must be used within FileContext.Provider");
+    return ctx;
+};
+
+// Split context: Audio playback
+type AudioContextProps = {
     waveFormRef: React.RefObject<HTMLDivElement>;
     isReady: boolean;
     isPlaying: boolean;
@@ -27,41 +33,25 @@ type SingleFileContextProps = {
     togglePlay: () => void;
     seekTo: (fraction: number) => void;
     waveSurferRef: React.RefObject<HTMLDivElement>;
-
-    // Helper functions for comments
     formatTime: (time: number) => string;
     getCurrentTimeForComment: () => number;
     seekToTime: (time: number) => void;
 };
-
-const SingleFileContext = createContext<SingleFileContextProps | undefined>(
-    undefined,
-);
-
-export const useSingleFileContext = () => {
-    const ctx = useContext(SingleFileContext);
-    if (!ctx) {
-        throw new Error(
-            "useSingleFileContext must be used within a SingleFileContextProvider",
-        );
-    }
-    return ctx; // This was missing!
+const AudioContext = createContext<AudioContextProps | undefined>(undefined);
+export const useAudioContext = () => {
+    const ctx = useContext(AudioContext);
+    if (!ctx) throw new Error("useAudioContext must be used within AudioContext.Provider");
+    return ctx;
 };
 
 type ProviderProps = {
     children: ReactNode;
 };
 
+
 export const SingleFileContextProvider = ({ children }: ProviderProps) => {
-    const {
-        currentFile,
-        getCurrentFile,
-        loading,
-    } = useFiles();
-    const { fileId } = useParams();
-
+    const { currentFile, isLoading } = useFiles({ includeStreamUrl: true });
     const waveFormRef = useRef<HTMLDivElement>(null);
-
     const {
         isReady,
         isPlaying,
@@ -74,22 +64,12 @@ export const SingleFileContextProvider = ({ children }: ProviderProps) => {
         waveSurferRef,
     } = useAudioPlayback(waveFormRef, currentFile?.streamUrl as string);
 
-    useEffect(() => {
-        if (fileId) {
-            getCurrentFile(fileId, true);
-        }
-    }, [fileId]);
-
     const formatTime = (time: number) => {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60).toString().padStart(2, "0");
         return `${minutes}:${seconds}`;
     };
-
-    const getCurrentTimeForComment = () => {
-        return currentTime; // Return the current playback time as a number
-    };
-
+    const getCurrentTimeForComment = () => currentTime;
     const seekToTime = (time: number) => {
         if (duration > 0) {
             const fraction = time / duration;
@@ -97,14 +77,12 @@ export const SingleFileContextProvider = ({ children }: ProviderProps) => {
         }
     };
 
-    const contextValue: SingleFileContextProps = {
-        // File-related
+    const fileContextValue: FileContextProps = {
         currentFile,
-        getCurrentFile,
-        loading,
+        loading: isLoading,
+    };
 
-
-        // Audio playback
+    const audioContextValue: AudioContextProps = {
         waveFormRef,
         isReady,
         isPlaying,
@@ -115,17 +93,17 @@ export const SingleFileContextProvider = ({ children }: ProviderProps) => {
         togglePlay,
         seekTo,
         waveSurferRef,
-
-        // helper functions
-        getCurrentTimeForComment,
         formatTime,
-        seekToTime
+        getCurrentTimeForComment,
+        seekToTime,
     };
 
     return (
-        <SingleFileContext.Provider value={contextValue}>
-            {children}
-        </SingleFileContext.Provider>
+        <FileContext.Provider value={fileContextValue}>
+            <AudioContext.Provider value={audioContextValue}>
+                {children}
+            </AudioContext.Provider>
+        </FileContext.Provider>
     );
 };
 

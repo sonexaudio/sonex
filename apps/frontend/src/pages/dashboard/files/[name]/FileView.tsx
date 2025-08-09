@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../../components
 import { Badge } from "../../../../components/ui/badge";
 import FileCommentSection from "../../../../components/FileCommentSection";
 import AudioPlayer from "../../../../components/AudioPlayer";
-import { useSingleFileContext } from "../../../../context/SingleFileContextProvider";
+import { useAudioContext, useFileContext } from "../../../../context/SingleFileContextProvider";
 import { useProjectContext } from "../../../../hooks/projects/useProjectContext";
 
 interface FileViewProps {
@@ -16,10 +16,11 @@ interface FileViewProps {
 }
 
 const FileView = ({ onBack }: FileViewProps) => {
-    const { downloadFile } = useFiles();
-    const { projectData: { project: currentProject } } = useProjectContext();
+    const { currentFile } = useFileContext();
+    const { downloadFile, isLoading } = useFiles();
+    const { project: currentProject } = useProjectContext();
     const { fileId } = useParams();
-    const { currentFile, loading, duration, formatTime } = useSingleFileContext();
+    const { duration, formatTime } = useAudioContext();
 
     const handleDownloadFile = async () => {
         if (!fileId) return;
@@ -39,7 +40,7 @@ const FileView = ({ onBack }: FileViewProps) => {
 
     if (!currentFile) return null;
 
-    if (loading) return <p>Loading...</p>;
+    if (isLoading) return <p>Loading...</p>;
 
     return (
         <div className="p-8 max-w-5xl mx-auto">

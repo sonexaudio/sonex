@@ -15,10 +15,10 @@ const publicRoutes = [
 	"/reset-password",
 ];
 
-const AuthLayout = ({ children }: PropsWithChildren) => {
+const ProtectedRoute = ({ children }: PropsWithChildren) => {
 	const { user, loading, refetchUser } = useAuth();
 	const location = useLocation();
-	const { fetchProjects, projects } = useProjects();
+	const { projects } = useProjects();
 	const [clients, setClients] = useState<Client[]>([]);
 	const [clientsLoading, setClientsLoading] = useState(false);
 	const [showOnboarding, setShowOnboarding] = useState(false);
@@ -40,9 +40,6 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 		if (user && !clientsLoading) fetchClients();
 	}, [user]);
 
-	useEffect(() => {
-		if (user && projects.length === 0) fetchProjects();
-	}, [user, projects.length]);
 
 	useEffect(() => {
 		const prompt = localStorage.getItem("promptForOnboarding");
@@ -105,4 +102,4 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
 		{children}
 	</>;
 };
-export default AuthLayout;
+export default ProtectedRoute;

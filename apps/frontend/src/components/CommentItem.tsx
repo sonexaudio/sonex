@@ -75,7 +75,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                             <span className="font-medium">{renderCommentAuthor()}</span>
                             <span className="text-xs text-muted-foreground">{formatRelativeTime(comment.createdAt as Date)}</span>
                             {comment.timestamp && (
-                                <Button onClick={handleTimeStampClick} className="flex items-center gap-x-1 text-xs text-primary bg-blue-50 px-2 py-1 rounded-full hover:bg-blue-100 transition-colors duration-200">
+                                <Button onClick={handleTimeStampClick} className="flex items-center gap-x-1 text-xs text-primary bg-background px-2 py-1 rounded-full hover:bg-background/80 transition-colors duration-200">
                                     <Clock size="size-3" />
                                     <span>@ {formatTime(comment.timestamp)}</span>
                                 </Button>
@@ -92,7 +92,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     </Button>
 
                     {comment.replies?.length > 0 && (
-                        <Button onClick={() => setShowReplies(!showReplies)}>
+                        <Button onClick={() => setShowReplies(!showReplies)} variant="ghost">
                             {showReplies ? (
                                 <ChevronDown className="size-3" />
                             ) : (

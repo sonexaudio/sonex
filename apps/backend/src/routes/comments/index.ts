@@ -6,6 +6,7 @@ const router = Router();
 
 router.get("/", async (req, res) => {
     const { fileId } = req.query;
+    const userId = req.user?.id;
     let comments: unknown;
 
     if (fileId) {
@@ -21,13 +22,13 @@ router.get("/", async (req, res) => {
         });
     } else {
         comments = await prisma.comment.findMany({
+            where: { userId: userId as string },
             include: {
                 client: true,
                 user: true,
             },
         });
     }
-
     successResponse(res, { comments });
 });
 

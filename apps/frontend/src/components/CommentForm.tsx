@@ -5,7 +5,7 @@ import { Checkbox } from "./ui/checkbox";
 import { Clock, Send } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { useSingleFileContext } from "../context/SingleFileContextProvider";
+import { useAudioContext } from "../context/SingleFileContextProvider";
 
 interface CommentFormProps {
     onSubmit: (content: string, isRevision: boolean, audioTimestamp?: number) => void;
@@ -20,7 +20,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
     buttonText = "Post Comment",
     compact = false
 }) => {
-    const { formatTime, getCurrentTimeForComment } = useSingleFileContext();
+    const { formatTime, getCurrentTimeForComment } = useAudioContext();
     const [content, setContent] = useState("");
     const [isRevision, setIsRevision] = useState(false);
 
@@ -74,7 +74,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
                     )}
                 </div>
 
-                <Button type="submit" disabled={!content.trim() || content.length <= 5}>
+                <Button type="submit" disabled={!content.trim()}>
                     <Send className={compact ? "size-3" : "size-4"} />
                     <span>{buttonText}</span>
                 </Button>

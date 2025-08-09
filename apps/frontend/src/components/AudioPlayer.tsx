@@ -1,11 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Pause, Play } from "lucide-react";
-import { useSingleFileContext } from "../context/SingleFileContextProvider";
+import { useAudioContext, useFileContext } from "../context/SingleFileContextProvider";
 
 const AudioPlayer = () => {
+    const { currentFile } = useFileContext();
+
     const {
-        currentFile,
         waveFormRef,
         isPlaying,
         togglePlay,
@@ -13,7 +14,7 @@ const AudioPlayer = () => {
         duration,
         isReady,
         formatTime
-    } = useSingleFileContext();
+    } = useAudioContext();
 
 
     if (!currentFile) {

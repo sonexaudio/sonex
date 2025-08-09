@@ -6,6 +6,7 @@ import { currentVersion } from "../utils/version";
 import { useNavigate } from "react-router";
 import { useAuth } from "../hooks/useAuth";
 import { useState } from "react";
+import logoImage from "../assets/logo-dark-cropped.png"
 
 const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: "overview" },
@@ -26,15 +27,14 @@ const DashboardSidebar = () => {
     const handleOnboardingTrigger = () => {
         localStorage.setItem("promptForOnboarding", "true");
         setTriggered(true);
-        window.location.reload(); // Ensures AuthLayout picks up the change
+        window.location.reload(); // Ensures ProtectedRoute picks up the change
     };
 
     return (
         <Sidebar collapsible="icon">
-            <SidebarHeader>
-                <SidebarMenuButton className="cursor-pointer" onClick={() => navigate("/overview")}>
-                    <span className="font-bold text-lg">SONEX</span>
-                    <p className="text-xs text-gray-400">Audio Solutions</p>
+            <SidebarHeader >
+                <SidebarMenuButton onClick={() => navigate("/overview")} className="cursor-pointer hover:bg-transparent">
+                    <img src={logoImage} alt="Sonex Logo" className="h-8 mr-2" />
                     <span className="text-xs text-muted-foreground">v{currentVersion}</span>
                 </SidebarMenuButton>
             </SidebarHeader>

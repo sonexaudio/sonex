@@ -5,6 +5,8 @@ import ProjectAccessPrompt from "./ProjectAccessPrompt";
 import ProjectAccessDenied from "./ProjectAccessDenied";
 import PageLayout from "../PageLayout";
 import { useProjectContext } from "../../hooks/projects/useProjectContext";
+import useUser from "../../hooks/useUser";
+import useClientAuth from "../../hooks/useClientAuth";
 
 
 export type ProjectAccessGateState =
@@ -15,49 +17,30 @@ export type ProjectAccessGateState =
 
 const ProjectAccessGate = ({ children }: { children: ReactNode; }) => {
 	const { id: projectId } = useParams();
+	const { loading: userLoading } = useUser();
+	const { loading: clientLoading } = useClientAuth();
 	const { search } = useLocation();
 	const code = new URLSearchParams(search).get("code");
 
-	const { isUnauthorized, isUnknown, clientLoading, userLoading, projectData: { isLoading }, isOwner, isClient, currentClient, changeAccessLevel } = useProjectContext();
+	const { isUnauthorized, isUnknown, isLoading, isOwner, isClient, client: currentClient, changeAccessLevel } = useProjectContext();
 
 	const canAccess = isOwner || isClient;
+	console.log("CAN ACCESS?", canAccess);
 	const loading = userLoading || clientLoading || isLoading;
 
 	useEffect(() => {
-		// const clientView = new URLSearchParams(search).get("clientView");
-		// const userViewingAsClient = isOwner && clientView && clientView === "true";
+		if (loading) return; // Wait for all auth/project loading to finish
+		// if (!code && !canAccess) {
+		// 	changeAccessLevel("UNAUTHORIZED");
+		// }
+	}, [loading, code, canAccess, changeAccessLevel]);
 
-		// No need to do anything if there is already a user or authorized client
-		// First check if the user is viewing as a client
-		// if (userViewingAsClient || canAccess) return;
-		if (isLoading) return;
-
-
-
-		if (!code && !canAccess) {
-			changeAccessLevel("UNAUTHORIZED");
-			return;
-		}
-
-		// Validate code and get a JWT token
-		// api.post("/auth/client/validate-code", { code, projectId })
-		// 	.then(({ data: { data } }) => {
-
-		// 		if (data) {
-		// 			localStorage.setItem("accessToken", data.clientToken);
-		// 			localStorage.setItem("clientEmail", data.email);
-		// 			// setTimeout(() => window.location.replace(`/projects/${projectId}`), 3500);
-		// 		}
-
-		// 	})
-		// 	.catch((e) => {
-		// 		console.log("COULD NOT VALIDATE", e);
-		// 		localStorage.removeItem("accessToken");
-		// 		localStorage.removeItem("clientEmail");
-		// 	});
-	}, [search, projectId, loading, isOwner, isClient, changeAccessLevel, code]);
-
-
+	console.log("IS UNAUTHORIZED?", isUnauthorized);
+	console.log("IS UNKNOWN?", isUnknown);
+	console.log("IS LOADING?", isLoading);
+	console.log("IS OWNER?", isOwner);
+	console.log("IS CLIENT?", isClient);
+	console.log("CURRENT CLIENT?", currentClient);
 
 	if (loading) {
 		return (
@@ -89,7 +72,7 @@ const ProjectAccessGate = ({ children }: { children: ReactNode; }) => {
 
 	}
 
-
+	return null; 
 
 };
 

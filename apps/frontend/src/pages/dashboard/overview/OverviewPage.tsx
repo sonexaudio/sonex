@@ -9,18 +9,33 @@ import { Button } from "../../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
 import { Plus, Upload, Users, Folder, FileText, MessageCircle } from "lucide-react";
 import type { Project } from "../../../types/projects";
-import AuthLayout from "../../../components/AuthLayout";
-import { useProjectData } from "../../../hooks/projects/useProjectData";
 import { useClients } from "../../../hooks/useClients";
 import useFiles from "../../../hooks/useFiles";
+import NoProjects from "../../../components/empty-state/NoProjects";
+import { useNavigate } from "react-router";
+import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
+import { useActivities } from "../../../hooks/useActivities";
+import { formatRelative } from "date-fns"
 
 const OverviewPage = () => {
+	useDocumentTitle("My Sonex | Overview");
+
+	const navigate = useNavigate();
 	const { currentUser } = useUser();
-	const { projects, loading: projectsLoading } = useProjects();
-	const { clients, loading: clientsLoading } = useClients();
-	const { files, loading: filesLoading } = useFiles();
+	const { projects, projectsLoading } = useProjects();
+	const { clients, clientsLoading } = useClients();
+	const { files, isLoading: filesLoading } = useFiles();
 	const { comments, loading: commentsLoading } = useComments();
-	const { transactions, loading: paymentsLoading } = useTransactions();
+	const { transactions, isLoading: paymentsLoading } = useTransactions();
+	const { activities } = useActivities();
+
+	console.log("COMMENTS", comments);
+
+	const isEmpty = projects.length === 0 && clients.length === 0 && files.length === 0 && comments.length === 0 && transactions.length === 0;
+
+	const handleGoToProject = (id: string) => {
+		return navigate(`/projects/${id}`);
+	};
 
 	const quickActions = [
 		{ icon: <Plus />, label: "New Project", onClick: () => {/* route to new project */ } },
@@ -29,10 +44,10 @@ const OverviewPage = () => {
 	];
 
 	const stats = [
-		{ icon: <Folder />, label: "Projects", value: projects.length },
-		{ icon: <Users />, label: "Clients", value: clients.length },
-		{ icon: <FileText />, label: "Files", value: files.length },
-		{ icon: <MessageCircle />, label: "Comments", value: comments.length },
+		{ icon: <Folder />, label: "Projects", value: projects?.length },
+		{ icon: <Users />, label: "Clients", value: clients?.length },
+		{ icon: <FileText />, label: "Files", value: files?.length },
+		{ icon: <MessageCircle />, label: "Comments", value: comments?.length },
 	];
 
 	const ChartPlaceholder = ({ title }: { title: string; }) => (
@@ -48,23 +63,35 @@ const OverviewPage = () => {
 		</Card>
 	);
 
-	return (
-		<AuthLayout>
+	if (projectsLoading || clientsLoading || filesLoading || commentsLoading || paymentsLoading) {
+		return (
+
 			<PageLayout>
+				<div className="flex items-center justify-center h-full">
+					<p>Loading...</p>
+				</div>
+			</PageLayout>
+		);
+	}
+
+	return (
+
+		<PageLayout>
+			{/* If there are no projects, clients, files, comments, or transactions, return a call to action to create a project to get started */}
+			{isEmpty ? (
+				<NoProjects />
+			) : (
 				<div
-					className="grid gap-6"
-					style={{
-						display: 'grid',
-						gridTemplateColumns: 'repeat(6, 1fr)',
-						gridTemplateRows: 'repeat(3, minmax(120px, auto))',
-						gridTemplateAreas: `
-						  'main main main activity activity activity'
-						  'projects revenue comments comments unique unique'
-						  'flexible flexible payments payments status status'
-						`,
-					}}
+					className="
+						mt-6
+						grid gap-3
+						grid-cols-6
+						grid-rows-3
+						[grid-template-areas:'main_main_main_activity_activity_activity''projects_revenue_comments_comments_unique_unique''flexible_flexible_payments_payments_status_status']
+						[min-h-[120px]]
+					"
 				>
-					{/* Main Board/Quick Actions/Stats */}
+
 					<Card className="col-span-3 row-span-1" style={{ gridArea: 'main' }}>
 						<CardHeader>
 							<CardTitle>Welcome{currentUser ? `, ${currentUser.firstName}` : ""}!</CardTitle>
@@ -97,8 +124,16 @@ const OverviewPage = () => {
 						</CardHeader>
 						<CardContent>
 							<ul className="space-y-2">
-								{/* Replace with real activities */}
-								<li>No recent activities yet.</li>
+								{/* TODO: Replace with real activities */}
+									{activities.length > 0 ? activities.slice(0, 4).map((activity) => (
+										<li key={activity.id} className="flex items-center justify-between">
+											{/* TODO - create a render activity metadata function */}
+											<span>{activity.action}</span>
+											<span>{formatRelative(new Date(activity.createdAt), new Date())}</span>
+										</li>
+									)) : (
+											<li>No recent activities yet.</li>
+									)}
 							</ul>
 						</CardContent>
 					</Card>
@@ -110,10 +145,10 @@ const OverviewPage = () => {
 						</CardHeader>
 						<CardContent>
 							<ul className="space-y-2">
-								{allProjects.slice(0, 4).map((project: Project) => (
+								{projects.slice(0, 4).map((project: Project) => (
 									<li key={project.id} className="flex items-center justify-between">
 										<span>{project.title}</span>
-										<Button size="sm" variant="link">Go to Project</Button>
+										<Button size="sm" variant="link" onClick={() => handleGoToProject(project.id)}>Go to Project</Button>
 									</li>
 								))}
 							</ul>
@@ -186,9 +221,9 @@ const OverviewPage = () => {
 							</div>
 						</CardContent>
 					</Card>
-				</div>
-			</PageLayout>
-		</AuthLayout>
+				</div>)}
+
+		</PageLayout>
 	);
 };
 

@@ -17,7 +17,7 @@ import type { SonexFile } from "../../../../../types/files";
 import { useProjectContext } from "../../../../../hooks/projects/useProjectContext";
 
 const ProjectOverviewTab = () => {
-    const { projectData: { project, files, clients, folders, isLoading }, isOwner } = useProjectContext();
+    const { project, files, folders, isLoading, clients, isOwner } = useProjectContext();
 
     // Calculate storage usage
     const storageStats = useMemo(() => {

@@ -1,19 +1,15 @@
-import api from "../lib/axios";
-import type { SonexFile } from "../types/files";
-import { useState } from "react";
+import {
+    createFolder,
+    deleteFolder,
+    fetchFolders,
+    moveItemIntoFolder,
+    updateFolder,
+    type ISonexFolder,
+} from "./query-functions/folders";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useParams } from "react-router";
 
-export type ISonexFolder = {
-    id: string;
-    name: string;
-    parentId?: string | null;
-    projectId: string;
-    subfolders?: ISonexFolder[];
-    files?: SonexFile[];
-    createdAt: Date | string;
-    lastModified: Date | string;
-};
-
-type CreateFolderParams = {
+export type CreateFolderParams = {
     name: string;
     parentId?: string | null;
     projectId: string;
@@ -21,96 +17,86 @@ type CreateFolderParams = {
 };
 
 export function useFolders() {
-    const [folders, setFolders] = useState<ISonexFolder[]>([]);
-    const [loading, setLoading] = useState(false);
+    const queryClient = useQueryClient();
+    const { id: projectId } = useParams();
 
-    async function fetchFolders({ projectId, limit, page, sortBy }: { projectId?: string; limit?: string; page?: string; sortBy?: { name?: "asc" | "desc"; createdAt?: "asc" | "desc"; }; }) {
-        const params: Record<string, string> = {};
+    const foldersQuery = useQuery({
+        queryKey: ["folders", projectId, "all"],
+        queryFn: ({ queryKey }) => {
+            const [, projectId] = queryKey;
+            return fetchFolders({ projectId });
+        },
+        enabled: !!projectId,
+    });
 
-        if (projectId) {
-            params.projectId = projectId;
-        }
+    const create = useMutation({
+        mutationFn: (newFolderData: CreateFolderParams) =>
+            createFolder(newFolderData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["folders", projectId as string, "all"],
+            });
+        },
+    });
 
-        if (limit) {
-            params.limit = limit;
-        }
+    const update = useMutation({
+        mutationFn: (updatedFolderData: Partial<CreateFolderParams>) =>
+            updateFolder(updatedFolderData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["folders", projectId as string, "all"],
+            });
+        },
+    });
 
-        if (page) {
-            params.page = page;
-        }
+    const move = useMutation({
+        mutationFn: (moveFolderData: {
+            itemId: string;
+            targetFolderId: string | null;
+            itemType: "folder" | "file";
+        }) =>
+            moveItemIntoFolder(
+                moveFolderData.itemId,
+                moveFolderData.targetFolderId,
+                moveFolderData.itemType,
+            ),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["folders", projectId as string, "all"],
+            });
+        },
+    });
 
-        if (sortBy) {
-            params.sortBy = JSON.stringify(sortBy);
-        }
+    const deleteSingle = useMutation({
+        mutationFn: (folderId: string) => deleteFolder(folderId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["folders", projectId as string, "all"],
+            });
+        },
+    });
 
-        setLoading(true);
-        try {
-            const { data: { data } } = await api.get("/folders", { params });
-            setFolders(data.folders);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    }
+    const isLoading =
+        foldersQuery.isLoading ||
+        create.isPending ||
+        update.isPending ||
+        move.isPending ||
+        deleteSingle.isPending;
 
-    async function createFolder(folderData: CreateFolderParams): Promise<void> {
-        setLoading(true);
-        try {
-            await api.post("/folders", folderData);
-            await fetchFolders({ projectId: folderData.projectId });
-        } catch (error) {
-            console.error(error);
-            throw error;
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function updateFolder(folderData: Partial<CreateFolderParams>): Promise<void> {
-        try {
-            await api.put(`/folders/${folderData.folderId}`);
-            await fetchFolders({ projectId: folderData.projectId });
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
-    }
-
-    async function moveItemIntoFolder(itemId: string, targetFolderId: string | null, itemType: "folder" | "file") {
-        try {
-            const { data: { data } } = await api.put("/folders/move", { itemId, targetFolderId: targetFolderId ?? null, itemType });
-
-            if (data.success) {
-                // TODO: Find a way to update the folder structure in the state
-                return true;
-            }
-
-            return false;
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
-    }
-
-    async function deleteFolder(id: string): Promise<boolean> {
-        try {
-            await api.delete(`/folders/${id}`);
-            setFolders(folders.filter(folder => folder.id !== id));
-            return true;
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
-    }
+    const error =
+        foldersQuery.error ||
+        create.error ||
+        update.error ||
+        move.error ||
+        deleteSingle.error
 
     return {
-        folders,
-        loading,
-        fetchFolders,
-        createFolder,
-        updateFolder,
-        deleteFolder,
-        moveItemIntoFolder
+        folders: (foldersQuery.data as ISonexFolder[]) || [],
+        isLoading,
+        error,
+        createFolder: create.mutateAsync,
+        updateFolder: update.mutateAsync,
+        deleteFolder: deleteSingle.mutateAsync,
+        moveItemIntoFolder: move.mutateAsync,
     };
 }

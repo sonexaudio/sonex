@@ -1,5 +1,4 @@
 import { useParams } from "react-router";
-import useFiles from "../../../../hooks/useFiles";
 import type { SonexFile } from "../../../../types/files";
 import { formatFileSize } from "../../../../utils/files";
 import { useProjectContext } from "../../../../hooks/projects/useProjectContext";
@@ -9,10 +8,10 @@ interface SonexFileExtended extends SonexFile {
 }
 
 const ProjectFile = ({ file }: { file: SonexFileExtended; }) => {
-    const { deleteFile } = useFiles();
+    const { deleteProjectFile } = useProjectContext()
 
     const handleDeleteFile = async () => {
-        await deleteFile(file.id);
+        await deleteProjectFile(file.id);
     };
 
     return (
@@ -31,7 +30,7 @@ const ProjectFile = ({ file }: { file: SonexFileExtended; }) => {
 };
 
 const ProjectFiles = ({ isProjectOwner }: { isProjectOwner: boolean; }) => {
-    const { projectData: { files, isLoading }, currentClient, currentUser } = useProjectContext();
+    const { project: { files }, client: currentClient, user: currentUser, isLoading } = useProjectContext();
     const { id: projectId } = useParams();
 
 

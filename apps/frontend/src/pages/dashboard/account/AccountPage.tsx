@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import AuthLayout from "../../../components/AuthLayout";
 import PageLayout from "../../../components/PageLayout";
 import useUser from "../../../hooks/useUser";
 import StripeManager from "./StripeManager";
@@ -45,23 +44,22 @@ const AccountPage = () => {
 	if (loading) return <p>Loading...</p>;
 
 	return (
-		<AuthLayout>
-			<PageLayout>
-				{error && (
-					<AuthState
-						type="error"
-						message="Google account email doesn't match your account email."
-					/>
-				)}
-				<div className="space-y-8">
-					<StripeManager />
-					<UpdateAccount />
-					<ConnectWithGoogleAccount />
-					<AccountActivities activities={activities} />
-					<AccountDangerZone />
-				</div>
-			</PageLayout>
-		</AuthLayout>
+
+		<PageLayout>
+			{error && (
+				<AuthState
+					type="error"
+					message="Google account email doesn't match your account email."
+				/>
+			)}
+			<div className="space-y-8">
+				<StripeManager />
+				<UpdateAccount />
+				<ConnectWithGoogleAccount />
+				<AccountActivities activities={activities} />
+				<AccountDangerZone />
+			</div>
+		</PageLayout>
 	);
 };
 

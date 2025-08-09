@@ -16,24 +16,24 @@ import ClientsPage from "../pages/dashboard/clients/ClientsPage";
 import SingleFilePage from "../pages/dashboard/files/[name]/SingleFilePage";
 import { ProjectProvider } from "../context/ProjectProvider";
 import PaymentsPage from "../pages/dashboard/payments/PaymentsPage";
-import SubscriptionProvider from "../context/SubscriptionProvider";
 import SettingsPage from "../pages/dashboard/settings/SettingsPage";
+import ProtectedRoute from "./ProtectedRoute";
 
 const RoutesLayout = () => {
 	return (
 		<Routes>
 			<Route index element={<HomePage />} />
-			<Route path="login" element={<LoginPage />} />
-			<Route path="signup" element={<SignupPage />} />
-			<Route path="forgot-password" element={<ForgotPasswordPage />} />
-			<Route path="reset-password" element={<ResetPasswordPage />} />
+			<Route path="login" element={<ProtectedRoute><LoginPage /></ProtectedRoute>} />
+			<Route path="signup" element={<ProtectedRoute><SignupPage /></ProtectedRoute>} />
+			<Route path="forgot-password" element={<ProtectedRoute><ForgotPasswordPage /></ProtectedRoute>} />
+			<Route path="reset-password" element={<ProtectedRoute><ResetPasswordPage /></ProtectedRoute>} />
 			<Route element={<DashboardLayout />}>
 				<Route path="overview" element={
-					<OverviewPage />
+					<ProtectedRoute><OverviewPage /></ProtectedRoute>
 				} />
 				<Route path="projects">
 					<Route index element={
-						<ProjectsPage />
+						<ProtectedRoute><ProjectsPage /></ProtectedRoute>
 					} />
 					<Route path=":id">
 						<Route index element={
@@ -47,24 +47,24 @@ const RoutesLayout = () => {
 					</Route>
 				</Route>
 				<Route path="clients" element={
-					<ClientsPage />
+					<ProtectedRoute><ClientsPage /></ProtectedRoute>
 				} />
 				<Route path="files" element={
-					<FilesPage />
+					<ProtectedRoute><FilesPage /></ProtectedRoute>
 				} />
 				<Route path="account" element={
 
-					<AccountPage />
+					<ProtectedRoute><AccountPage /></ProtectedRoute>
 
 				} />
 				<Route path="payments" >
 					<Route index element={
-						<PaymentsPage />
+						<ProtectedRoute><PaymentsPage /></ProtectedRoute>
 					} />
 					<Route path="success" element={<SuccessPage />} />
 				</Route>
 				<Route path="settings" element={
-					<SettingsPage />
+					<ProtectedRoute><SettingsPage /></ProtectedRoute>
 				} />
 			</Route>
 

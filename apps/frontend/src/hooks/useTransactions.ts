@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import api from "../lib/axios";
-import type { AxiosError } from "axios";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchTransactions, createTransaction, updateTransaction, deleteTransaction } from "./query-functions/transactions";
 
 export interface Transaction {
     id: string;
@@ -15,98 +15,55 @@ export interface Transaction {
     updatedAt: Date | string;
 }
 
-export interface AxiosResponseError extends AxiosError {
-    error?: string;
+// Generic error type for React Query hooks
+export interface SonexQueryError<T = unknown> {
+    error?: T;
 }
 
-export function useTransactions() {
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+export function useTransactions<TError = unknown>() {
+    const queryClient = useQueryClient();
 
-    useEffect(() => {
-        fetchTransactions();
-    }, []);
+    // Fetch all transactions
+    const transactionsQuery = useQuery<Transaction[], SonexQueryError<TError>>({
+        queryKey: ["transactions"],
+        queryFn: fetchTransactions,
+    });
 
-    async function fetchTransactions() {
-        setLoading(true);
-        try {
-            const {
-                data: { data },
-            } = await api.get("/transactions");
-            setTransactions(data.transactions);
-        } catch (error) {
-            console.error(error);
-            setError(
-                (error as AxiosError<AxiosResponseError>).response?.data
-                    ?.error as string,
-            );
-        } finally {
-            setLoading(false);
-        }
-    }
+    // Create transaction
+    const createMutation = useMutation({
+        mutationFn: (transactionData: Partial<Transaction>) => createTransaction(transactionData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        },
+    });
 
-    async function createTransaction(transactionData: Partial<Transaction>) {
-        try {
-            const {
-                data: { data },
-            } = await api.post("/transactions", transactionData);
-            if (data) {
-                setTransactions(prev => [data.transaction, ...prev]);
-            }
-            return data?.transaction;
-        } catch (error) {
-            console.error(error);
-            setError(
-                (error as AxiosError<AxiosResponseError>).response?.data
-                    ?.error as string,
-            );
-            throw error;
-        }
-    }
+    // Update transaction
+    const updateMutation = useMutation({
+        mutationFn: ({ id, transactionData }: { id: string; transactionData: Partial<Transaction>; }) => updateTransaction(id, transactionData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        },
+    });
 
-    async function updateTransaction(id: string, transactionData: Partial<Transaction>) {
-        try {
-            const {
-                data: { data },
-            } = await api.put(`/transactions/${id}`, transactionData);
-            if (data) {
-                setTransactions(prev =>
-                    prev.map(tx => tx.id === id ? data.transaction : tx)
-                );
-            }
-            return data?.transaction;
-        } catch (error) {
-            console.error(error);
-            setError(
-                (error as AxiosError<AxiosResponseError>).response?.data
-                    ?.error as string,
-            );
-            throw error;
-        }
-    }
-
-    async function deleteTransaction(id: string) {
-        try {
-            await api.delete(`/transactions/${id}`);
-            setTransactions(prev => prev.filter(tx => tx.id !== id));
-        } catch (error) {
-            console.error(error);
-            setError(
-                (error as AxiosError<AxiosResponseError>).response?.data
-                    ?.error as string,
-            );
-            throw error;
-        }
-    }
+    // Delete transaction
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => deleteTransaction(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        },
+    });
 
     return {
-        transactions,
-        loading,
-        error,
-        fetchTransactions,
-        createTransaction,
-        updateTransaction,
-        deleteTransaction,
+        transactions: transactionsQuery.data || [],
+        isLoading: transactionsQuery.isLoading,
+        error: transactionsQuery.error,
+        refetch: transactionsQuery.refetch,
+        createTransaction: createMutation.mutateAsync,
+        updateTransaction: (id: string, transactionData: Partial<Transaction>) =>
+            updateMutation.mutateAsync({ id, transactionData }),
+        deleteTransaction: deleteMutation.mutateAsync,
+        createStatus: createMutation.status,
+        updateStatus: updateMutation.status,
+        deleteStatus: deleteMutation.status,
     };
-} 
+}

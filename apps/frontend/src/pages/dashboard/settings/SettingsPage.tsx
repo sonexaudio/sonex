@@ -1,22 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import useUser from "../../../hooks/useUser";
-import AuthLayout from "../../../components/AuthLayout";
 import PageLayout from "../../../components/PageLayout";
 import { useSubscription } from "../../../hooks/useSubscription";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
 import api from "../../../lib/axios";
-import { getStripePrices, PRICING_ORDER } from "../../../utils/stripeConfig";
-import { Button } from "../../../components/ui/button";
-import { Checkbox } from "../../../components/ui/checkbox";
-import { Label } from "../../../components/ui/label";
-import { formatFileSize } from "../../../utils/files";
-import { Progress } from "../../../components/ui/progress";
 import SettingsTabs from "./SettingsTabs";
 import ProfileSettings from "../../../components/settings/ProfileSettings";
 import SubscriptionSettings from "../../../components/settings/SubscriptionSettings";
 import StorageSettings from "../../../components/settings/StorageSettings";
 import BillingSettings from "../../../components/settings/BillingSettings";
 import AccountSettings from "../../../components/settings/AccountSettings";
+import { getStripePrices } from "../../../utils/stripeConfig";
 
 const SettingsPage = () => {
     const { currentUser } = useUser();
@@ -43,27 +36,27 @@ const SettingsPage = () => {
     };
 
     return (
-        <AuthLayout>
-            <PageLayout>
-                <div className="space-y-6 p-6">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-                        <p className="text-muted-foreground">Manage your account settings and preferences.</p>
-                    </div>
-                    <div className="flex flex-col md:flex-row gap-6">
-                        <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-                        <div className="flex-1">
-                            {activeTab === "profile" && <ProfileSettings />}
-                            {activeTab === "subscription" && <SubscriptionSettings />}
-                            {activeTab === "storage" && <StorageSettings />}
-                            {activeTab === "billing" && <BillingSettings />}
-                            {activeTab === "account" && <AccountSettings />}
-                        </div>
+        <PageLayout>
+            <div className="space-y-6 p-6">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+                    <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+                </div>
+                <div className="flex flex-col md:flex-row gap-6">
+                    <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+                    <div className="flex-1">
+                        {activeTab === "profile" && <ProfileSettings />}
+                        {activeTab === "subscription" && <SubscriptionSettings />}
+                        {activeTab === "storage" && <StorageSettings />}
+                        {activeTab === "billing" && <BillingSettings />}
+                        {activeTab === "account" && <AccountSettings />}
                     </div>
                 </div>
-            </PageLayout>
-        </AuthLayout >
+            </div>
+        </PageLayout>
+
     );
 };
 export default SettingsPage;

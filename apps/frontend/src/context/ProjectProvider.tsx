@@ -2,32 +2,37 @@ import type React from "react";
 import {
     createContext,
     useCallback,
-    useEffect,
 } from "react";
-import type { DetailedProject } from "../types/projects";
 import { useParams } from "react-router";
 import { useClients, type Client } from "../hooks/useClients";
-import { useAuth } from "../hooks/useAuth";
-import useClientAuth from "../hooks/useClientAuth";
+
 import { useProjectData, type SingleProjectViewData } from "../hooks/projects/useProjectData";
 import { useProjectAccess, type AccessLevel } from "../hooks/projects/useProjectAccess";
 import { useBuildFileTree } from "../hooks/projects/useBuildFileTree";
+import { useQueryClient } from "@tanstack/react-query";
+import { useFolders, type CreateFolderParams } from "../hooks/useFolders";
+import useFiles from "../hooks/useFiles";
 
-interface ProjectContextType {
-    projectData: SingleProjectViewData | undefined;
-    fileTree: ReturnType<typeof useBuildFileTree>;
-    accessLevel: AccessLevel;
-    changeAccessLevel: (level: AccessLevel) => void;
-    addClient: (projectId: string, clientData: Partial<Client>) => Promise<Client | null>;
-    removeClient: (projectId: string, clientId: string) => Promise<void>;
+export interface ProjectContextType extends SingleProjectViewData {
+    // Auth & access
     isOwner: boolean;
     isClient: boolean;
     isUnauthorized: boolean;
     isUnknown: boolean;
-    currentUser: ReturnType<typeof useAuth>["user"];
-    currentClient: ReturnType<typeof useClientAuth>["client"];
-    userLoading: boolean;
-    clientLoading: boolean;
+    accessLevel: AccessLevel;
+    changeAccessLevel: (level: AccessLevel) => void;
+
+    // Project data
+    projectId?: string;
+    fileTree: ReturnType<typeof useBuildFileTree>;
+
+    // Project actions
+    addClientToProject: (projectId: string, clientData: Partial<Client>) => Promise<void>;
+    removeClientFromProject: (projectId: string, clientId: string) => Promise<void>;
+    createProjectFolder: (folderData: CreateFolderParams) => Promise<void>;
+    moveItemIntoFolder: (data: { itemId: string; targetFolderId: string; itemType: "folder" | "file"; }) => Promise<void>;
+    deleteProjectFolder: (folderId: string) => Promise<void>;
+    deleteProjectFile: (fileId: string) => Promise<void>;
 }
 
 export const ProjectContext = createContext<ProjectContextType | null>(null);
@@ -46,78 +51,101 @@ export const PROJECT_ACCESS_LEVELS = {
 // My aim is to prevent multiple calls to the api just to get the same data
 // This Context is ONLY provided around components that need the data of a single project
 export const ProjectProvider: React.FC<{ children: React.ReactNode; }> = ({
-    children,
+    children
 }) => {
-    const { user, loading: userLoading } = useAuth();
-    const { client, loading: clientLoading } = useClientAuth();
-    console.log("CLIENT IN PROJECT PROVIDER", client);
+    const queryClient = useQueryClient();
     const { id: projectId } = useParams();
+
     const projectData = useProjectData(projectId);
-    const { accessLevel, changeAccessLevel } = useProjectAccess({ userId: user?.id, clientEmail: client?.email, project: projectData?.project as DetailedProject | null });
-    const fileTree = useBuildFileTree(projectData?.files || [], projectData?.folders || []);
-    const { addClientToProject, removeClientFromProject } = useClients();
+    const { accessLevel, changeAccessLevel } = useProjectAccess({
+        project: projectData.project,
+        clientEmail: projectData.client?.email,
+        userId: projectData.user?.id
+    });
+    const { addToProject, removeFromProject } = useClients();
+    const { createFolder, deleteFolder, moveItemIntoFolder: moveItemIntoFolderApi } = useFolders();
+    const { deleteFile: deleteFileApi } = useFiles();
 
-    // Project management functions
-    const addClient = useCallback(
-        async (projectId: string, clientData: Partial<Client>) => {
-            try {
-                const result = await addClientToProject(projectId, clientData);
-                if (!result) {
-                    console.error("Failed to add client to project");
-                    throw new Error("Failed to add client to project");
-                }
-                await projectData?.refetchProject();
-                return result;
-            } catch (error) {
-                console.error(error);
-                throw error;
-            }
-        },
-        [addClientToProject, projectData?.refetchProject],
-    );
-    const removeClient = useCallback(async (projectId: string, clientId: string) => {
-        try {
-            await removeClientFromProject(projectId, clientId);
-            await projectData?.refetchProject();
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
-    }, [removeClientFromProject, projectData?.refetchProject]);
+    const { files, folders } = projectData
 
-    // Computed values
+    const fileTree = useBuildFileTree(files, folders);
+
+    console.log("Project Data", projectData);
+    console.log("FILE TREE", fileTree)
+
+    // ======== Functions ======
+
+    // Client-related
+    const addClientToProject = useCallback(async (projectId: string, clientData: Partial<Client>) => {
+        await addToProject({ projectId, clientData });
+    }, [addToProject]);
+
+    const removeClientFromProject = useCallback(async (projectId: string, clientId: string) => {
+        await removeFromProject(clientId);
+        queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+    }, [removeFromProject, queryClient]);
+
+    // Folder-related
+    const createProjectFolder = useCallback(async (folderData: CreateFolderParams) => {
+        await createFolder(folderData);
+        queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+    }, [createFolder, queryClient]);
+
+    const moveItemIntoFolder = useCallback(async (data: {
+        itemId: string;
+        targetFolderId: string | null;
+        itemType: "folder" | "file";
+    }) => {
+        await moveItemIntoFolderApi(data);
+        // Invalidate files and folders queries so the file tree updates
+        queryClient.invalidateQueries({ queryKey: ["files"] });
+        queryClient.invalidateQueries({ queryKey: ["folders", projectId, "all"] });
+        queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+    }, [moveItemIntoFolderApi, queryClient]);
+
+    const deleteProjectFolder = useCallback(async (folderId: string) => {
+        await deleteFolder(folderId);
+        queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+    }, [deleteFolder, queryClient]);
+
+    // File-related
+    const deleteProjectFile = useCallback(async (fileId: string) => {
+        await deleteFileApi(fileId);
+        queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+    }, [deleteFileApi, queryClient]);
+
+    // computed data
     const isOwner = accessLevel === PROJECT_ACCESS_LEVELS.OWNER;
     const isClient = accessLevel === PROJECT_ACCESS_LEVELS.CLIENT;
     const isUnauthorized = accessLevel === PROJECT_ACCESS_LEVELS.UNAUTHORIZED;
     const isUnknown = accessLevel === PROJECT_ACCESS_LEVELS.UNKNOWN;
 
-
-    // Load initial data
-    useEffect(() => {
-        if (!projectId || projectData?.isLoading) return;
-        projectData?.fetchAllProjectData();
-    }, [projectId]);
-
     const contextValues = {
-        projectData,
-        currentUser: user,
-        currentClient: client,
-        fileTree,
-        accessLevel,
-        addClient,
-        removeClient,
+        // auth
         isOwner,
         isClient,
         isUnauthorized,
         isUnknown,
+        accessLevel,
         changeAccessLevel,
-        userLoading,
-        clientLoading,
+
+        // project data
+        // rest of project data
+        ...projectData,
+        fileTree,
+        projectId,
+
+        // functions
+        addClientToProject,
+        removeClientFromProject,
+        createProjectFolder,
+        moveItemIntoFolder,
+        deleteProjectFolder,
+        deleteProjectFile,
     };
 
-    return (
-        <ProjectContext.Provider value={contextValues}>
-            {children}
-        </ProjectContext.Provider>
-    );
+    return <ProjectContext.Provider value={contextValues}>
+        {children}
+    </ProjectContext.Provider>;
 };
+
