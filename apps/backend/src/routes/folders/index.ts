@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { errorResponse, successResponse } from "../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
 import { prisma } from "../../lib/prisma";
 import type { File, Folder } from "../../generated/prisma";
 
@@ -16,10 +16,10 @@ folderRouter.post("/", async (req, res) => {
             },
         });
 
-        successResponse(res, { folder }, null, 201);
+        sendSuccessResponse(res, { folder }, null, 201);
     } catch (error) {
         console.error(error);
-        errorResponse(res, 500, "Something went wrong");
+        sendErrorResponse(res, 500, "Something went wrong");
     }
 });
 
@@ -27,7 +27,7 @@ folderRouter.get("/", async (req, res) => {
     let { projectId, limit, page, sortBy }: { projectId?: string, limit?: string | undefined, page?: string | undefined, sortBy?: { name?: "asc" | "desc"; createdAt?: "asc" | "desc"; }; } = req.query;
 
     // if (!projectId || typeof projectId !== "string") {
-    //     errorResponse(res, 400, "Project Id required");
+    //     sendErrorResponse(res, 400, "Project Id required");
     //     return;
     // }
 
@@ -45,9 +45,9 @@ folderRouter.get("/", async (req, res) => {
             ]
         });
 
-        successResponse(res, { folders });
+        sendSuccessResponse(res, { folders });
     } catch (error) {
-        errorResponse(res, 500, "Something went wrong");
+        sendErrorResponse(res, 500, "Something went wrong");
     }
 });
 
@@ -56,11 +56,11 @@ folderRouter.put("/move", async (req, res) => {
 
     // allow targetFolderId to be null (root)
     if (!itemId || itemType === undefined) {
-        errorResponse(res, 400, "Missing itemId or itemType");
+        sendErrorResponse(res, 400, "Missing itemId or itemType");
         return;
     }
     if (itemType !== "file" && itemType !== "folder") {
-        errorResponse(res, 400, "itemType must be 'file' or 'folder'");
+        sendErrorResponse(res, 400, "itemType must be 'file' or 'folder'");
         return;
     }
 
@@ -71,7 +71,7 @@ folderRouter.put("/move", async (req, res) => {
                 where: { id: targetFolderId as string },
             });
             if (!existingFolder) {
-                errorResponse(res, 404, "Target folder does not exist");
+                sendErrorResponse(res, 404, "Target folder does not exist");
                 return;
             }
         }
@@ -89,7 +89,7 @@ folderRouter.put("/move", async (req, res) => {
             });
         }
         if (!existingItem) {
-            errorResponse(res, 404, "Item not found");
+            sendErrorResponse(res, 404, "Item not found");
             return;
         }
 
@@ -105,10 +105,10 @@ folderRouter.put("/move", async (req, res) => {
             });
         }
 
-        successResponse(res, { folderId: targetFolderId?.id });
+        sendSuccessResponse(res, { folderId: targetFolderId?.id });
     } catch (error) {
         console.error(error);
-        errorResponse(res, 500, "Something went wrong");
+        sendErrorResponse(res, 500, "Something went wrong");
     }
 });
 

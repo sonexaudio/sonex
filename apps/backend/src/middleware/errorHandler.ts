@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import logger from "../utils/logger";
-import { errorResponse } from "../utils/responses";
+import { sendErrorResponse } from "../utils/responses";
 
 export function errorHandler(
 	err: any,
@@ -9,5 +9,5 @@ export function errorHandler(
 	next: NextFunction,
 ) {
 	logger.error((err as Error).message);
-	errorResponse(res, 500, err);
+	sendErrorResponse(res, 500, err);
 }

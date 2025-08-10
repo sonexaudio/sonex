@@ -4,7 +4,7 @@ import { prisma } from "../../../lib/prisma";
 import jwt from "jsonwebtoken";
 import config from "../../../config";
 import { generateClientAccessToken, generateTokenHash } from "../../../utils/token";
-import { errorResponse, successResponse } from "../../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../../utils/responses";
 
 export async function sendClientAccess(email: string, projectId: string): Promise<{ token: string; url: string; } | null> {
     try {

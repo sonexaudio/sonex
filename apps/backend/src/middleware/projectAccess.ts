@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { errorResponse } from "../utils/responses";
+import { sendErrorResponse } from "../utils/responses";
 import { prisma } from "../lib/prisma";
 import { generateTokenHash } from "../utils/token";
 import jwt from "jsonwebtoken";
@@ -26,7 +26,7 @@ export async function requireProjectAccess(req: Request, res: Response, next: Ne
 				return next();
 			}
 		} catch (error) {
-			return errorResponse(res, 500, "Error checking project access");
+			return sendErrorResponse(res, 500, "Error checking project access");
 		}
 	}
 
@@ -40,7 +40,7 @@ export async function requireProjectAccess(req: Request, res: Response, next: Ne
 				return next();
 			}
 		} catch (error) {
-			return errorResponse(res, 401, "Invalid or expired client token");
+			return sendErrorResponse(res, 401, "Invalid or expired client token");
 		}
 	}
 

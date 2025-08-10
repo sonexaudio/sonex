@@ -6,14 +6,14 @@ import { stripe } from "../../lib/stripe";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
 import type Stripe from "stripe";
-import { errorResponse, successResponse } from "../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
 
 const paymentRouter = Router();
 
 // get current user subscription
 paymentRouter.get("/subscription", requireAuth, async (req, res) => {
 	if (!req.user?.stripeCustomerId) {
-		successResponse(res, { subscription: null, message: "User has not created a subscription" });
+		sendSuccessResponse(res, { subscription: null, message: "User has not created a subscription" });
 		return;
 	}
 
@@ -35,7 +35,7 @@ paymentRouter.get("/subscription/:userId", async (req, res) => {
 	const { userId } = req.params;
 
 	if (!userId) {
-		return errorResponse(res, 400, "User ID is required");
+		return sendErrorResponse(res, 400, "User ID is required");
 	}
 
 	const subscription = await prisma.subscription.findFirst({
@@ -49,7 +49,7 @@ paymentRouter.get("/subscription/:userId", async (req, res) => {
 	});
 
 	// If no subscription found, return null
-	successResponse(res, { subscription });
+	sendSuccessResponse(res, { subscription });
 });
 
 // create checkout session link to subscribe to a plan
@@ -146,7 +146,7 @@ paymentRouter.post("/change-plan", requireAuth, async (req, res) => {
 		console.log("NEW PRICE DETAILS", newPrice);
 
 		if (!newPrice) {
-			return errorResponse(res, 400, "Invalid price ID");
+			return sendErrorResponse(res, 400, "Invalid price ID");
 		}
 
 
@@ -176,7 +176,7 @@ paymentRouter.post("/change-plan", requireAuth, async (req, res) => {
 
 			console.log("PAYMENT INTENT", paymentIntent);
 
-			successResponse(res, {
+			sendSuccessResponse(res, {
 				message: "Subscription created",
 				subscriptionId: subscription.id,
 				clientSecret: paymentIntent,
@@ -189,7 +189,7 @@ paymentRouter.post("/change-plan", requireAuth, async (req, res) => {
 			// Charge prorated amount and pay difference immediately
 			// User is upgrading from existing subscription
 			if (!subscriptionId) {
-				return errorResponse(res, 400, "No active subscription found");
+				return sendErrorResponse(res, 400, "No active subscription found");
 			}
 
 			// Get current subscription item ID
@@ -234,14 +234,14 @@ paymentRouter.post("/change-plan", requireAuth, async (req, res) => {
 				},
 			});
 
-			successResponse(res, {
+			sendSuccessResponse(res, {
 				message: "Subscription upgraded successfully"
 			});
 		} else {
 			// HANDLE DOWNGRADE LOGIC
 			// Create a new subscription schedule for the next billing cycle
 			if (!subscriptionId) {
-				return errorResponse(res, 400, "No active subscription found");
+				return sendErrorResponse(res, 400, "No active subscription found");
 			}
 
 			stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -296,11 +296,11 @@ paymentRouter.post("/change-plan", requireAuth, async (req, res) => {
 				}
 			});
 
-			successResponse(res, { effectiveDate: new Date(stripeSubscription.items.data[0].current_period_end * 1000), scheduleId: schedule.id }, "Subscription downgrade scheduled for next billing cycle");
+			sendSuccessResponse(res, { effectiveDate: new Date(stripeSubscription.items.data[0].current_period_end * 1000), scheduleId: schedule.id }, "Subscription downgrade scheduled for next billing cycle");
 		}
 	} catch (error) {
 		console.error("Error changing plan:", error);
-		errorResponse(res, 500, "Failed to change subscription plan");
+		sendErrorResponse(res, 500, "Failed to change subscription plan");
 	}
 });
 // create client payment intent secret for client to pay user for a project
@@ -341,30 +341,30 @@ paymentRouter.post("/client", async (req, res) => {
 		// PROJECT
 		console.log("PROJECT", project);
 		if (!project) {
-			errorResponse(res, 404, "Project not found");
+			sendErrorResponse(res, 404, "Project not found");
 			return;
 		}
 
 		if (project.paymentStatus === "Paid") {
 			console.error("PROJECT IS PAID");
-			errorResponse(res, 400, "Project is already paid");
+			sendErrorResponse(res, 400, "Project is already paid");
 			return;
 		}
 
 		if (project.userId !== userId) {
 			console.error("USERID ERROR");
-			errorResponse(res, 403, "User is not the project owner");
+			sendErrorResponse(res, 403, "User is not the project owner");
 			return;
 		}
 		// if (project.clients.length === 0 || project.clients[0].id !== clientId) {
 		// 	console.error("CLIENTID ERROR");
-		// 	errorResponse(res, 403, "Client not associated with project");
+		// 	sendErrorResponse(res, 403, "Client not associated with project");
 		// 	return;
 		// }
 
 		if (Number(project?.amount) !== projectAmount) {
 			console.error("AMOUNT ERROR");
-			errorResponse(res, 400, "Amount does not match project's total amount");
+			sendErrorResponse(res, 400, "Amount does not match project's total amount");
 			return;
 		}
 
@@ -389,14 +389,14 @@ paymentRouter.post("/client", async (req, res) => {
 			},
 		});
 
-		successResponse(
+		sendSuccessResponse(
 			res,
 			{ clientSecret: intent.client_secret },
 			"Payment intent created",
 		);
 	} catch (error) {
 		console.error("[Stripe Intent Error]", error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 

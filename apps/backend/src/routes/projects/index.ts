@@ -5,7 +5,7 @@ import { Prisma } from "../../generated/prisma";
 import { validate } from "../../middleware/validate";
 import { INVITE_EXPIRATION_DATE } from "../../../types";
 import { ProjectSchema } from "@sonex/schemas/project";
-import { errorResponse, successResponse } from "../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
 import {
 	generateClientAccessToken,
 	generateTokenHash,
@@ -182,7 +182,7 @@ projectRouter.get("/:id", requireProjectAccess, async (req, res) => {
 	});
 
 	if (!project) {
-		errorResponse(res, 404, "Project not found");
+		sendErrorResponse(res, 404, "Project not found");
 		return;
 	}
 
@@ -199,9 +199,9 @@ projectRouter.get("/:id/folders", async (req, res) => {
 			}
 		});
 
-		successResponse(res, { folders });
+		sendSuccessResponse(res, { folders });
 	} catch (error) {
-		errorResponse(res, 500, "Failed to fetch folders");
+		sendErrorResponse(res, 500, "Failed to fetch folders");
 	}
 
 });
@@ -215,9 +215,9 @@ projectRouter.get("/:id/comments", async (req, res) => {
 			}
 		});
 
-		successResponse(res, { comments });
+		sendSuccessResponse(res, { comments });
 	} catch (error) {
-		errorResponse(res, 500, "Failed to fetch comments");
+		sendErrorResponse(res, 500, "Failed to fetch comments");
 	}
 });
 
@@ -231,9 +231,9 @@ projectRouter.get("/:id/transactions", async (req, res) => {
 			}
 		});
 
-		successResponse(res, { transactions });
+		sendSuccessResponse(res, { transactions });
 	} catch (error) {
-		errorResponse(res, 500, "Failed to fetch transactions");
+		sendErrorResponse(res, 500, "Failed to fetch transactions");
 	}
 });
 
@@ -246,10 +246,10 @@ projectRouter.get("/:id/activities", async (req, res) => {
 			}
 		});
 
-		successResponse(res, { activities });
+		sendSuccessResponse(res, { activities });
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, (error as Error).message);
+		sendErrorResponse(res, 500, (error as Error).message);
 	}
 });
 
@@ -271,9 +271,9 @@ projectRouter.post("/:id/clients", async (req, res) => {
 				clientId: client.id,
 			}
 		});
-		successResponse(res, { client });
+		sendSuccessResponse(res, { client });
 	} catch (error) {
-		errorResponse(res, 500, (error as Error).message);
+		sendErrorResponse(res, 500, (error as Error).message);
 	}
 });
 

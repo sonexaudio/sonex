@@ -3,7 +3,7 @@ import multer from "multer";
 import { prisma } from "../../lib/prisma";
 import path from "path";
 import fs from "fs";
-import { errorResponse, successResponse } from "../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
 import { requireAuth } from "../../middleware/auth";
 import type { Client, File } from "../../generated/prisma";
 import multerS3 from "multer-s3";
@@ -116,19 +116,19 @@ router.post(
 		});
 
 		if (!project) {
-			errorResponse(res, 404, "Project not found");
+			sendErrorResponse(res, 404, "Project not found");
 			return;
 		}
 
 		// Permission check
 		if (uploaderType === "USER" && project.userId !== uploaderId) {
-			errorResponse(res, 403, "Insufficient permissions");
+			sendErrorResponse(res, 403, "Insufficient permissions");
 			return;
 		}
 
 		const files = req.files as Express.MulterS3.File[];
 		if (!files || files.length === 0) {
-			errorResponse(res, 400, "No files uploaded");
+			sendErrorResponse(res, 400, "No files uploaded");
 			return;
 		}
 
@@ -151,10 +151,10 @@ router.post(
 					});
 				}),
 			);
-			successResponse(res, { files: savedFiles }, null, 201);
+			sendSuccessResponse(res, { files: savedFiles }, null, 201);
 		} catch (error) {
 			console.error(error);
-			errorResponse(res, 500, "Something went wrong");
+			sendErrorResponse(res, 500, "Something went wrong");
 		}
 	},
 );
@@ -182,14 +182,14 @@ router.get("/", async (req, res) => {
 				},
 			});
 		} else {
-			errorResponse(res, 401, "Unauthorized");
+			sendErrorResponse(res, 401, "Unauthorized");
 			return;
 		}
 
-		successResponse(res, { files });
+		sendSuccessResponse(res, { files });
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 
@@ -201,14 +201,14 @@ router.get("/:id", async (req, res) => {
 		});
 
 		if (!file) {
-			errorResponse(res, 404, "File not found");
+			sendErrorResponse(res, 404, "File not found");
 			return;
 		}
 
-		successResponse(res, { file });
+		sendSuccessResponse(res, { file });
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 
@@ -221,7 +221,7 @@ router.get("/:id/stream-url", async (req, res) => {
 		});
 
 		if (!fileInfo) {
-			errorResponse(res, 404, "File not found");
+			sendErrorResponse(res, 404, "File not found");
 			return;
 		}
 
@@ -229,7 +229,7 @@ router.get("/:id/stream-url", async (req, res) => {
 		const isStreamable = streamableTypes.some(type => fileInfo.mimeType.startsWith(type));
 
 		if (!isStreamable) {
-			errorResponse(res, 400, "File type not streamable");
+			sendErrorResponse(res, 400, "File type not streamable");
 			return;
 		}
 
@@ -248,10 +248,10 @@ router.get("/:id/stream-url", async (req, res) => {
 			streamUrl: url
 		};
 
-		successResponse(res, { file });
+		sendSuccessResponse(res, { file });
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 
@@ -265,7 +265,7 @@ router.get("/:id/download-url", async (req, res) => {
 		});
 
 		if (!fileInfo) {
-			errorResponse(res, 404, "File not found");
+			sendErrorResponse(res, 404, "File not found");
 			return;
 		}
 
@@ -280,10 +280,10 @@ router.get("/:id/download-url", async (req, res) => {
 
 		const url = await getSignedUrl(s3Client, command, { expiresIn: SIGNED_EXPIRATION_SECONDS });
 
-		successResponse(res, { url });
+		sendSuccessResponse(res, { url });
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 
@@ -315,7 +315,7 @@ router.post("/delete-all", requireAuth, async (req, res) => {
 		res.sendStatus(204);
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 
 });
@@ -335,7 +335,7 @@ router.delete("/:id", async (req, res) => {
 		});
 
 		if (!existingFile) {
-			errorResponse(res, 404, "File not found");
+			sendErrorResponse(res, 404, "File not found");
 			return;
 		}
 
@@ -353,7 +353,7 @@ router.delete("/:id", async (req, res) => {
 
 		res.sendStatus(204);
 	} catch (error) {
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 

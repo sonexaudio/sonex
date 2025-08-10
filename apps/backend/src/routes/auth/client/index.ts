@@ -1,5 +1,5 @@
 import { type Response, Router } from "express";
-import { errorResponse, successResponse } from "../../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../../utils/responses";
 import { sendClientAccess, validateClientCode } from "./clientFunctions";
 import { prisma } from "../../../lib/prisma";
 import config from "../../../config";
@@ -15,7 +15,7 @@ clientAuthRouter.get("/", async (req, res) => {
     const token = req.cookies?.client_token || req.cookies?.client_refresh_token;
 
     if (!token) {
-        successResponse(res, { client: null });
+        sendSuccessResponse(res, { client: null });
         return;
     }
 
@@ -28,17 +28,17 @@ clientAuthRouter.get("/", async (req, res) => {
         });
 
         if (!client) {
-            errorResponse(res, 404, "Client not found");
+            sendErrorResponse(res, 404, "Client not found");
             return;
         }
 
         console.log("First client found:", client);
 
-        successResponse(res, { client });
+        sendSuccessResponse(res, { client });
 
     } catch (error) {
         console.error("JWT verify failed", error);
-        successResponse(res, { client: null });
+        sendSuccessResponse(res, { client: null });
     }
 
 });
@@ -51,7 +51,7 @@ clientAuthRouter.get("/", async (req, res) => {
 //     const { email, projectId } = req.body;
 
 //     if (!email || !projectId) {
-//         errorResponse(res, 400, "Missing email or projectId");
+//         sendErrorResponse(res, 400, "Missing email or projectId");
 //         return;
 //     }
 
@@ -67,17 +67,17 @@ clientAuthRouter.get("/", async (req, res) => {
 //         // TODO - need a check to make sure project exists
 //         const result = await sendClientAccess(email, projectId);
 //         if (!result) {
-//             errorResponse(res, 500, "Failed to create client access");
+//             sendErrorResponse(res, 500, "Failed to create client access");
 //             return;
 //         }
 
-//         successResponse(res, {
+//         sendSuccessResponse(res, {
 //             token: result.token,
 //             url: result.url,
 //         }); // for dev, will update to email
 //     } catch (error) {
 //         console.error(error);
-//         errorResponse(res, 500, "Failed to create client access");
+//         sendErrorResponse(res, 500, "Failed to create client access");
 //     }
 // });
 
@@ -86,7 +86,7 @@ clientAuthRouter.post("/validate", async (req, res) => {
         const { code, projectId, name, email } = req.body;
 
         if (!code || !projectId || !email || !name) {
-            errorResponse(res, 400, "All fields required");
+            sendErrorResponse(res, 400, "All fields required");
             return;
         }
 
@@ -95,7 +95,7 @@ clientAuthRouter.post("/validate", async (req, res) => {
         });
 
         if (!project || project.shareCode !== code) {
-            errorResponse(res, 401, "Invalid code");
+            sendErrorResponse(res, 401, "Invalid code");
             return;
         }
 
@@ -124,9 +124,9 @@ clientAuthRouter.post("/validate", async (req, res) => {
         // Set cookies
         addTokensToBrowserCookies(res, refreshToken, accessToken);
 
-        successResponse(res, { client: { name: client.name, email: client.email, accessToken, refreshToken } });
+        sendSuccessResponse(res, { client: { name: client.name, email: client.email, accessToken, refreshToken } });
     } catch (error) {
-        errorResponse(res, 500, "Internal server error");
+        sendErrorResponse(res, 500, "Internal server error");
     }
 });
 
@@ -145,7 +145,7 @@ clientAuthRouter.post("/refresh-token", async (req, res) => {
 
         addTokensToBrowserCookies(res, refreshToken);
 
-        successResponse(res, { refreshToken });
+        sendSuccessResponse(res, { refreshToken });
 
     } catch (error) {
         res.sendStatus(403);
@@ -167,7 +167,7 @@ clientAuthRouter.post("/logout", (req, res) => {
         secure: true,
         sameSite: "none",
     });
-    successResponse(res, { message: "Logged out successfully" });
+    sendSuccessResponse(res, { message: "Logged out successfully" });
 });
 
 function signClientTokens(

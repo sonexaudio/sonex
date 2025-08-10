@@ -2,7 +2,7 @@ import { Router } from "express";
 import { requireAuth } from "../../middleware/auth";
 import { prisma } from "../../lib/prisma";
 import { parseUserName, type UserDisplayName } from "../../utils";
-import { errorResponse, successResponse } from "../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
 
 const userRouter = Router();
 
@@ -31,10 +31,10 @@ userRouter.get("/:id/subscription-status", async (req, res) => {
 		const hasActiveSubscription = !!subscription;
 		const isActive = hasActiveSubscription || user?.subscriptionStatus === "free" || user?.isActive || !user?.hasExceededStorageLimit || user?.subscriptionStatus !== "past_due" || !user?.isInGracePeriod;
 
-		successResponse(res, { isActive });
+		sendSuccessResponse(res, { isActive });
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Failed to fetch subscription status");
+		sendErrorResponse(res, 500, "Failed to fetch subscription status");
 	}
 
 });

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { errorResponse, successResponse } from "../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
 import { prisma } from "../../lib/prisma";
 
 const router = Router();
@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
             },
         });
     }
-    successResponse(res, { comments });
+    sendSuccessResponse(res, { comments });
 });
 
 router.post("/", async (req, res) => {
@@ -46,7 +46,7 @@ router.post("/", async (req, res) => {
         }
     });
 
-    successResponse(res, { comment }, null, 201);
+    sendSuccessResponse(res, { comment }, null, 201);
     return;
 });
 
@@ -64,7 +64,7 @@ router.post("/reply", async (req, res) => {
         }
     });
 
-    successResponse(res, { comment }, null, 201);
+    sendSuccessResponse(res, { comment }, null, 201);
     return;
 });
 
@@ -77,7 +77,7 @@ router.delete("/:id", async (req, res) => {
         });
 
         if (!comment) {
-            errorResponse(res, 404, "Comment does not exist");
+            sendErrorResponse(res, 404, "Comment does not exist");
             return;
         }
 
@@ -85,10 +85,10 @@ router.delete("/:id", async (req, res) => {
             where: { id }
         });
 
-        successResponse(res, null, null, 204);
+        sendSuccessResponse(res, null, null, 204);
     } catch (error) {
         console.error(error);
-        errorResponse(res, 500, "Something went wrong");
+        sendErrorResponse(res, 500, "Something went wrong");
     }
 });
 
