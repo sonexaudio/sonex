@@ -1,65 +1,48 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/auth";
-import { prisma } from "../../lib/prisma";
 import { parseUserName, type UserDisplayName } from "../../utils";
-import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
+import { sendSuccessResponse } from "../../utils/responses";
+import {
+	findActivitiesByUserId,
+	findSubscriptionByUserInfo,
+	findTransactionsByUserId,
+	findUserById,
+} from "../../services/db.service";
+import { ForbiddenError, NotFoundError } from "../../errors";
+import { deleteUserById, updateUserById } from "../../services/user.service";
+import { logoutUser } from "../../services/auth.service";
 
 const userRouter = Router();
 
-userRouter.get("/:id/subscription-status", async (req, res) => {
+userRouter.get("/:id/subscription-status", async (req, res, next) => {
 	const { id } = req.params;
 	try {
-		const subscription = await prisma.subscription.findFirst({
-			where: {
-				userId: id,
-				startDate: {
-					// get the subscription that has started in the past 30 days
-					gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-					lt: new Date(),
-				},
-				isActive: true,
-			}
-		});
+		const subscription = await findSubscriptionByUserInfo(id);
 
-		const user = await prisma.user.findUnique({
-			where: {
-				id,
-			}
-		});
-
+		// Even if the user doesn't have an active subscription, they might still be considered "active"
+		const user = await findUserById(id);
 
 		const hasActiveSubscription = !!subscription;
-		const isActive = hasActiveSubscription || user?.subscriptionStatus === "free" || user?.isActive || !user?.hasExceededStorageLimit || user?.subscriptionStatus !== "past_due" || !user?.isInGracePeriod;
+		const isActive =
+			hasActiveSubscription ||
+			user?.subscriptionStatus === "free" ||
+			user?.isActive ||
+			!user?.hasExceededStorageLimit ||
+			user?.subscriptionStatus !== "past_due" ||
+			!user?.isInGracePeriod;
 
 		sendSuccessResponse(res, { isActive });
 	} catch (error) {
-		console.error(error);
-		sendErrorResponse(res, 500, "Failed to fetch subscription status");
+		next(error);
 	}
-
 });
 
-userRouter.put("/:id", requireAuth, async (req, res) => {
+userRouter.put("/:id", requireAuth, async (req, res, next) => {
 	const { id } = req.params;
 	const { name, ...userData } = req.body;
+	const currentUserId = req.user?.id;
 
 	try {
-		const user = await prisma.user.findUnique({
-			where: {
-				id,
-			},
-		});
-
-		if (!user) {
-			res.status(404).json({ error: "User does not exist in database" });
-			return;
-		}
-
-		if (req.user?.id !== id) {
-			res.status(403).json({ error: "Forbidden" });
-			return;
-		}
-
 		// parse new name if provided
 		let parsedName: UserDisplayName | undefined;
 
@@ -67,111 +50,84 @@ userRouter.put("/:id", requireAuth, async (req, res) => {
 			parsedName = parseUserName(req.body.name);
 		}
 
-		const updated = await prisma.user.update({
-			where: { id },
-			data: {
+		const updatedUser = await updateUserById(
+			id,
+			{
 				...userData,
-				firstName: parsedName?.firstName || user.firstName, // could either be given name or null
-				lastName: parsedName?.lastName || user.lastName,
+				firstName: parsedName?.firstName, // could either be given name or null
+				lastName: parsedName?.lastName || null, // lastName can be undefined
 			},
-		});
+			currentUserId,
+		);
 
-		res.json({ data: { user: updated } });
+		sendSuccessResponse(res, { user: updatedUser });
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
-userRouter.delete("/:id", requireAuth, async (req, res) => {
+userRouter.delete("/:id", requireAuth, async (req, res, next) => {
 	const { id } = req.params;
+	const currentUserId = req.user?.id;
 
 	try {
-		const user = await prisma.user.findUnique({
-			where: {
-				id,
-			},
-		});
+		const user = await findUserById(id);
 
 		if (!user) {
-			res.status(404).json({ error: "User does not exist" });
-			return;
+			throw new NotFoundError(`User with ID ${id} not found`);
 		}
 
-		if (req.user?.id !== id) {
-			res.status(403).json({ error: "Forbidden" });
-			return;
-		}
+		await deleteUserById(id, currentUserId);
 
-		await prisma.user.delete({
-			where: {
-				id,
-			},
-		});
-
-		req.logOut((err) => {
-			if (err) {
-				console.error("Logout error:", err);
-				res.status(500).json({ error: "Logout failed" });
-				return;
-			}
-			res.sendStatus(204);
-		});
+		logoutUser(req, res);
 	} catch (error) {
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
-userRouter.get("/:id/activities", requireAuth, async (req, res) => {
+userRouter.get("/:id/activities", requireAuth, async (req, res, next) => {
 	const { id } = req.params;
+	const currentUserId = req.user?.id;
+
+	if (currentUserId !== id) {
+		throw new ForbiddenError("You do not have permission to access this user's activities");
+	}
 
 	try {
-		const activities = await prisma.activity.findMany({
-			where: {
-				userId: id,
-			},
-		});
-
+		const activities = await findActivitiesByUserId(id);
+		sendSuccessResponse(res, { activities });
 		res.json({ data: { activities } });
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
-userRouter.get("/:id/transactions", requireAuth, async (req, res) => {
+userRouter.get("/:id/transactions", requireAuth, async (req, res, next) => {
 	const { id } = req.params;
+	const currentUserId = req.user?.id;
+
+	if (currentUserId !== id) {
+		throw new ForbiddenError("You do not have permission to access this user's transactions");
+	}
 
 	try {
-		const transactions = await prisma.transaction.findMany({
-			where: {
-				userId: id,
-			},
-		});
-
-		res.json({ data: { transactions } });
+		const transactions = await findTransactionsByUserId(id);
+		sendSuccessResponse(res, { transactions });
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
 // Mark user as onboarded
-userRouter.put("/onboarded", requireAuth, async (req, res) => {
+userRouter.put("/onboarded", requireAuth, async (req, res, next) => {
+	const userId = req.user?.id;
 	try {
-		const userId = req.user?.id;
-		if (!userId) {
-			res.status(401).json({ error: "Unauthorized" });
-			return;
-		}
-		const updated = await prisma.user.update({
-			where: { id: userId },
-			data: { isOnboarded: true },
-		});
-		res.json({ data: { user: updated } });
+		const updated = await updateUserById(userId!, { isOnboarded: true });
+		sendSuccessResponse(res, { user: updated });
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 

@@ -61,3 +61,42 @@ export async function findProjectById(id: string) {
 
     return project;
 }
+
+// ==== Subscription-Specific ====
+export async function findSubscriptionByUserInfo(userId: string) {
+    const subscription = await prisma.subscription.findFirst({
+        where: {
+            userId,
+            startDate: {
+                // get the subscription that has started in the past 30 days
+                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                lt: new Date(),
+            },
+            isActive: true,
+        }
+    });
+
+    return subscription;
+}
+
+// ===== Activity-Specific ====
+export async function findActivitiesByUserId(userId: string) {
+    const activities = await prisma.activity.findMany({
+        where: {
+            userId,
+        },
+    });
+
+    return activities;
+}
+
+// ===== Transaction-Specific ====
+export async function findTransactionsByUserId(userId: string) {
+    const transactions = await prisma.transaction.findMany({
+        where: {
+            userId,
+        },
+    });
+
+    return transactions;
+}

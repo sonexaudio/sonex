@@ -37,6 +37,7 @@ export async function updateUserById(
     currentUserId?: string,
 ) {
     const user = await findUserById(userId);
+
     if (!user) {
         throw new NotFoundError(`User with ID ${userId} not found`);
     }
@@ -51,4 +52,20 @@ export async function updateUserById(
     });
 
     return updatedUser;
+}
+
+export async function deleteUserById(userId: string, currentUserId?: string) {
+    const user = await findUserById(userId);
+
+    if (!user) {
+        throw new NotFoundError(`User with ID ${userId} not found`);
+    }
+
+    if (currentUserId && user.id !== currentUserId) {
+        throw new ForbiddenError("You do not have permission to delete this user");
+    }
+
+    await prisma.user.delete({
+        where: { id: userId },
+    });
 }

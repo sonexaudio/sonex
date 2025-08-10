@@ -76,6 +76,19 @@ export async function loginAndAuthenticateUser(
     })(req, res, next);
 }
 
+export function logoutUser(req: Request, res: Response) {
+    req.logOut((err) => {
+        if (err) {
+            console.error("Logout error:", err);
+            res.status(500).json({ error: "Logout failed" });
+            return;
+        }
+
+        res.sendStatus(204);
+    });
+}
+
+
 
 // Client auth
 export async function addClientAccessDataToDatabase({
