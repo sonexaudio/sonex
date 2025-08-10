@@ -4,10 +4,12 @@ import { stripe } from "../../lib/stripe";
 import { getOrCreateStripeAccount } from "../../utils";
 import type { User } from "../../generated/prisma";
 import config from "../../config";
+import { ForbiddenError, NotFoundError } from "../../errors";
+import { sendSuccessResponse } from "../../utils/responses";
 
 const accountRouter = Router();
 
-accountRouter.get("/info", requireAuth, async (req, res) => {
+accountRouter.get("/info", requireAuth, async (req, res, next) => {
 	if (!req.user?.connectedAccountId) {
 		res.status(400).json({ error: "User does not have account" });
 		return;
@@ -15,63 +17,64 @@ accountRouter.get("/info", requireAuth, async (req, res) => {
 
 	try {
 		const account = await stripe.accounts.retrieve(req.user.connectedAccountId);
+
 		if (!account) {
-			res.status(404).json({ error: "Could not find account" });
-			return;
+			throw new NotFoundError("Could not find account");
 		}
 
 		if (account.id !== req.user.connectedAccountId) {
-			res.status(403).json({ error: "Forbidden" });
+			throw new ForbiddenError("You do not have access to this account");
 		}
 
-		res.json({
-			data: {
-				accountData: {
-					email: account.email,
-					requestDate: new Date().toISOString(),
-					profile: account.business_profile,
-					metadata: account.metadata,
-				},
+		sendSuccessResponse(res, {
+			accountData: {
+				email: account.email,
+				requestDate: new Date().toISOString(),
+				profile: account.business_profile,
+				metadata: account.metadata,
 			},
 		});
 	} catch (error) {
-		console.error(error);
-		res.status(500).send({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
-accountRouter.post("/account", requireAuth, async (req, res) => {
+accountRouter.post("/account", requireAuth, async (req, res, next) => {
+	const user = req.user as User;
 	try {
-		const accountId = await getOrCreateStripeAccount(req.user as User);
-		res.json({ data: accountId });
+		const accountId = await getOrCreateStripeAccount(user);
+		sendSuccessResponse(res, { accountId });
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
 // account onboarding link
-accountRouter.post("/onboarding", requireAuth, async (req, res) => {
-	if (!req.user?.connectedAccountId) {
-		res.status(400).json({ error: "User does not have stripe account" });
-		return;
+accountRouter.post("/onboarding", requireAuth, async (req, res, next) => {
+	const user = req.user as User;
+	try {
+		if (!user?.connectedAccountId) {
+			throw new NotFoundError("User does not have connected account");
+		}
+
+		if (user?.isOnboarded) {
+			sendSuccessResponse(res, { message: "User already onboarded" });
+			return;
+		}
+
+		const account: string = user.connectedAccountId;
+
+		const accountLink = await stripe.accountLinks.create({
+			account,
+			type: "account_onboarding",
+			refresh_url: `${config.frontendUrl}/return/${account}`,
+			return_url: `${config.frontendUrl}/return/${account}`,
+		});
+
+		sendSuccessResponse(res, { accountLink: accountLink.url });
+	} catch (error) {
+		next(error);
 	}
-
-	if (req.user.isOnboarded) {
-		res.json({ message: "User already onboarded" });
-		return;
-	}
-
-	const account: string = req.user.connectedAccountId;
-
-	const accountLink = await stripe.accountLinks.create({
-		account,
-		type: "account_onboarding",
-		refresh_url: `${config.frontendUrl}/return/${account}`,
-		return_url: `${config.frontendUrl}/return/${account}`,
-	});
-
-	res.json({ data: { accountLink: accountLink.url } });
 });
 
 export default accountRouter;
