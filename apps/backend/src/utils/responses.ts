@@ -1,6 +1,6 @@
 import type { Response } from "express";
 
-export function successResponse(
+export function sendSuccessResponse(
 	res: Response,
 	data: any,
 	message?: string | null,
@@ -11,6 +11,6 @@ export function successResponse(
 		.json({ success: true, message: message ?? null, data });
 }
 
-export function errorResponse(res: Response, status: number, error: string) {
+export function sendErrorResponse(res: Response, status: number, error: string) {
 	return res.status(status).json({ success: false, error });
 }

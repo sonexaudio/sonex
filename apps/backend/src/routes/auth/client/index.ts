@@ -1,10 +1,12 @@
 import { type Response, Router } from "express";
-import { errorResponse, successResponse } from "../../../utils/responses";
-import { sendClientAccess, validateClientCode } from "./clientFunctions";
+import { sendErrorResponse, sendSuccessResponse } from "../../../utils/responses";
 import { prisma } from "../../../lib/prisma";
 import config from "../../../config";
 import jwt from "jsonwebtoken";
-import { generateTokenHash } from "../../../utils/token";
+import { findClientByEmail, findProjectById } from "../../../services/db.service";
+import { NotFoundError } from "../../../errors";
+import { addClient, addClientToProject } from "../../../services/client.service";
+
 
 const clientAuthRouter = Router();
 
@@ -15,105 +17,53 @@ clientAuthRouter.get("/", async (req, res) => {
     const token = req.cookies?.client_token || req.cookies?.client_refresh_token;
 
     if (!token) {
-        successResponse(res, { client: null });
+        sendSuccessResponse(res, { client: null });
         return;
     }
 
     try {
-        console.log("Verifying client token:", token);
         const payload = jwt.verify(token, config.auth.clientTokenSecret) as { email: string; };
 
-        const client = await prisma.client.findFirst({
-            where: { email: payload.email },
-        });
+        const client = await findClientByEmail(payload.email);
 
         if (!client) {
-            errorResponse(res, 404, "Client not found");
-            return;
+            throw new NotFoundError("Client does not exist");
         }
 
-        console.log("First client found:", client);
-
-        successResponse(res, { client });
+        sendSuccessResponse(res, { client });
 
     } catch (error) {
         console.error("JWT verify failed", error);
-        successResponse(res, { client: null });
+        sendSuccessResponse(res, { client: null });
     }
 
 });
 
 /*
-    TODO- Hold until emails are setup
+    TODO- Hold sending project access codes until emails are setup
 */
-
-// clientAuthRouter.post("/send-project-access", async (req, res) => {
-//     const { email, projectId } = req.body;
-
-//     if (!email || !projectId) {
-//         errorResponse(res, 400, "Missing email or projectId");
-//         return;
-//     }
-
-//     try {
-//         console.log(
-//             "Sending client access for project:",
-//             projectId,
-//             "to email:",
-//             email,
-//         );
-
-//         // Call the function to send client access
-//         // TODO - need a check to make sure project exists
-//         const result = await sendClientAccess(email, projectId);
-//         if (!result) {
-//             errorResponse(res, 500, "Failed to create client access");
-//             return;
-//         }
-
-//         successResponse(res, {
-//             token: result.token,
-//             url: result.url,
-//         }); // for dev, will update to email
-//     } catch (error) {
-//         console.error(error);
-//         errorResponse(res, 500, "Failed to create client access");
-//     }
-// });
 
 clientAuthRouter.post("/validate", async (req, res) => {
     try {
         const { code, projectId, name, email } = req.body;
 
         if (!code || !projectId || !email || !name) {
-            errorResponse(res, 400, "All fields required");
+            sendErrorResponse(res, 400, "All fields required");
             return;
         }
 
-        const project = await prisma.project.findUnique({
-            where: { id: projectId },
-        });
+        const project = await findProjectById(projectId);
 
         if (!project || project.shareCode !== code) {
-            errorResponse(res, 401, "Invalid code");
+            sendErrorResponse(res, 401, "Invalid code");
             return;
         }
 
         // Create client if it doesn't exist
-        const client = await prisma.client.upsert({
-            where: { email_userId: { email, userId: project.userId } },
-            update: { name },
-            create: { email, name, userId: project.userId },
-        });
+        const client = await addClient({ email, name, userId: project.userId });
 
         // add to client project
-        await prisma.clientProject.upsert({
-            where: {
-                clientId_projectId: { clientId: client.id, projectId: project.id },
-            },
-            update: {},
-            create: { clientId: client.id, projectId: project.id },
-        });
+        await addClientToProject({ clientId: client.id, projectId });
 
         const { accessToken, refreshToken } = signClientTokens(
             client.id,
@@ -124,9 +74,9 @@ clientAuthRouter.post("/validate", async (req, res) => {
         // Set cookies
         addTokensToBrowserCookies(res, refreshToken, accessToken);
 
-        successResponse(res, { client: { name: client.name, email: client.email, accessToken, refreshToken } });
+        sendSuccessResponse(res, { client: { name: client.name, email: client.email, accessToken, refreshToken } });
     } catch (error) {
-        errorResponse(res, 500, "Internal server error");
+        sendErrorResponse(res, 500, "Internal server error");
     }
 });
 
@@ -145,7 +95,7 @@ clientAuthRouter.post("/refresh-token", async (req, res) => {
 
         addTokensToBrowserCookies(res, refreshToken);
 
-        successResponse(res, { refreshToken });
+        sendSuccessResponse(res, { refreshToken });
 
     } catch (error) {
         res.sendStatus(403);
@@ -167,7 +117,7 @@ clientAuthRouter.post("/logout", (req, res) => {
         secure: true,
         sameSite: "none",
     });
-    successResponse(res, { message: "Logged out successfully" });
+    sendSuccessResponse(res, { message: "Logged out successfully" });
 });
 
 function signClientTokens(

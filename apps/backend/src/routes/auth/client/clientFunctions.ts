@@ -1,10 +1,9 @@
 import { addDays } from "date-fns";
-import type { Request, Response } from "express";
-import { prisma } from "../../../lib/prisma";
 import jwt from "jsonwebtoken";
 import config from "../../../config";
 import { generateClientAccessToken, generateTokenHash } from "../../../utils/token";
-import { errorResponse, successResponse } from "../../../utils/responses";
+import { addClientAccessDataToDatabase, updateClientAccessData } from "../../../services/auth.service";
+import { findClientAccessByToken } from "../../../services/db.service";
 
 export async function sendClientAccess(email: string, projectId: string): Promise<{ token: string; url: string; } | null> {
     try {
@@ -12,21 +11,14 @@ export async function sendClientAccess(email: string, projectId: string): Promis
         const hashedToken = generateTokenHash(token);
         const expires = addDays(new Date(), 3); // expires in 3 days
 
-        await prisma.clientAccess.upsert({
-            where: { email_projectId: { email, projectId } },
-            update: {
-                token: hashedToken,
-                expires
-            },
-            create: {
-                email,
-                projectId,
-                token: hashedToken,
-                expires
-            }
+        await addClientAccessDataToDatabase({
+            email,
+            projectId,
+            token: hashedToken,
+            expires
         });
 
-        const url = `${process.env.FRONTEND_URL}/projects/${projectId}?code=${token}`;
+        const url = generateClientAccessUrl(projectId, token);
 
         // TODO: Send email to client
 
@@ -40,20 +32,25 @@ export async function sendClientAccess(email: string, projectId: string): Promis
 
 export async function validateClientCode(code: string, projectId: string) {
     const hashedToken = generateTokenHash(code);
-    const access = await prisma.clientAccess.findUnique({ where: { token: hashedToken, projectId } });
+
+    const access = await findClientAccessByToken(hashedToken, projectId);
 
     if (!access || access.projectId !== projectId || access.expires < new Date()) {
         return null;
     }
 
     // Mark code as accepted once validated and create a JWT token
-    await prisma.clientAccess.update({ where: { token: hashedToken }, data: { acceptedAt: new Date() } });
+    await updateClientAccessData({
+        token: hashedToken, data: { acceptedAt: new Date() }
+    });
 
     const clientToken = jwt.sign({
         projectId, email: access.email
     }, config.auth.clientTokenSecret);
 
-    console.log("CLIENT TOKEN", clientToken);
-
     return clientToken;
+}
+
+function generateClientAccessUrl(projectId: string, token: string) {
+    return `${config.frontendUrl}/projects/${projectId}?code=${token}`;
 }

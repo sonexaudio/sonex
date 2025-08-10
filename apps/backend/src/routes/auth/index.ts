@@ -1,36 +1,29 @@
-import { type Request, type Response, Router } from "express";
-import { prisma } from "../../lib/prisma";
+import { Router } from "express";
 import bcrypt from "bcryptjs";
 import {
 	createResetPasswordToken,
 	encryptResetPasswordToken,
-	parseUserName,
 } from "../../utils";
 import passport from "passport";
-import type { User } from "../../generated/prisma";
 import config from "../../config";
 import "../../lib/passport/local";
 import "../../lib/passport/google";
 import { requireAuth } from "../../middleware/auth";
-import { errorResponse, successResponse } from "../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
 import { validate } from "../../middleware/validate";
 import { SignupSchema, LoginSchema } from "@sonex/schemas/user";
+import { findUserByEmail, findUserByResetToken } from "../../services/db.service";
+import { ConflictError, NotFoundError } from "../../errors";
+import { getCurrentSessionUser, loginAndAuthenticateUser, registerNewUser } from "../../services/auth.service";
+import { updateUserById } from "../../services/user.service";
 
 const authRouter = Router();
 
 // Get currently authenticated user
 authRouter.get("/me", (req, res, next) => {
 	try {
-		if (
-			!req.user ||
-			typeof req.isAuthenticated !== "function" ||
-			!req.isAuthenticated()
-		) {
-			res.status(200).json({ data: null });
-			return;
-		}
-
-		successResponse(res, req.user);
+		const currentUser = getCurrentSessionUser(req);
+		sendSuccessResponse(res, currentUser);
 	} catch (error) {
 		next(error);
 	}
@@ -44,66 +37,30 @@ authRouter.post("/register", validate(SignupSchema), async (req, res, next) => {
 			return;
 		}
 
-		const existingUser = await prisma.user.findUnique({
-			where: {
-				email,
-			},
-		});
+		const existingUser = await findUserByEmail(email);
 
 		if (existingUser) {
-			errorResponse(res, 409, "User with that email already exists");
-			return;
+			throw new ConflictError(`User with email ${email} already exists`);
 		}
 
-		const hashedPassword = await bcrypt.hash(password, 10);
-		const displayName = parseUserName(name);
+		const newUser = await registerNewUser({ name, email, password });
 
-		const newUser = await prisma.user.create({
-			data: {
-				email,
-				firstName: displayName?.firstName,
-				lastName: displayName?.lastName ?? null,
-				hashedPassword,
-			},
-		});
-
-		successResponse(res, newUser, null, 201);
+		sendSuccessResponse(res, newUser, null, 201);
 	} catch (error) {
 		next(error);
 	}
 });
 
 authRouter.post("/login", validate(LoginSchema), async (req, res, next) => {
-	passport.authenticate("local", (err: unknown, user: User, info: unknown) => {
-		if (err) {
-			next(err);
-			return;
-		}
-
-		if (!user) {
-			errorResponse(res, 400, info as string);
-			return;
-		}
-
-		req.login(user, (err) => {
-			if (err) {
-				next(err);
-				return;
-			}
-
-			successResponse(res, user, null);
-		});
-	})(req, res);
+	await loginAndAuthenticateUser(req, res, next);
 });
 
 // Handle google authentication
-authRouter.get(
-	"/google",
+authRouter.get("/google",
 	passport.authenticate("google", { scope: ["profile", "email"] }),
 );
 
-authRouter.get(
-	"/google/callback",
+authRouter.get("/google/callback",
 	passport.authenticate("google", {
 		failureRedirect: `${config.frontendUrl}/account?error=google-email-mismatch`,
 	}),
@@ -112,23 +69,12 @@ authRouter.get(
 	},
 );
 
-authRouter.put("/google/unlink", requireAuth, async (req, res) => {
+authRouter.put("/google/unlink", requireAuth, async (req, res, next) => {
 	try {
-		await prisma.user.update({
-			where: { id: req.user?.id },
-			data: {
-				googleId: null,
-			},
-		});
-
-		res
-			.status(200)
-			.json({ success: true, message: "Google account unlinked." });
+		await updateUserById(req.user?.id!, { googleId: null });
+		sendSuccessResponse(res, null, "Google account unlinked.");
 	} catch (error) {
-		console.error(error);
-		res
-			.status(500)
-			.json({ success: false, message: "Failed to unlink Google account." });
+		next(error);
 	}
 });
 
@@ -152,41 +98,23 @@ authRouter.get("/logout", (req, res) => {
 
 // Verify email
 // TODO: add a token to the email and use email api to send
-authRouter.post("/send-verification-email", requireAuth, async (req, res) => {
+authRouter.post("/send-verification-email", requireAuth, async (req, res, next) => {
 	const { email } = req.body;
 	if (!email) {
-		res.status(400).json({ error: "Email is required to verify" });
+		sendErrorResponse(res, 400, "Email is required to verify");
 		return;
 	}
 
 	try {
-		const user = await prisma.user.findUnique({
-			where: {
-				email,
-			},
-		});
-
-		if (!user) {
-			res.status(404).json({ error: "User with that email does not exist" });
-			return;
-		}
-
-		await prisma.user.update({
-			where: {
-				id: user.id,
-			},
-			data: {
-				isVerified: true,
-			},
-		});
+		const user = await findUserByEmail(email);
+		await updateUserById(user?.id!, { isVerified: true }, req.user?.id); //TODO - for now, the user is verified without email confirmation.
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
 // Request to generate new token for forgotten password
-authRouter.post("/forgot-password", async (req, res) => {
+authRouter.post("/forgot-password", async (req, res, next) => {
 	const { email } = req.body;
 	if (!email) {
 		res.status(400).json({ error: "Email is required to update password" });
@@ -194,40 +122,23 @@ authRouter.post("/forgot-password", async (req, res) => {
 	}
 
 	try {
-		const user = await prisma.user.findUnique({
-			where: {
-				email,
-			},
-		});
-
-		if (!user) {
-			res.status(404).json({ error: "User with that email does not exist" });
-			return;
-		}
+		const user = await findUserByEmail(email)
 
 		const { token, hashedToken, expiresAt } = createResetPasswordToken();
 		const resetTokenLink = `${config.frontendUrl}/reset-password?code=${token}`;
 
-		await prisma.user.update({
-			where: {
-				id: user.id,
-			},
-			data: {
-				resetPasswordToken: hashedToken,
-				resetTokenExpiresAt: expiresAt,
-			},
-		});
+		await updateUserById(user?.id!, { resetPasswordToken: hashedToken, resetTokenExpiresAt: expiresAt })
 
 		// TODO send straight to email and only return 201
-		res.json({ data: { resetTokenLink, expiresAt, hashedToken } });
+		sendSuccessResponse(res, { resetTokenLink, expiresAt, hashedToken })
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
 // Request to reset password given token and valid params
-authRouter.patch("/reset-password", async (req, res) => {
+authRouter.patch("/reset-password", async (req, res, next) => {
 	const { token } = req.query;
 	const { password } = req.body;
 
@@ -237,41 +148,24 @@ authRouter.patch("/reset-password", async (req, res) => {
 	}
 
 	try {
+		// Hash the incoming token to match what's in the database
 		const hashedToken = encryptResetPasswordToken(token as string);
 
-		const user = await prisma.user.findFirst({
-			where: {
-				resetPasswordToken: hashedToken,
-				resetTokenExpiresAt: {
-					gt: new Date(), // expiration can not be anywhere at or less than this current moment
-				},
-			},
-		});
+		const user = await findUserByResetToken(hashedToken);
 
 		if (!user) {
-			res.status(404).json({ error: "Token is invalid or expired" });
-			return;
+			throw new NotFoundError(`User with reset token ${hashedToken} not found`);
 		}
 
 		// Now the magic happens
 		const hashedPassword = await bcrypt.hash(password, 10);
 
-		await prisma.user.update({
-			where: {
-				id: user.id,
-			},
-			data: {
-				hashedPassword,
-				passwordLastChangedAt: new Date(),
-				resetPasswordToken: null,
-				resetTokenExpiresAt: null,
-			},
-		});
+		await updateUserById(user.id, { hashedPassword, passwordLastChangedAt: new Date(), resetPasswordToken: null, resetTokenExpiresAt: null });
 
-		res.json({ data: { message: "User updated successfully!" } });
+		sendSuccessResponse(res, { message: "Password reset successfully!" });
+
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 

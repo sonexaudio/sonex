@@ -6,154 +6,103 @@ import { stripe } from "../../lib/stripe";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
 import type Stripe from "stripe";
-import { errorResponse, successResponse } from "../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
+import { findSubscriptionByUserInfo } from "../../services/db.service";
+import { BadRequestError } from "../../errors";
+import { createPaymentSession } from "../../services/payments.service";
 
 const paymentRouter = Router();
 
 // get current user subscription
 paymentRouter.get("/subscription", requireAuth, async (req, res) => {
 	if (!req.user?.stripeCustomerId) {
-		successResponse(res, { subscription: null, message: "User has not created a subscription" });
+		sendSuccessResponse(res, {
+			subscription: null,
+			message: "User has not created a subscription",
+		});
 		return;
 	}
 
-	const subscription = await prisma.subscription.findFirst({
-		where: {
-			userId: req.user?.id,
-			isActive: true,
-			endDate: {
-				gte: new Date(),
-			},
-		},
-	});
-
-	res.json({ data: { subscription } });
+	const subscription = await findSubscriptionByUserInfo(req.user?.id);
+	sendSuccessResponse(res, { subscription });
 });
 
 // get project owner subscription
-paymentRouter.get("/subscription/:userId", async (req, res) => {
-	const { userId } = req.params;
+// used when clients are accessing project details
+// makes sure that the project owner is at least in good standing
+// at least that's the goal...
+paymentRouter.get("/subscription/:userId", async (req, res, next) => {
+	try {
+		const { userId } = req.params;
 
-	if (!userId) {
-		return errorResponse(res, 400, "User ID is required");
+		if (!userId) {
+			throw new BadRequestError("User ID is required");
+		}
+
+		const subscription = await findSubscriptionByUserInfo(userId);
+
+		// If no subscription found, still return null
+		sendSuccessResponse(res, { subscription });
+	} catch (error) {
+		next(error);
 	}
-
-	const subscription = await prisma.subscription.findFirst({
-		where: {
-			userId,
-			isActive: true,
-			endDate: {
-				gte: new Date(),
-			},
-		},
-	});
-
-	// If no subscription found, return null
-	successResponse(res, { subscription });
 });
 
 // create checkout session link to subscribe to a plan
 // actions here will trigger stripe webhook
-paymentRouter.post("/subscribe", requireAuth, async (req, res) => {
+paymentRouter.post("/subscribe", requireAuth, async (req, res, next) => {
 	const { priceId } = req.body;
+	const currentUser = req.user as User;
+
 	try {
-		const customerId: string = await getOrCreateStripeCustomer(
-			req.user as User,
-		);
+		const customerId: string = await getOrCreateStripeCustomer(currentUser);
 
 		const validPrice = await stripe.prices.retrieve(priceId).catch(() => null);
 
 		if (!validPrice) {
-			res.status(400).json({ error: "Invalid or missing price" });
-			return;
+			throw new BadRequestError("Invalid or missing price ID");
 		}
 
 		// check if user already has a subscription
-		const existingSubscription = await prisma.subscription.findFirst({
-			where: { userId: req.user?.id, isActive: true },
-		});
+		const existingSubscription = await findSubscriptionByUserInfo(currentUser.id);
 
 		if (existingSubscription) {
-			res.status(400).json({ error: "User already has a subscription" });
-			return;
+			throw new BadRequestError("User already has a subscription");
 		}
 
-		const session = await stripe.checkout.sessions.create({
-			customer: customerId,
-			mode: "subscription",
-			line_items: [
-				{
-					price: priceId,
-					quantity: 1,
-				},
-			],
-			success_url: `${config.frontendUrl}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${config.frontendUrl}/payments/cancel`,
+		const session = await createPaymentSession(customerId, priceId, currentUser.id, validPrice?.product as string);
 
-			metadata: {
-				userId: req.user?.id as string,
-			},
-
-			subscription_data: {
-				metadata: {
-					userId: req.user?.id as string,
-					plan: validPrice.product as string,
-				},
-			},
-			allow_promotion_codes: true,
-			saved_payment_method_options: {
-				payment_method_save: "enabled",
-			}
-		});
-
-		res.json({ data: { sessionUrl: session.url } });
+		sendSuccessResponse(res, { sessionUrl: session.url });
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ error: "Something went wrong" });
+		next(error);
 	}
 });
 
 // allow user to update their plan: upgrade and downgrade
-paymentRouter.post("/change-plan", requireAuth, async (req, res) => {
+paymentRouter.post("/change-plan", requireAuth, async (req, res, next) => {
 	const { newPriceId } = req.body;
 	const user = req.user as User;
-
-	console.log("CHANGE PLAN REQUEST", req.body.newPriceId);
 
 	try {
 		let stripeSubscription: Stripe.Subscription;
 
 		// Get current subscription
-		const currentSubscription = await prisma.subscription.findFirst({
-			where: {
-				userId: user.id,
-				isActive: true,
-			},
-		});
-
-		console.log("CURRENT SUBSCRIPTION", currentSubscription);
+		const currentSubscription = await findSubscriptionByUserInfo(user.id!);
 
 		// If no current subscription, user is on free plan
 		const isOnFreePlan = !currentSubscription;
 		const currentPriceId = currentSubscription?.priceId || null;
 		const subscriptionId = currentSubscription?.stripeSubscriptionId;
-		console.log("ON FREE PLAN", isOnFreePlan);
-		console.log("CURRENT PRICE ID", currentPriceId);
-		console.log("SUBSCRIPTION ID", subscriptionId);
 
 		// Validate the new price
 		const newPrice = await stripe.prices.retrieve(newPriceId).catch(() => null);
-		console.log("NEW PRICE DETAILS", newPrice);
 
 		if (!newPrice) {
-			return errorResponse(res, 400, "Invalid price ID");
+			throw new BadRequestError("Subscription to new plan is invalid");
 		}
-
 
 		// Determine if this is an upgrade or downgrade
 		const isUpgrade = determineIsUpgrade(currentPriceId, newPriceId);
-
-		console.log("IS UPGRADE?", isUpgrade);
 
 		// HANDLE UPGRADE FROM FREE PLAN
 		if (isOnFreePlan || !subscriptionId) {
@@ -168,28 +117,23 @@ paymentRouter.post("/change-plan", requireAuth, async (req, res) => {
 				},
 			});
 
-			console.log("NEW SUBSCRIPTION", subscription);
-
 			//  Return client secret for payment confirmation
 			const invoice = subscription.latest_invoice as Stripe.Invoice;
 			const paymentIntent = invoice.confirmation_secret?.client_secret || null;
 
-			console.log("PAYMENT INTENT", paymentIntent);
-
-			successResponse(res, {
+			sendSuccessResponse(res, {
 				message: "Subscription created",
 				subscriptionId: subscription.id,
 				clientSecret: paymentIntent,
-				status: subscription.status
+				status: subscription.status,
 			});
-
 		} else if (isUpgrade) {
 			// User is upgrading from existing subscription
 			// Change immediately without waiting for next billing cycle
 			// Charge prorated amount and pay difference immediately
 			// User is upgrading from existing subscription
 			if (!subscriptionId) {
-				return errorResponse(res, 400, "No active subscription found");
+				return sendErrorResponse(res, 400, "No active subscription found");
 			}
 
 			// Get current subscription item ID
@@ -199,26 +143,27 @@ paymentRouter.post("/change-plan", requireAuth, async (req, res) => {
 			const currentItemId = stripeSubscription.items.data[0].id;
 			console.log("CURRENT ITEM ID", currentItemId);
 
-			const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
-				proration_behavior: "always_invoice",
-				items: [
-					{
-						id: currentItemId,
-						price: newPriceId,
-						quantity: 1,
-					},
-				],
-			});
-
-			console.log("UPDATED STRIPE SUBSCRIPTION", updatedSubscription);
+			const updatedSubscription = await stripe.subscriptions.update(
+				subscriptionId,
+				{
+					proration_behavior: "always_invoice",
+					items: [
+						{
+							id: currentItemId,
+							price: newPriceId,
+							quantity: 1,
+						},
+					],
+				},
+			);
 
 			// Update user's Subscription record
 			await prisma.subscription.update({
 				where: { stripeSubscriptionId: subscriptionId },
 				data: {
 					priceId: newPriceId,
-					plan: newPrice.metadata?.planName || newPrice.product as string,
-				}
+					plan: newPrice.metadata?.planName || (newPrice.product as string),
+				},
 			});
 
 			// Update user immediately with new storage limit
@@ -234,73 +179,75 @@ paymentRouter.post("/change-plan", requireAuth, async (req, res) => {
 				},
 			});
 
-			successResponse(res, {
-				message: "Subscription upgraded successfully"
+			sendSuccessResponse(res, {
+				message: "Subscription upgraded successfully",
 			});
 		} else {
 			// HANDLE DOWNGRADE LOGIC
 			// Create a new subscription schedule for the next billing cycle
 			if (!subscriptionId) {
-				return errorResponse(res, 400, "No active subscription found");
+				return sendErrorResponse(res, 400, "No active subscription found");
 			}
 
 			stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-			// await stripe.subscriptions.update(subscriptionId, {
-			// 	proration_behavior: "none",
-			// 	billing_cycle_anchor: "unchanged"
-			// 	items: [
-			// 		{
-			// 			id: stripeSubscription.items.data[0].id,
-
-			// 		}
-			// 	]
-			// })
-
 			// Create a new subscription schedule for the next billing cycle
 			const schedule = await stripe.subscriptionSchedules.create({
-				from_subscription: subscriptionId
+				from_subscription: subscriptionId,
 			});
 
-			const subscriptionSchedule = await stripe.subscriptionSchedules.update(schedule.id, {
-				end_behavior: "release",
-				phases: [
-					{
-						items: [
-							{
-								price: schedule.phases[0].items[0].price as string,
-								quantity: 1,
-							}
-						],
-						start_date: schedule.phases[0].start_date,
-						end_date: schedule.phases[0].end_date,
-					},
-					{
-						items: [
-							{
-								price: newPriceId,
-								quantity: 1
-							}
-						]
-					}
-				]
-			});
-
+			const subscriptionSchedule = await stripe.subscriptionSchedules.update(
+				schedule.id,
+				{
+					end_behavior: "release",
+					phases: [
+						{
+							items: [
+								{
+									price: schedule.phases[0].items[0].price as string,
+									quantity: 1,
+								},
+							],
+							start_date: schedule.phases[0].start_date,
+							end_date: schedule.phases[0].end_date,
+						},
+						{
+							items: [
+								{
+									price: newPriceId,
+									quantity: 1,
+								},
+							],
+						},
+					],
+				},
+			);
 
 			// Update the user's subscription record
 			await prisma.subscription.update({
 				where: { stripeSubscriptionId: subscriptionId },
 				data: {
 					pendingDowngradeTo: newPriceId,
-					pendingDowngradeAt: new Date(stripeSubscription.items.data[0].current_period_end * 1000),
-				}
+					pendingDowngradeAt: new Date(
+						stripeSubscription.items.data[0].current_period_end * 1000,
+					),
+				},
 			});
 
-			successResponse(res, { effectiveDate: new Date(stripeSubscription.items.data[0].current_period_end * 1000), scheduleId: schedule.id }, "Subscription downgrade scheduled for next billing cycle");
+			sendSuccessResponse(
+				res,
+				{
+					effectiveDate: new Date(
+						stripeSubscription.items.data[0].current_period_end * 1000,
+					),
+					scheduleId: schedule.id,
+				},
+				"Subscription downgrade scheduled for next billing cycle",
+			);
 		}
 	} catch (error) {
 		console.error("Error changing plan:", error);
-		errorResponse(res, 500, "Failed to change subscription plan");
+		sendErrorResponse(res, 500, "Failed to change subscription plan");
 	}
 });
 // create client payment intent secret for client to pay user for a project
@@ -331,9 +278,9 @@ paymentRouter.post("/client", async (req, res) => {
 				clients: {
 					where: {
 						client: {
-							id: clientId
-						}
-					}
+							id: clientId,
+						},
+					},
 				},
 			},
 		});
@@ -341,30 +288,29 @@ paymentRouter.post("/client", async (req, res) => {
 		// PROJECT
 		console.log("PROJECT", project);
 		if (!project) {
-			errorResponse(res, 404, "Project not found");
+			sendErrorResponse(res, 404, "Project not found");
 			return;
 		}
 
 		if (project.paymentStatus === "Paid") {
 			console.error("PROJECT IS PAID");
-			errorResponse(res, 400, "Project is already paid");
+			sendErrorResponse(res, 400, "Project is already paid");
 			return;
 		}
 
 		if (project.userId !== userId) {
 			console.error("USERID ERROR");
-			errorResponse(res, 403, "User is not the project owner");
+			sendErrorResponse(res, 403, "User is not the project owner");
 			return;
 		}
-		// if (project.clients.length === 0 || project.clients[0].id !== clientId) {
-		// 	console.error("CLIENTID ERROR");
-		// 	errorResponse(res, 403, "Client not associated with project");
-		// 	return;
-		// }
 
 		if (Number(project?.amount) !== projectAmount) {
 			console.error("AMOUNT ERROR");
-			errorResponse(res, 400, "Amount does not match project's total amount");
+			sendErrorResponse(
+				res,
+				400,
+				"Amount does not match project's total amount",
+			);
 			return;
 		}
 
@@ -389,14 +335,14 @@ paymentRouter.post("/client", async (req, res) => {
 			},
 		});
 
-		successResponse(
+		sendSuccessResponse(
 			res,
 			{ clientSecret: intent.client_secret },
 			"Payment intent created",
 		);
 	} catch (error) {
 		console.error("[Stripe Intent Error]", error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 

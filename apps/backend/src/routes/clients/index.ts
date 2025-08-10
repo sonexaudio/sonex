@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/auth";
-import { errorResponse, successResponse } from "../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
 import { prisma } from "../../lib/prisma";
 import { parseUserName } from "../../utils";
 
@@ -15,10 +15,10 @@ clientRouter.get("/", requireAuth, async (req, res) => {
 				userId
 			},
 		});
-		successResponse(res, { clients });
+		sendSuccessResponse(res, { clients });
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 
@@ -47,10 +47,10 @@ clientRouter.post("/", requireAuth, async (req, res) => {
 			},
 		});
 
-		successResponse(res, { client }, null, 201);
+		sendSuccessResponse(res, { client }, null, 201);
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 
@@ -60,7 +60,7 @@ clientRouter.post("/delete-all", requireAuth, async (req, res) => {
 	const { clients } = req.body;
 
 	if (!Array.isArray(clients) || clients.length === 0) {
-		errorResponse(res, 400, "No clients provided");
+		sendErrorResponse(res, 400, "No clients provided");
 		return;
 	}
 
@@ -79,7 +79,7 @@ clientRouter.post("/delete-all", requireAuth, async (req, res) => {
 		);
 
 		if (existingClientIds.length === 0) {
-			errorResponse(res, 404, "No valid clients found for deletion");
+			sendErrorResponse(res, 404, "No valid clients found for deletion");
 			return;
 		}
 
@@ -111,7 +111,7 @@ clientRouter.post("/delete-all", requireAuth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 
@@ -125,12 +125,12 @@ clientRouter.put("/:id", requireAuth, async (req, res) => {
 		});
 
 		if (!client) {
-			errorResponse(res, 404, "Client not found");
+			sendErrorResponse(res, 404, "Client not found");
 			return;
 		}
 
 		if (client.userId !== userId) {
-			errorResponse(res, 403, "Forbidden");
+			sendErrorResponse(res, 403, "Forbidden");
 			return;
 		}
 
@@ -150,10 +150,10 @@ clientRouter.put("/:id", requireAuth, async (req, res) => {
 				targetId: updatedClient.id,
 			},
 		});
-		successResponse(res, { client: updatedClient });
+		sendSuccessResponse(res, { client: updatedClient });
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 
@@ -166,12 +166,12 @@ clientRouter.delete("/:id", requireAuth, async (req, res) => {
 			where: { id },
 		});
 		if (!client) {
-			errorResponse(res, 404, "Client not found");
+			sendErrorResponse(res, 404, "Client not found");
 			return;
 		}
 
 		if (client.userId !== userId) {
-			errorResponse(res, 403, "Forbidden");
+			sendErrorResponse(res, 403, "Forbidden");
 			return;
 		}
 
@@ -194,7 +194,7 @@ clientRouter.delete("/:id", requireAuth, async (req, res) => {
 		res.sendStatus(204);
 	} catch (error) {
 		console.error(error);
-		errorResponse(res, 500, "Something went wrong");
+		sendErrorResponse(res, 500, "Something went wrong");
 	}
 });
 
