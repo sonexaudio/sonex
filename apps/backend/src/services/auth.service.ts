@@ -5,8 +5,9 @@ import type { NextFunction, Response, Request } from "express";
 import passport from "passport";
 import "../lib/passport/local";
 import "../lib/passport/google";
-import type { User } from "../generated/prisma";
+import type { ClientAccess, User } from "../generated/prisma";
 import { sendErrorResponse, sendSuccessResponse } from "../utils/responses";
+import { prisma } from "../lib/prisma";
 
 export type SignupData = {
     email: string;
@@ -14,6 +15,14 @@ export type SignupData = {
     name: string;
 };
 
+export type ClientAccessData = {
+    email: string;
+    projectId: string;
+    token: string;
+    expires: Date | string;
+}
+
+// User auth
 export function getCurrentSessionUser(req: Request) {
     if (
         !req.user ||
@@ -65,4 +74,39 @@ export async function loginAndAuthenticateUser(
             sendSuccessResponse(res, { user });
         });
     })(req, res, next);
+}
+
+
+// Client auth
+export async function addClientAccessDataToDatabase({
+    email,
+    projectId,
+    token,
+    expires
+}: ClientAccessData) {
+    await prisma.clientAccess.upsert({
+        where: {
+            email_projectId: {
+                email,
+                projectId
+            }
+        },
+        update: {
+            token,
+            expires
+        },
+        create: {
+            email,
+            projectId,
+            token,
+            expires
+        }
+    });
+}
+
+export async function updateClientAccessData({ token, data }: { token: string, data: Partial<ClientAccess>; }) {
+    await prisma.clientAccess.update({
+        where: { token },
+        data
+    });
 }

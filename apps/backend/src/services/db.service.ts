@@ -10,10 +10,6 @@ export async function findUserByEmail(email: string) {
         },
     });
 
-    if (!user) {
-        throw new NotFoundError(`User with email ${email} not found`);
-    }
-
     return user;
 }
 
@@ -37,9 +33,31 @@ export async function findUserByResetToken(resetToken: string) {
         },
     });
 
-    if (!user) {
-        throw new NotFoundError(`User with reset token ${resetToken} not found`);
-    }
-
     return user;
+}
+
+// ===== Client-Specific ====
+export async function findClientByEmail(email: string) {
+    const client = await prisma.client.findFirst({
+        where: { email }
+    });
+
+    return client;
+}
+
+export async function findClientAccessByToken(token: string, projectId: string) {
+    const clientAccess = await prisma.clientAccess.findUnique({
+        where: { token, projectId }
+    });
+
+    return clientAccess;
+}
+
+// ===== Project-Specific ====
+export async function findProjectById(id: string) {
+    const project = await prisma.project.findUnique({
+        where: { id }
+    });
+
+    return project;
 }

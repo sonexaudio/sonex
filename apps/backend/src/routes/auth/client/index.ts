@@ -1,10 +1,12 @@
 import { type Response, Router } from "express";
 import { sendErrorResponse, sendSuccessResponse } from "../../../utils/responses";
-import { sendClientAccess, validateClientCode } from "./clientFunctions";
 import { prisma } from "../../../lib/prisma";
 import config from "../../../config";
 import jwt from "jsonwebtoken";
-import { generateTokenHash } from "../../../utils/token";
+import { findClientByEmail, findProjectById } from "../../../services/db.service";
+import { NotFoundError } from "../../../errors";
+import { addClient, addClientToProject } from "../../../services/client.service";
+
 
 const clientAuthRouter = Router();
 
@@ -20,19 +22,13 @@ clientAuthRouter.get("/", async (req, res) => {
     }
 
     try {
-        console.log("Verifying client token:", token);
         const payload = jwt.verify(token, config.auth.clientTokenSecret) as { email: string; };
 
-        const client = await prisma.client.findFirst({
-            where: { email: payload.email },
-        });
+        const client = await findClientByEmail(payload.email);
 
         if (!client) {
-            sendErrorResponse(res, 404, "Client not found");
-            return;
+            throw new NotFoundError("Client does not exist");
         }
-
-        console.log("First client found:", client);
 
         sendSuccessResponse(res, { client });
 
@@ -44,42 +40,8 @@ clientAuthRouter.get("/", async (req, res) => {
 });
 
 /*
-    TODO- Hold until emails are setup
+    TODO- Hold sending project access codes until emails are setup
 */
-
-// clientAuthRouter.post("/send-project-access", async (req, res) => {
-//     const { email, projectId } = req.body;
-
-//     if (!email || !projectId) {
-//         sendErrorResponse(res, 400, "Missing email or projectId");
-//         return;
-//     }
-
-//     try {
-//         console.log(
-//             "Sending client access for project:",
-//             projectId,
-//             "to email:",
-//             email,
-//         );
-
-//         // Call the function to send client access
-//         // TODO - need a check to make sure project exists
-//         const result = await sendClientAccess(email, projectId);
-//         if (!result) {
-//             sendErrorResponse(res, 500, "Failed to create client access");
-//             return;
-//         }
-
-//         sendSuccessResponse(res, {
-//             token: result.token,
-//             url: result.url,
-//         }); // for dev, will update to email
-//     } catch (error) {
-//         console.error(error);
-//         sendErrorResponse(res, 500, "Failed to create client access");
-//     }
-// });
 
 clientAuthRouter.post("/validate", async (req, res) => {
     try {
@@ -90,9 +52,7 @@ clientAuthRouter.post("/validate", async (req, res) => {
             return;
         }
 
-        const project = await prisma.project.findUnique({
-            where: { id: projectId },
-        });
+        const project = await findProjectById(projectId);
 
         if (!project || project.shareCode !== code) {
             sendErrorResponse(res, 401, "Invalid code");
@@ -100,20 +60,10 @@ clientAuthRouter.post("/validate", async (req, res) => {
         }
 
         // Create client if it doesn't exist
-        const client = await prisma.client.upsert({
-            where: { email_userId: { email, userId: project.userId } },
-            update: { name },
-            create: { email, name, userId: project.userId },
-        });
+        const client = await addClient({ email, name, userId: project.userId });
 
         // add to client project
-        await prisma.clientProject.upsert({
-            where: {
-                clientId_projectId: { clientId: client.id, projectId: project.id },
-            },
-            update: {},
-            create: { clientId: client.id, projectId: project.id },
-        });
+        await addClientToProject({ clientId: client.id, projectId });
 
         const { accessToken, refreshToken } = signClientTokens(
             client.id,

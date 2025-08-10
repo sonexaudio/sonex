@@ -1,21 +1,19 @@
 import { Router } from "express";
-import { prisma } from "../../lib/prisma";
 import bcrypt from "bcryptjs";
 import {
 	createResetPasswordToken,
 	encryptResetPasswordToken,
 } from "../../utils";
 import passport from "passport";
-import type { User } from "../../generated/prisma";
 import config from "../../config";
 import "../../lib/passport/local";
 import "../../lib/passport/google";
 import { requireAuth } from "../../middleware/auth";
-import { sendSuccessResponse } from "../../utils/responses";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
 import { validate } from "../../middleware/validate";
 import { SignupSchema, LoginSchema } from "@sonex/schemas/user";
 import { findUserByEmail, findUserByResetToken } from "../../services/db.service";
-import { ConflictError } from "../../errors";
+import { ConflictError, NotFoundError } from "../../errors";
 import { getCurrentSessionUser, loginAndAuthenticateUser, registerNewUser } from "../../services/auth.service";
 import { updateUserById } from "../../services/user.service";
 
@@ -25,11 +23,6 @@ const authRouter = Router();
 authRouter.get("/me", (req, res, next) => {
 	try {
 		const currentUser = getCurrentSessionUser(req);
-
-		if (!currentUser) {
-			sendSuccessResponse(res, null);
-		}
-
 		sendSuccessResponse(res, currentUser);
 	} catch (error) {
 		next(error);
@@ -59,26 +52,6 @@ authRouter.post("/register", validate(SignupSchema), async (req, res, next) => {
 });
 
 authRouter.post("/login", validate(LoginSchema), async (req, res, next) => {
-	// passport.authenticate("local", (err: unknown, user: User, info: unknown) => {
-	// 	if (err) {
-	// 		next(err);
-	// 		return;
-	// 	}
-
-	// 	if (!user) {
-	// 		sendErrorResponse(res, 400, info as string);
-	// 		return;
-	// 	}
-
-	// 	req.login(user, (err) => {
-	// 		if (err) {
-	// 			next(err);
-	// 			return;
-	// 		}
-
-	// 		sendSuccessResponse(res, user, null);
-	// 	});
-	// })(req, res);
 	await loginAndAuthenticateUser(req, res, next);
 });
 
@@ -128,23 +101,13 @@ authRouter.get("/logout", (req, res) => {
 authRouter.post("/send-verification-email", requireAuth, async (req, res, next) => {
 	const { email } = req.body;
 	if (!email) {
-		res.status(400).json({ error: "Email is required to verify" });
+		sendErrorResponse(res, 400, "Email is required to verify");
 		return;
 	}
 
 	try {
 		const user = await findUserByEmail(email);
-
-		// await prisma.user.update({
-		// 	where: {
-		// 		id: user.id,
-		// 	},
-		// 	data: {
-		// 		isVerified: true,
-		// 	},
-		// });
-
-		await updateUserById(user.id, { isVerified: true }, req.user?.id)
+		await updateUserById(user?.id!, { isVerified: true }, req.user?.id); //TODO - for now, the user is verified without email confirmation.
 	} catch (error) {
 		next(error);
 	}
@@ -164,17 +127,7 @@ authRouter.post("/forgot-password", async (req, res, next) => {
 		const { token, hashedToken, expiresAt } = createResetPasswordToken();
 		const resetTokenLink = `${config.frontendUrl}/reset-password?code=${token}`;
 
-		// await prisma.user.update({
-		// 	where: {
-		// 		id: user.id,
-		// 	},
-		// 	data: {
-		// 		resetPasswordToken: hashedToken,
-		// 		resetTokenExpiresAt: expiresAt,
-		// 	},
-		// });
-
-		await updateUserById(user.id, { resetPasswordToken: hashedToken, resetTokenExpiresAt: expiresAt })
+		await updateUserById(user?.id!, { resetPasswordToken: hashedToken, resetTokenExpiresAt: expiresAt })
 
 		// TODO send straight to email and only return 201
 		sendSuccessResponse(res, { resetTokenLink, expiresAt, hashedToken })
@@ -195,9 +148,14 @@ authRouter.patch("/reset-password", async (req, res, next) => {
 	}
 
 	try {
+		// Hash the incoming token to match what's in the database
 		const hashedToken = encryptResetPasswordToken(token as string);
 
 		const user = await findUserByResetToken(hashedToken);
+
+		if (!user) {
+			throw new NotFoundError(`User with reset token ${hashedToken} not found`);
+		}
 
 		// Now the magic happens
 		const hashedPassword = await bcrypt.hash(password, 10);
