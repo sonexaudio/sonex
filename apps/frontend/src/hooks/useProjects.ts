@@ -24,7 +24,6 @@ export default function useProjects(params?: ProjectQueryParams) {
 	const projectsQuery = useQuery({
 		queryKey: ["projects", params],
 		queryFn: () => fetchProjects(params),
-		enabled: !!params,
 	});
 
 	// Create a new project
