@@ -17,6 +17,7 @@ import {
 	FormMessage,
 } from "../../components/ui/form";
 import { toast } from "sonner";
+import AuthState from "../../components/auth/AuthState";
 
 const signupFormSchema = z
 	.object({
@@ -37,7 +38,7 @@ const signupFormSchema = z
 	});
 
 const SignupForm = () => {
-	const { signup } = useAuth();
+	const { signup, error, isSubmitting } = useAuth();
 
 	const form = useForm<z.infer<typeof signupFormSchema>>({
 		resolver: zodResolver(signupFormSchema),
@@ -61,6 +62,12 @@ const SignupForm = () => {
 	return (
 		<Card className="z-50 w-full max-w-md">
 			<CardContent>
+				{error && (
+					<AuthState message={error.message} type="error" />
+				)}
+				{isSubmitting && (
+					<AuthState message="Account created successfully! Check your email for a verification link." type="success" />
+				)}
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 						<div className="grid gap-4">
@@ -162,10 +169,10 @@ const SignupForm = () => {
 								type="submit"
 								className="w-full"
 								disabled={
-									!form.formState.isValid || form.formState.isSubmitting
+									isSubmitting || !form.formState.isValid
 								}
 							>
-								Create Account
+								{isSubmitting ? "Creating Account..." : "Create Account"}
 							</Button>
 						</div>
 					</form>

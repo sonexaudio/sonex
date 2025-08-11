@@ -1,4 +1,4 @@
-import { createContext, type ReactNode } from "react";
+import { createContext, useState, type ReactNode } from "react";
 
 import api from "../lib/axios";
 import { useNavigate } from "react-router";
@@ -17,7 +17,9 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 );
 
 export function AuthProvider({ children }: { children: ReactNode; }) {
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const { data: session, isPending, error, refetch } = authClient.useSession();
+
 	const navigate = useNavigate();
 
 	const loginWithEmail = async (email: string, password: string) => {
@@ -28,8 +30,12 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 				rememberMe: true,
 			},
 			{
-				onRequest: () => { },
-				onResponse: () => { },
+				onRequest: () => {
+					setIsSubmitting(true);
+				},
+				onResponse: () => {
+					setIsSubmitting(false);
+				},
 				onError: (ctx) => {
 					toast.error(ctx.error.message);
 				},
@@ -61,26 +67,28 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 				name: data.name,
 			},
 			{
-				onRequest: () => { },
-				onResponse: () => { },
+				onRequest: () => {
+					setIsSubmitting(true);
+				},
+				onResponse: () => {
+					setIsSubmitting(false);
+				},
 				onError: (ctx) => {
 					toast.error(ctx.error.message);
 				},
-				onSuccess: () => {
-					const { name } = data;
-					const firstName = name.split(" ")[0];
-					toast(`Welcome to Sonex ${firstName}!`);
-					navigate("/overview");
+				onSuccess: async () => {
+					await authClient.sendVerificationEmail({
+						email: data.email,
+						callbackURL: `${import.meta.env.VITE_FRONTEND_URL}/auth/verify`,
+					});
+
 				},
 			},
 		);
 
 		if (error) throw error;
 
-		await authClient.sendVerificationEmail({
-			email: data.email,
-			callbackURL: `${import.meta.env.VITE_FRONTEND_URL}/auth/verify`,
-		});
+
 
 		return success;
 	};
@@ -118,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 		logout,
 		refetchUser: refetch,
 		error: error ? (error as BetterFetchError) : null,
+		isSubmitting,
 	};
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

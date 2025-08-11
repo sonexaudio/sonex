@@ -87,6 +87,7 @@ export interface AuthContextType {
 	logout: () => Promise<void>;
 	refetchUser: () => void;
 	error: BetterFetchError | null;
+	isSubmitting: boolean;
 }
 
 export interface UserSession {

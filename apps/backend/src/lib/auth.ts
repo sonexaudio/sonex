@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { magicLink } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import config from "../config";
@@ -9,10 +10,18 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql"
     }),
+    session: {
+        expiresIn: 60 * 60 * 24 * 30, // 30 days
+        cookieCache: {
+            enabled: true,
+            maxAge: 5 * 60
+        }
+    },
     emailAndPassword: {
         enabled: true,
         minPasswordLength: 8,
         requireEmailVerification: true,
+        autoSignIn: false,
         sendResetPassword: async ({ user, url }) => {
             await sendEmail({
                 to: user.email,
@@ -47,5 +56,18 @@ export const auth = betterAuth({
     trustedOrigins: [
         config.frontendUrl
     ],
-    plugins: []
+    plugins: [
+        magicLink({
+            sendMagicLink: async ({ email, url }) => {
+                await sendEmail({
+                    to: email,
+                    subject: "Your magic link",
+                    meta: {
+                        description: "Please click the link below to sign in.",
+                        link: url,
+                    },
+                });
+            }
+        })
+    ]
 });
