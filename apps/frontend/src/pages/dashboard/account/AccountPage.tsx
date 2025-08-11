@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import PageLayout from "../../../components/PageLayout";
-import useUser from "../../../hooks/useUser";
 import StripeManager from "./StripeManager";
 
 import UpdateAccount from "./UpdateAccount";
@@ -9,12 +8,13 @@ import AccountDangerZone from "./AccountDangerZone";
 import ConnectWithGoogleAccount from "./ConnectWithGoogleAccount";
 import { useSearchParams } from "react-router";
 import AuthState from "../../../components/auth/AuthState";
+import { useAuth } from "../../../hooks/useAuth";
+import useUser from "../../../hooks/useUser";
+import SignOutButton from "../../../components/auth/SignoutButton";
 
 const AccountPage = () => {
-	const {
-		user,
-		loading
-	} = useUser();
+	const { session, loading } = useAuth();
+	const { user } = useUser()
 	const [searchParams] = useSearchParams();
 	const error = searchParams.get("error");
 
@@ -37,7 +37,12 @@ const AccountPage = () => {
 	return (
 
 		<PageLayout>
-			{error && (
+			<SignOutButton />
+			<pre className="text-sm overflow-clip flex flex-col mt-8">
+				<span>Session info</span>
+				{JSON.stringify(session, null, 2)}
+			</pre>
+			{/* {error && (
 				<AuthState
 					type="error"
 					message="Google account email doesn't match your account email."
@@ -49,7 +54,7 @@ const AccountPage = () => {
 				<ConnectWithGoogleAccount />
 				<AccountActivities activities={user?.activities} />
 				<AccountDangerZone />
-			</div>
+			</div> */}
 		</PageLayout>
 	);
 };

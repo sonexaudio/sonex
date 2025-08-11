@@ -1,8 +1,8 @@
 const LoginHeader = () => {
 	return (
-		<div>
-			<h1>Welcome Back</h1>
-			<p>Enter your login details to access Sonex</p>
+		<div className="space-y-3 text-center">
+			<h1 className="text-3xl font-bold">Welcome Back</h1>
+			<p className="text-muted-foreground">Enter your login details to access Sonex</p>
 		</div>
 	);
 };

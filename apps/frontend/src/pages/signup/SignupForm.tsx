@@ -1,87 +1,147 @@
-import AuthenticationForm from "../../components/auth/AuthenticationForm";
-import AuthState from "../../components/auth/AuthState";
-import SignInWithGoogleButton from "../../components/auth/SignInWithGoogleButton";
-import DividerLine from "../../components/DividerLine";
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { SignupSchema } from "@sonex/schemas/user";
+import { Card, CardContent, } from "../../components/ui/card";
 
-type SignupErrorParams = {
-	error: string;
-};
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../../components/ui/form";
+import { toast } from "sonner";
+
+const signupFormSchema = z.object({
+	firstName: z.string().min(1, { message: "First name is required" }),
+	lastName: z.string().min(1, { message: "Last name is required" }),
+	email: z.string().email({ message: "Email is required" }),
+	password: z.string().min(8, { message: "Password must be at least 8 characters" }).max(25, { message: "Password too long" })
+	,
+	confirmPassword: z.string().min(1, { message: "Please confirm your password" })
+}).refine((data) => data.password === data.confirmPassword, {
+	message: "Passwords do not match",
+	path: ["confirmPassword"],
+})
 
 const SignupForm = () => {
 	const { signup } = useAuth();
-	const [signupError, setSignupError] = useState<string | null>();
-	const [submitSuccessful, setSubmitSuccessful] = useState(false);
-	const handleSubmit = async ({
-		email,
-		password,
-		name,
-	}: { email: string; password: string; name: string }) => {
-		setSignupError(null);
-		setSubmitSuccessful(false);
-		try {
-			await signup({ email, password, name });
-			setSubmitSuccessful(true);
-		} catch (error) {
-			const message = (error as SignupErrorParams).error;
-			setSubmitSuccessful(false);
-			setSignupError(message || "Something went wrong. Please try again.");
-		}
-	};
 
-	useEffect(() => {
-		if (signupError) {
-			const clearError = setTimeout(() => setSignupError(null), 4000);
-			return () => clearTimeout(clearError);
+	const form = useForm<z.infer<typeof signupFormSchema>>({
+		resolver: zodResolver(signupFormSchema),
+		defaultValues: {
+			confirmPassword: "",
+			email: "",
+			firstName: "",
+			lastName: "",
+			password: ""
 		}
-	}, [signupError]);
+	});
+
+	async function onSubmit(values: z.infer<typeof signupFormSchema>) {
+
+		const { firstName, lastName, password, email } = values;
+
+		const name = `${firstName} ${lastName}`;
+
+		await signup({ email, name, password });
+	}
 
 	return (
-		<div className="max-w-md mt-4 space-y-6">
-			<SignInWithGoogleButton />
-			<DividerLine />
-			<AuthenticationForm schema={SignupSchema} onSubmit={handleSubmit}>
-				{signupError && <AuthState type="error" message={signupError} />}
-				{submitSuccessful && (
-					<AuthState
-						type="success"
-						message="Awesome! We sent a confirmation email to you."
-					/>
-				)}
-				<h3>Sign up with your email and password</h3>
-				<AuthenticationForm.Input
-					name="email"
-					label="Email"
-					type="email"
-					placeholder="Enter your email address"
-				/>
-				<AuthenticationForm.Input
-					name="password"
-					label="Password"
-					type="password"
-					placeholder="Enter your password"
-				/>
-				<AuthenticationForm.Input
-					name="name"
-					label="Full Name"
-					placeholder="Enter your full name"
-				/>
+		<Card className="z-50 w-full max-w-md">
+			<CardContent>
+				<Form {...form}>
+					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+						<div className="grid gap-4">
+							<div className="grid grid-cols-2 gap-4">
+								<div className="grid gap-2">
+									<FormField
+										control={form.control}
+										name="firstName"
+										render={({ field }) => (
+											<FormItem className="grid gap-2">
+												<FormLabel>First Name</FormLabel>
+												<FormControl>
+													<Input placeholder="Your legal first name" {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									>
+									</FormField>
+								</div>
+								<div className="grid gap-2">
+									<FormField
+										control={form.control}
+										name="lastName"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Last Name</FormLabel>
+												<FormControl>
+													<Input placeholder="Your legal last name" {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									>
+									</FormField>
+								</div>
+							</div>
+							<div className="grid gap-2">
+								<FormField
+									control={form.control}
+									name="email"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Email</FormLabel>
+											<FormControl>
+												<Input placeholder="user@sonex.app" {...field} />
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								>
+								</FormField>
+							</div>
+							<div className="grid gap-2">
+								<FormField
+									control={form.control}
+									name="password"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Password</FormLabel>
+											<FormControl>
+												<Input placeholder="Enter a password (8 chars min, 25 chars max)" autoComplete="new-password" {...field} />
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								>
+								</FormField>
+							</div>
+							<div className="grid gap-2">
+								<FormField
+									control={form.control}
+									name="confirmPassword"
+									render={({ field }) => (
+										<FormItem className="grid gap-2">
+											<FormLabel>Confirm Password</FormLabel>
+											<FormControl>
+												<Input placeholder="Confirm your password" autoComplete="new-password" {...field} />
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								>
+								</FormField>
+							</div>
+						</div>
 
-				<div className="flex justify-between">
-					<AuthenticationForm.ShowPasswordToggle />
-				</div>
+						<div><Button type="submit" className="w-full">Create Account</Button></div>
 
-				<AuthenticationForm.SubmitButton>
-					Sign up
-				</AuthenticationForm.SubmitButton>
-			</AuthenticationForm>
-			<p className="text-center text-sm">
-				Already have an account? <Link to="/login">Sign in</Link>
-			</p>
-		</div>
+					</form>
+				</Form>
+			</CardContent>
+		</Card>
 	);
 };
 export default SignupForm;

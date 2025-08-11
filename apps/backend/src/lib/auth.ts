@@ -10,6 +10,7 @@ export const auth = betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
+        minPasswordLength: 8,
     },
     trustedOrigins: [
         config.frontendUrl

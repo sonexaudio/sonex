@@ -6,10 +6,10 @@ import LoginForm from "./LoginForm";
 const LoginPage = () => {
 	return (
 
-		<PageLayout>
+		<div className="flex flex-col items-center space-y-8 px-8 py-16">
 			<LoginHeader />
 			<LoginForm />
-		</PageLayout>
+		</div>
 	);
 };
 export default LoginPage;

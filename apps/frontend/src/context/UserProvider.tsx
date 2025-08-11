@@ -12,7 +12,6 @@ interface UserContextType {
     refetchUser: () => Promise<QueryObserverResult<unknown, Error>>;
     isError: boolean;
     error: Error | null;
-
 }
 
 export const UserProviderContext = createContext<UserContextType | null>(null);

@@ -1,14 +1,13 @@
-import PageLayout from "../../components/PageLayout";
 import SignupForm from "./SignupForm";
 import SignupHeader from "./SignupHeader";
 
 const SignupPage = () => {
 	return (
-
-		<PageLayout>
+		<div className="flex flex-col items-center space-y-8 px-8 py-16">
 			<SignupHeader />
 			<SignupForm />
-		</PageLayout>
+		</div>
+
 	);
 };
 export default SignupPage;
