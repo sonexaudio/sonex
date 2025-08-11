@@ -9,10 +9,23 @@ import {
 	findUserById,
 } from "../../services/db.service";
 import { ForbiddenError, NotFoundError } from "../../errors";
-import { deleteUserById, updateUserById } from "../../services/user.service";
-import { logoutUser } from "../../services/auth.service";
+import { deleteUserById, getFullUserInfo, updateUserById } from "../../services/user.service";
 
 const userRouter = Router();
+
+userRouter.get("/current", requireAuth, async (req, res, next) => {
+	const userId = req.user?.id;
+	try {
+		const user = await getFullUserInfo(userId);
+
+		if (!user) {
+			throw new NotFoundError(`User with ID ${userId} not found`);
+		}
+		sendSuccessResponse(res, { user });
+	} catch (error) {
+		next(error);
+	}
+})
 
 userRouter.get("/:id/subscription-status", async (req, res, next) => {
 	const { id } = req.params;
@@ -78,8 +91,6 @@ userRouter.delete("/:id", requireAuth, async (req, res, next) => {
 		}
 
 		await deleteUserById(id, currentUserId);
-
-		logoutUser(req, res);
 	} catch (error) {
 		next(error);
 	}

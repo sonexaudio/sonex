@@ -1,3 +1,4 @@
+
 generator client {
   provider      = "prisma-client-js"
   output        = "../src/generated/prisma"
@@ -11,15 +12,15 @@ datasource db {
 
 model User {
   // User fields
-  id             String  @id @default(cuid())
-  firstName      String?
-  lastName       String?
-  email          String  @unique
-  hashedPassword String?
-  googleId       String? @unique
-  avatarUrl      String?
-  storageUsed    Int     @default(0)
-  storageLimit   Int     @default(5369) // 5369MB = ~5GB
+  id                 String             @id @default(cuid())
+  firstName          String?
+  lastName           String?
+  email              String             @unique
+  hashedPassword     String?
+  googleId           String?            @unique
+  avatarUrl          String?
+  storageUsed        Int                @default(0)
+  storageLimit       Int                @default(5369) // 5369MB = ~5GB
   subscriptionStatus SubscriptionStatus @default(free)
 
   // Stripe fields
@@ -54,6 +55,13 @@ model User {
   activities    Activity[]
   clients       Client[]
   comments      Comment[]
+  name          String
+  emailVerified Boolean @default(false)
+  image         String?
+  sessions      Session[]
+  accounts      Account[]
+
+  @@map("user")
 }
 
 model Client {
@@ -62,13 +70,13 @@ model Client {
   name      String?
   email     String
   userId    String
-  isBlocked          Boolean @default(false)
+  isBlocked Boolean @default(false)
 
   // Database Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   projects ClientProject[]
   comments Comment[]
 
@@ -85,16 +93,16 @@ model Project {
   amount        Decimal?
   dueDate       DateTime?
   status        ProjectStatus        @default(Active) // active, complete, archived, private
-  shareCode   String? @unique
+  shareCode     String?              @unique
   paymentStatus ProjectPaymentStatus @default(Unpaid) // free, unpaid, paid
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 
   // Associations
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  files   File[]
-  clients ClientProject[]
-  comments Comment[]
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files              File[]
+  clients            ClientProject[]
+  comments           Comment[]
   clientAccessTokens ClientAccess[]
 
   // Prevent user from creating project with the same title
@@ -173,21 +181,21 @@ model Comment {
   user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent   Comment?  @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
   children Comment[] @relation("Thread")
-  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Subscription {
-  id                   String   @id @default(cuid())
+  id                   String    @id @default(cuid())
   userId               String
-  stripeSubscriptionId String   @unique
+  stripeSubscriptionId String    @unique
   plan                 String
-  interval             String @default("month")
+  interval             String    @default("month")
   priceId              String
   pendingDowngradeTo   String?
   pendingDowngradeAt   DateTime?
   startDate            DateTime
   endDate              DateTime
-  cancelAtPeriodEnd    Boolean  @default(false)
+  cancelAtPeriodEnd    Boolean   @default(false)
 
   // Flags
   isActive Boolean @default(true)
@@ -202,10 +210,10 @@ model Subscription {
 }
 
 model Transaction {
-  id     String @id @default(cuid())
-  userId String
-  type   String
-  amount Float
+  id        String  @id @default(cuid())
+  userId    String
+  type      String
+  amount    Float
   projectId String?
   // paymentMethod TransactionPaymentMethod
 
@@ -241,22 +249,23 @@ model Activity {
 
 // Create a new model that links the many clients to the many projects they can be associated with
 // This will also store the permissions of that client's project
+
 model ClientProject {
-  id Int @id @default(autoincrement())
-  clientId String
-  projectId String
-  canView Boolean @default(true)
-  canComment Boolean @default(true)
-  canUpload Boolean @default(true)
+  id          Int     @id @default(autoincrement())
+  clientId    String
+  projectId   String
+  canView     Boolean @default(true)
+  canComment  Boolean @default(true)
+  canUpload   Boolean @default(true)
   canDownload Boolean @default(true)
-  isBlocked Boolean @default(false)
+  isBlocked   Boolean @default(false)
 
   // DB Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Associations
-  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   // Make sure same client is not added again to project
@@ -304,4 +313,49 @@ enum SubscriptionStatus {
   free
   cancelled
   incomplete
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
 }

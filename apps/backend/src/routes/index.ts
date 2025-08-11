@@ -14,17 +14,23 @@ import stripeWebhook from "./webhooks/stripe";
 import stripeConnectWebhook from "./webhooks/stripe-connect";
 import { checkUserStillExists } from "../middleware/auth";
 import { errorHandler } from "../middleware/errorHandler";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "../lib/auth";
 
 const router = express.Router();
 
 router.use("/webhooks/stripe", stripeWebhook);
 router.use("/webhooks/stripe-connect", stripeConnectWebhook);
 
+// 08-10-25 User auth now handled by better-auth
+// To be able to implement 2FA, Passkey, OAuth, etc
+
+router.all("/api/auth/*all", toNodeHandler(auth));
+
 router.use(express.json());
 router.use(checkUserStillExists);
-router.use("/auth", authRoutes);
-router.use("/auth/client", clientAuthRoutes);
 router.use("/users", userRoutes);
+router.use("/auth/client", clientAuthRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/accounts", accountRoutes);
 router.use("/projects", projectRoutes);

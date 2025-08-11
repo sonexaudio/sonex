@@ -12,14 +12,12 @@ import AuthState from "../../../components/auth/AuthState";
 
 const AccountPage = () => {
 	const {
-		currentUser: user,
-		loading,
-		getActivities,
-		activities,
-		getTransactionHistory,
+		user,
+		loading
 	} = useUser();
 	const [searchParams] = useSearchParams();
 	const error = searchParams.get("error");
+
 	/* Functions
 		Check if user has ability to view page
 		Get user information - done via AuthProvider
@@ -33,13 +31,6 @@ const AccountPage = () => {
 	// Section to update current information (can even connect or view google account)
 	// -- If user connected via google, add ability to add password
 	// Add ability to delete account (should soft delete)
-
-	useEffect(() => {
-		if (user) {
-			getActivities();
-			getTransactionHistory();
-		}
-	}, [user]);
 
 	if (loading) return <p>Loading...</p>;
 
@@ -56,7 +47,7 @@ const AccountPage = () => {
 				<StripeManager />
 				<UpdateAccount />
 				<ConnectWithGoogleAccount />
-				<AccountActivities activities={activities} />
+				<AccountActivities activities={user?.activities} />
 				<AccountDangerZone />
 			</div>
 		</PageLayout>

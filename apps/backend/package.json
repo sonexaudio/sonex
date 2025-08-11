@@ -49,6 +49,7 @@
 		"@prisma/client": "^6.8.2",
 		"@sonex/schemas": "workspace:*",
 		"bcryptjs": "^3.0.2",
+		"better-auth": "^1.3.4",
 		"connect-pg-simple": "^10.0.0",
 		"cookie-parser": "^1.4.7",
 		"cors": "^2.8.5",

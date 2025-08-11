@@ -159,21 +159,15 @@ router.post(
 	},
 );
 
-// Get all files pertaining to user/project
-// TODO: will add metadata so that I can add projectId, metadata, and getting files pertaining to project
-router.get("/", async (req, res) => {
-	const projectAccess = req.session.projectAccess;
-	const projectId = projectAccess?.projectId || (req.query.projectId as string);
+// Get all files pertaining to user
+router.get("/", requireAuth, async (req, res) => {
+// const projectAccess = req.session.projectAccess;
+// const projectId = projectAccess?.projectId || (req.query.projectId as string);
 	const userId = req.user?.id;
 
 	try {
 		let files: File[];
-		if (projectId && req.url.includes(projectId)) {
-			files = await prisma.file.findMany({
-				where: { OR: [{ projectId }, { uploaderId: req.user?.id }] },
-				orderBy: { createdAt: "desc" },
-			});
-		} else if (userId) {
+
 			files = await prisma.file.findMany({
 				where: {
 					project: {
@@ -181,10 +175,6 @@ router.get("/", async (req, res) => {
 					},
 				},
 			});
-		} else {
-			sendErrorResponse(res, 401, "Unauthorized");
-			return;
-		}
 
 		sendSuccessResponse(res, { files });
 	} catch (error) {

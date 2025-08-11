@@ -10,6 +10,21 @@ export type NewUserData = {
     hashedPassword: string;
 };
 
+export async function getFullUserInfo(userId: string | undefined) {
+    if (!userId) return null;
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            activities: true,
+            transactions: true,
+            subscriptions: true,
+        }
+    });
+
+    return user;
+}
+
 export async function createNewUser(userData: NewUserData) {
     const { email, firstName, lastName, hashedPassword } = userData;
 
@@ -22,6 +37,7 @@ export async function createNewUser(userData: NewUserData) {
                 firstName,
                 lastName,
                 hashedPassword,
+                name: `${firstName} ${lastName}`,   
             },
         });
 
