@@ -7,40 +7,38 @@ import { useEffect, useState } from "react";
 import AuthState from "../../components/auth/AuthState";
 import { LoginSchema } from "@sonex/schemas/user";
 import type { ErrorResponse } from "../../context/AuthProvider";
+import z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
+import { Card, CardContent } from "../../components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../../components/ui/form";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+
+const loginFormSchema = z.object({
+	email: z.string().email({ message: "Email is required" }),
+	password: z.string().min(8, { message: "Password must be at least 8 characters" }).max(25, { message: "Password too long" })
+})
 
 const LoginForm = () => {
 	const { loginWithEmail } = useAuth();
-	const [loginError, setLoginError] = useState<string | null>(null);
-	const [_loggingIn, setLoggingIn] = useState(false);
 	const location = useLocation();
 	const navigate = useNavigate();
 
 	const redirectPath = location.state?.from || "/";
 
-	useEffect(() => {
-		if (loginError) {
-			const clearError = setTimeout(() => setLoginError(null), 4000);
-			return () => clearTimeout(clearError);
+	const form = useForm<z.infer<typeof loginFormSchema>>({
+		resolver: zodResolver(loginFormSchema),
+		defaultValues: {
+			email: "",
+			password: ""
 		}
-	}, [loginError]);
+	});
 
-	const handleSubmit = async ({
-		email,
-		password,
-	}: { email: string; password: string }) => {
-		setLoginError(null);
-		setLoggingIn(true);
-		try {
-			await loginWithEmail(email, password);
-			navigate(redirectPath);
-		} catch (error) {
-			console.error(error);
-			const message = (error as ErrorResponse).message;
-			setLoginError(message || "Something went wrong. Please try again.");
-		} finally {
-			setLoggingIn(false);
-		}
-	};
+	async function onSubmit(values: z.infer<typeof loginFormSchema>) {
+		const { email, password } = values;
+		await loginWithEmail(email, password);
+	}
 
 	const returningFromReset: boolean | undefined = location.state?.fromReset;
 
@@ -57,40 +55,51 @@ const LoginForm = () => {
 				<AuthState type="error" message={location.state?.message} />
 			)}
 
-			<SignInWithGoogleButton />
+			<Card className="z-50 w-full max-w-md">
+				<CardContent>
+					<Form {...form}>
+						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+							<div className="grid gap-4">
+								<div className="grid gap-2">
+									<FormField
+										control={form.control}
+										name="email"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Email</FormLabel>
+												<FormControl>
+													<Input placeholder="user@sonex.app" {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									>
+									</FormField>
+								</div>
+								<div className="grid gap-2">
+									<FormField
+										control={form.control}
+										name="password"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Password</FormLabel>
+												<FormControl>
+													<Input placeholder="Enter your password" autoComplete="current-password" {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									>
+									</FormField>
+								</div>
+							</div>
 
-			<DividerLine />
+							<div><Button type="submit" className="w-full">Login</Button></div>
 
-			<AuthenticationForm schema={LoginSchema} onSubmit={handleSubmit}>
-				{loginError && <AuthState type="error" message={loginError} />}
-				<h3>Sign in with email and password</h3>
-				<AuthenticationForm.Input
-					name="email"
-					label="Email"
-					type="email"
-					placeholder="Enter your email address"
-				/>
-				<AuthenticationForm.Input
-					name="password"
-					label="Password"
-					type="password"
-					placeholder="Enter your password"
-				/>
-				<div className="flex justify-between">
-					<AuthenticationForm.ShowPasswordToggle />
-					<Link to="/forgot-password" className="text-sm">
-						Forgot Password?
-					</Link>
-				</div>
-
-				<AuthenticationForm.SubmitButton>
-					Log in
-				</AuthenticationForm.SubmitButton>
-			</AuthenticationForm>
-
-			<p className="mt-4 text-center text-sm">
-				Don&apos;t have an account? <Link to="/signup">Sign up</Link>
-			</p>
+						</form>
+					</Form>
+				</CardContent>
+			</Card>
 		</div>
 	);
 };

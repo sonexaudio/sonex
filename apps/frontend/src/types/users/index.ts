@@ -45,7 +45,20 @@ export interface AuthContextType {
 	user: AuthUser | null;
 	session: UserSession | null;
 	loading: boolean;
-	loginWithEmail: (email: string, password: string) => Promise<void>;
+	loginWithEmail: (email: string, password: string) => Promise<{
+		redirect: boolean;
+		token: string;
+		url: string | undefined;
+		user: {
+			id: string;
+			email: string;
+			name: string;
+			image: string | null | undefined;
+			emailVerified: boolean;
+			createdAt: Date;
+			updatedAt: Date;
+		};
+	}>;
 	loginWithGoogle: () => Promise<void>;
 	unlinkGoogleAccount: () => Promise<void>;
 	signup: (data: { email: string; password: string; name: string; }) => Promise<NonNullable<{

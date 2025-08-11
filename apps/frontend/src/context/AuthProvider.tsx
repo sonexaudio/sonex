@@ -21,12 +21,27 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 	const navigate = useNavigate();
 
 	const loginWithEmail = async (email: string, password: string) => {
-		await authClient.signIn.email({
+		const { data: success, error } = await authClient.signIn.email({
 			email,
 			password,
-			callbackURL: "/overview",
 			rememberMe: true,
-		});
+		},
+			{
+				onRequest: () => { },
+				onResponse: () => { },
+				onError: (ctx) => {
+					toast.error(ctx.error.message);
+				},
+				onSuccess: () => {
+					toast("Welcome back!");
+					navigate("/overview");
+				}
+			}
+		);
+
+		if (error) throw error;
+
+		return success;
 	};
 
 	const loginWithGoogle = async () => {
@@ -56,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 			updatedAt: Date;
 		};
 	}> | undefined> => {
-		try {
+
 			const { data: success, error } = await authClient.signUp.email({
 				email: data.email,
 				password: data.password,
@@ -67,14 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 				onError: (ctx) => {
 					toast.error(ctx.error.message);
 				},
-				onSuccess: () => { } 
+				onSuccess: () => {
+					const { name } = data;
+					const firstName = name.split(" ")[0];
+					toast(`Welcome to Sonex ${firstName}!`);
+					navigate("/overview");
+				}
 			});
 
 			if (error) throw error;
-			return success
-		} catch (error) {
-			console.log(error)
-		}
+		return success
 	};
 
 	const unlinkGoogleAccount = async () => {

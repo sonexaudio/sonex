@@ -1,7 +1,7 @@
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Card, CardContent, CardFooter, } from "../../components/ui/card";
+import { Card, CardContent, } from "../../components/ui/card";
 
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
@@ -35,11 +35,7 @@ const SignupForm = () => {
 			lastName: "",
 			password: ""
 		}
-	})
-
-	const [signupError, setSignupError] = useState<string | null>();
-	const [submitSuccessful, setSubmitSuccessful] = useState(false);
-
+	});
 
 	async function onSubmit(values: z.infer<typeof signupFormSchema>) {
 
@@ -47,20 +43,8 @@ const SignupForm = () => {
 
 		const name = `${firstName} ${lastName}`;
 
-		const success = await signup({ email, name, password });
-
-		if (success) {
-			toast(`Welcome to Sonex ${firstName}!`);
-		}
-
+		await signup({ email, name, password });
 	}
-
-	useEffect(() => {
-		if (signupError) {
-			const clearError = setTimeout(() => setSignupError(null), 4000);
-			return () => clearTimeout(clearError);
-		}
-	}, [signupError]);
 
 	return (
 		<Card className="z-50 w-full max-w-md">
@@ -157,7 +141,6 @@ const SignupForm = () => {
 					</form>
 				</Form>
 			</CardContent>
-
 		</Card>
 	);
 };

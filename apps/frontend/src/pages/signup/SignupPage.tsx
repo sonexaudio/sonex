@@ -3,7 +3,7 @@ import SignupHeader from "./SignupHeader";
 
 const SignupPage = () => {
 	return (
-		<div className="border flex flex-col items-center space-y-8 px-8 py-16">
+		<div className="flex flex-col items-center space-y-8 px-8 py-16">
 			<SignupHeader />
 			<SignupForm />
 		</div>
