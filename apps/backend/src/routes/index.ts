@@ -12,7 +12,6 @@ import commentRoutes from "./comments";
 import transactionRoutes from "./transactions";
 import stripeWebhook from "./webhooks/stripe";
 import stripeConnectWebhook from "./webhooks/stripe-connect";
-import { checkUserStillExists } from "../middleware/auth";
 import { errorHandler } from "../middleware/errorHandler";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "../lib/auth";
@@ -28,7 +27,6 @@ router.use("/webhooks/stripe-connect", stripeConnectWebhook);
 router.all("/api/auth/*all", toNodeHandler(auth));
 
 router.use(express.json());
-router.use(checkUserStillExists);
 router.use("/users", userRoutes);
 router.use("/auth/client", clientAuthRoutes);
 router.use("/payments", paymentRoutes);

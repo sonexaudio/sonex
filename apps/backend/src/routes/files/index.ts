@@ -161,8 +161,6 @@ router.post(
 
 // Get all files pertaining to user
 router.get("/", requireAuth, async (req, res) => {
-// const projectAccess = req.session.projectAccess;
-// const projectId = projectAccess?.projectId || (req.query.projectId as string);
 	const userId = req.user?.id;
 
 	try {

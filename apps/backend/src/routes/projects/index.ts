@@ -5,7 +5,6 @@ import { Prisma } from "../../generated/prisma";
 import { validate } from "../../middleware/validate";
 import { ProjectSchema } from "@sonex/schemas/project";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
-import { requireProjectAccess } from "../../middleware/projectAccess";
 
 const projectRouter = Router();
 
@@ -63,7 +62,7 @@ projectRouter.post(
 	}
 );
 
-projectRouter.get("/:id", requireProjectAccess, async (req, res) => {
+projectRouter.get("/:id", async (req, res) => {
 	const { id } = req.params;
 	const project = await projectService.getProjectById(id);
 	if (!project) {
