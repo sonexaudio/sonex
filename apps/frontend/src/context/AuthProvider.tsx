@@ -21,11 +21,12 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 	const navigate = useNavigate();
 
 	const loginWithEmail = async (email: string, password: string) => {
-		const { data: success, error } = await authClient.signIn.email({
-			email,
-			password,
-			rememberMe: true,
-		},
+		const { data: success, error } = await authClient.signIn.email(
+			{
+				email,
+				password,
+				rememberMe: true,
+			},
 			{
 				onRequest: () => { },
 				onResponse: () => { },
@@ -35,8 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 				onSuccess: () => {
 					toast("Welcome back!");
 					navigate("/overview");
-				}
-			}
+				},
+			},
 		);
 
 		if (error) throw error;
@@ -48,35 +49,18 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 		window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/google`;
 	};
 
-	const signup = async (data: { email: string; password: string; name: string; }): Promise<NonNullable<{
-		token: null;
-		user: {
-			id: string;
-			email: string;
-			name: string;
-			image: string | null | undefined;
-			emailVerified: boolean;
-			createdAt: Date;
-			updatedAt: Date;
-		};
-	} | {
-		token: string;
-		user: {
-			id: string;
-			email: string;
-			name: string;
-			image: string | null | undefined;
-			emailVerified: boolean;
-			createdAt: Date;
-			updatedAt: Date;
-		};
-	}> | undefined> => {
-
-			const { data: success, error } = await authClient.signUp.email({
+	const signup = async (data: {
+		email: string;
+		password: string;
+		name: string;
+	}) => {
+		const { data: success, error } = await authClient.signUp.email(
+			{
 				email: data.email,
 				password: data.password,
 				name: data.name,
-			}, {
+			},
+			{
 				onRequest: () => { },
 				onResponse: () => { },
 				onError: (ctx) => {
@@ -87,11 +71,18 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 					const firstName = name.split(" ")[0];
 					toast(`Welcome to Sonex ${firstName}!`);
 					navigate("/overview");
-				}
-			});
+				},
+			},
+		);
 
-			if (error) throw error;
-		return success
+		if (error) throw error;
+
+		await authClient.sendVerificationEmail({
+			email: data.email,
+			callbackURL: `${import.meta.env.VITE_FRONTEND_URL}/auth/verify`,
+		});
+
+		return success;
 	};
 
 	const unlinkGoogleAccount = async () => {
@@ -109,10 +100,10 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 					toast.error(ctx.error.message);
 				},
 				onSuccess: () => {
-					toast("See you later!")
+					toast("See you later!");
 					navigate("/");
-				}
-			}
+				},
+			},
 		});
 	};
 
@@ -126,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 		signup,
 		logout,
 		refetchUser: refetch,
-		error: error ? (error as BetterFetchError) : null
+		error: error ? (error as BetterFetchError) : null,
 	};
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

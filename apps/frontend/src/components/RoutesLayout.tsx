@@ -4,7 +4,6 @@ import LoginPage from "../pages/login/LoginPage";
 import SignupPage from "../pages/signup/SignupPage";
 import Error404 from "../pages/error/Error404";
 import ForgotPasswordPage from "../pages/forgot-password/ForgotPasswordPage";
-import ResetPasswordPage from "../pages/reset-password/ResetPasswordPage";
 import SuccessPage from "../pages/payments/SuccessPage";
 import DashboardLayout from "./DashboardLayout";
 import OverviewPage from "../pages/dashboard/overview/OverviewPage";
@@ -18,14 +17,28 @@ import { ProjectProvider } from "../context/ProjectProvider";
 import PaymentsPage from "../pages/dashboard/payments/PaymentsPage";
 import SettingsPage from "../pages/dashboard/settings/SettingsPage";
 import ProtectedRoute from "./ProtectedRoute";
+import VerificationPage from "../pages/auth/verify/VerificationPage";
+import ResetPasswordPage from "../pages/auth/reset-password/ResetPasswordPage";
+
 
 const RoutesLayout = () => {
 	return (
 		<Routes>
 			<Route index element={<HomePage />} />
+			<Route path="auth">
+				<Route path="verify" element={<VerificationPage />} />
+				<Route path="reset-password" element={<ResetPasswordPage />} />
+			</Route>
 			<Route path="login" element={<ProtectedRoute><LoginPage /></ProtectedRoute>} />
 			<Route path="signup" element={<ProtectedRoute><SignupPage /></ProtectedRoute>} />
-			<Route path="forgot-password" element={<ProtectedRoute><ForgotPasswordPage /></ProtectedRoute>} />
+			<Route
+				path="forgot-password"
+				element={
+					<ProtectedRoute>
+						<ForgotPasswordPage />
+					</ProtectedRoute>
+				}
+			/>
 			<Route path="reset-password" element={<ProtectedRoute><ResetPasswordPage /></ProtectedRoute>} />
 			<Route element={<DashboardLayout />}>
 				<Route path="overview" element={

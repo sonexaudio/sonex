@@ -55,7 +55,7 @@ const LoginForm = () => {
 				<AuthState type="error" message={location.state?.message} />
 			)}
 
-			<Card className="z-50 w-full max-w-md">
+			<Card className="z-50 w-full">
 				<CardContent>
 					<Form {...form}>
 						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -82,7 +82,15 @@ const LoginForm = () => {
 										name="password"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Password</FormLabel>
+												<div className="flex justify-between items-center gap-2">
+													<FormLabel>
+														Password
+													</FormLabel>
+													<Link
+														to="/forgot-password" className="text-sm italic text-muted-foreground hover:text-foreground">
+														Forgot password?
+													</Link>
+												</div>
 												<FormControl>
 													<Input placeholder="Enter your password" autoComplete="current-password" {...field} />
 												</FormControl>

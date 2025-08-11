@@ -1,27 +1,40 @@
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Card, CardContent, } from "../../components/ui/card";
+import { Card, CardContent } from "../../components/ui/card";
 
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../../components/ui/form";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "../../components/ui/form";
 import { toast } from "sonner";
 
-const signupFormSchema = z.object({
-	firstName: z.string().min(1, { message: "First name is required" }),
-	lastName: z.string().min(1, { message: "Last name is required" }),
-	email: z.string().email({ message: "Email is required" }),
-	password: z.string().min(8, { message: "Password must be at least 8 characters" }).max(25, { message: "Password too long" })
-	,
-	confirmPassword: z.string().min(1, { message: "Please confirm your password" })
-}).refine((data) => data.password === data.confirmPassword, {
-	message: "Passwords do not match",
-	path: ["confirmPassword"],
-})
+const signupFormSchema = z
+	.object({
+		firstName: z.string().min(1, { message: "First name is required" }),
+		lastName: z.string().min(1, { message: "Last name is required" }),
+		email: z.string().email({ message: "Email is required" }),
+		password: z
+			.string()
+			.min(8, { message: "Password must be at least 8 characters" })
+			.max(25, { message: "Password too long" }),
+		confirmPassword: z
+			.string()
+			.min(1, { message: "Please confirm your password" }),
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		message: "Passwords do not match",
+		path: ["confirmPassword"],
+	});
 
 const SignupForm = () => {
 	const { signup } = useAuth();
@@ -33,12 +46,11 @@ const SignupForm = () => {
 			email: "",
 			firstName: "",
 			lastName: "",
-			password: ""
-		}
+			password: "",
+		},
 	});
 
 	async function onSubmit(values: z.infer<typeof signupFormSchema>) {
-
 		const { firstName, lastName, password, email } = values;
 
 		const name = `${firstName} ${lastName}`;
@@ -61,13 +73,15 @@ const SignupForm = () => {
 											<FormItem className="grid gap-2">
 												<FormLabel>First Name</FormLabel>
 												<FormControl>
-													<Input placeholder="Your legal first name" {...field} />
+													<Input
+														placeholder="Your legal first name"
+														{...field}
+													/>
 												</FormControl>
 												<FormMessage />
 											</FormItem>
 										)}
-									>
-									</FormField>
+									/>
 								</div>
 								<div className="grid gap-2">
 									<FormField
@@ -77,13 +91,15 @@ const SignupForm = () => {
 											<FormItem>
 												<FormLabel>Last Name</FormLabel>
 												<FormControl>
-													<Input placeholder="Your legal last name" {...field} />
+													<Input
+														placeholder="Your legal last name"
+														{...field}
+													/>
 												</FormControl>
 												<FormMessage />
 											</FormItem>
 										)}
-									>
-									</FormField>
+									/>
 								</div>
 							</div>
 							<div className="grid gap-2">
@@ -99,8 +115,7 @@ const SignupForm = () => {
 											<FormMessage />
 										</FormItem>
 									)}
-								>
-								</FormField>
+								/>
 							</div>
 							<div className="grid gap-2">
 								<FormField
@@ -110,13 +125,16 @@ const SignupForm = () => {
 										<FormItem>
 											<FormLabel>Password</FormLabel>
 											<FormControl>
-												<Input placeholder="Enter a password (8 chars min, 25 chars max)" autoComplete="new-password" {...field} />
+												<Input
+													placeholder="Enter a password (8 chars min, 25 chars max)"
+													autoComplete="new-password"
+													{...field}
+												/>
 											</FormControl>
 											<FormMessage />
 										</FormItem>
 									)}
-								>
-								</FormField>
+								/>
 							</div>
 							<div className="grid gap-2">
 								<FormField
@@ -126,18 +144,30 @@ const SignupForm = () => {
 										<FormItem className="grid gap-2">
 											<FormLabel>Confirm Password</FormLabel>
 											<FormControl>
-												<Input placeholder="Confirm your password" autoComplete="new-password" {...field} />
+												<Input
+													placeholder="Confirm your password"
+													autoComplete="new-password"
+													{...field}
+												/>
 											</FormControl>
 											<FormMessage />
 										</FormItem>
 									)}
-								>
-								</FormField>
+								/>
 							</div>
 						</div>
 
-						<div><Button type="submit" className="w-full">Create Account</Button></div>
-
+						<div>
+							<Button
+								type="submit"
+								className="w-full"
+								disabled={
+									!form.formState.isValid || form.formState.isSubmitting
+								}
+							>
+								Create Account
+							</Button>
+						</div>
 					</form>
 				</Form>
 			</CardContent>
