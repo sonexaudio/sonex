@@ -4,10 +4,7 @@ import {
 	createResetPasswordToken,
 	encryptResetPasswordToken,
 } from "../../utils";
-import passport from "passport";
 import config from "../../config";
-import "../../lib/passport/local";
-import "../../lib/passport/google";
 import { requireAuth } from "../../middleware/auth";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
 import { validate } from "../../middleware/validate";

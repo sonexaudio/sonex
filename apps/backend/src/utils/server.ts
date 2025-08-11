@@ -7,7 +7,6 @@ import morgan from "morgan";
 import session from "express-session";
 import config from "../config";
 import routes from "../routes";
-import passport from "passport";
 import pg from "pg";
 import pgSession from "connect-pg-simple";
 import helmet from "helmet";
@@ -44,6 +43,7 @@ export default function createServer() {
 		cors({
 			credentials: true,
 			origin: frontendUrl,
+			methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
 		}),
 	);
 	app.use(
@@ -65,8 +65,6 @@ export default function createServer() {
 			},
 		}),
 	);
-	app.use(passport.initialize());
-	app.use(passport.session());
 	app.use(morgan("dev"));
 
 	// Create routes
