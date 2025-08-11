@@ -6,6 +6,7 @@ import type { AxiosError } from "axios";
 import type { AuthContextType } from "../types/users";
 import { authClient } from "../lib/client-auth";
 import type { BetterFetchError } from "better-auth/react";
+import { toast } from "sonner";
 
 export type ErrorResponse = {
 	message: string;
@@ -32,23 +33,53 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 		window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/google`;
 	};
 
-	const signup = async (data: { email: string; password: string; name: string; }) => {
+	const signup = async (data: { email: string; password: string; name: string; }): Promise<NonNullable<{
+		token: null;
+		user: {
+			id: string;
+			email: string;
+			name: string;
+			image: string | null | undefined;
+			emailVerified: boolean;
+			createdAt: Date;
+			updatedAt: Date;
+		};
+	} | {
+		token: string;
+		user: {
+			id: string;
+			email: string;
+			name: string;
+			image: string | null | undefined;
+			emailVerified: boolean;
+			createdAt: Date;
+			updatedAt: Date;
+		};
+	}> | undefined> => {
 		try {
-			await authClient.signUp.email({
+			const { data: success, error } = await authClient.signUp.email({
 				email: data.email,
 				password: data.password,
 				name: data.name,
+			}, {
+				onRequest: () => { },
+				onResponse: () => { },
+				onError: (ctx) => {
+					toast.error(ctx.error.message);
+				},
+				onSuccess: () => { } 
 			});
+
+			if (error) throw error;
+			return success
 		} catch (error) {
-			const axiosError = error as AxiosError<ErrorResponse>;
-			throw axiosError.response?.data.message;
+			console.log(error)
 		}
 	};
 
 	const unlinkGoogleAccount = async () => {
 		try {
 			await api.put("/auth/google/unlink");
-			await fetchUser();
 		} catch (error) {
 			console.error(error);
 		}
@@ -57,7 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 	const logout = async () => {
 		await authClient.signOut({
 			fetchOptions: {
+				onError: (ctx) => {
+					toast.error(ctx.error.message);
+				},
 				onSuccess: () => {
+					toast("See you later!")
 					navigate("/");
 				}
 			}
@@ -66,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 
 	const value: AuthContextType = {
 		user: session?.user || null,
+		session: session?.session || null,
 		loading: isPending,
 		loginWithEmail,
 		loginWithGoogle,
