@@ -4,105 +4,21 @@ import {
 	createResetPasswordToken,
 	encryptResetPasswordToken,
 } from "../../utils";
-import passport from "passport";
 import config from "../../config";
-import "../../lib/passport/local";
-import "../../lib/passport/google";
 import { requireAuth } from "../../middleware/auth";
-import { sendErrorResponse, sendSuccessResponse } from "../../utils/responses";
-import { validate } from "../../middleware/validate";
-import { SignupSchema, LoginSchema } from "@sonex/schemas/user";
+import { sendSuccessResponse } from "../../utils/responses";
 import { findUserByEmail, findUserByResetToken } from "../../services/db.service";
-import { ConflictError, NotFoundError } from "../../errors";
-import { getCurrentSessionUser, loginAndAuthenticateUser, registerNewUser } from "../../services/auth.service";
+import { BadRequestError, NotFoundError } from "../../errors";
 import { updateUserById } from "../../services/user.service";
 
 const authRouter = Router();
-
-// Get currently authenticated user
-authRouter.get("/me", (req, res, next) => {
-	try {
-		const currentUser = getCurrentSessionUser(req);
-		sendSuccessResponse(res, currentUser);
-	} catch (error) {
-		next(error);
-	}
-});
-
-authRouter.post("/register", validate(SignupSchema), async (req, res, next) => {
-	const { email, name, password } = req.body;
-	try {
-		if (!email || !name || !password) {
-			res.status(422).json({ error: "email, name, and password required" });
-			return;
-		}
-
-		const existingUser = await findUserByEmail(email);
-
-		if (existingUser) {
-			throw new ConflictError(`User with email ${email} already exists`);
-		}
-
-		const newUser = await registerNewUser({ name, email, password });
-
-		sendSuccessResponse(res, newUser, null, 201);
-	} catch (error) {
-		next(error);
-	}
-});
-
-authRouter.post("/login", validate(LoginSchema), async (req, res, next) => {
-	await loginAndAuthenticateUser(req, res, next);
-});
-
-// Handle google authentication
-authRouter.get("/google",
-	passport.authenticate("google", { scope: ["profile", "email"] }),
-);
-
-authRouter.get("/google/callback",
-	passport.authenticate("google", {
-		failureRedirect: `${config.frontendUrl}/account?error=google-email-mismatch`,
-	}),
-	(req, res) => {
-		res.redirect(config.frontendUrl);
-	},
-);
-
-authRouter.put("/google/unlink", requireAuth, async (req, res, next) => {
-	try {
-		await updateUserById(req.user?.id!, { googleId: null });
-		sendSuccessResponse(res, null, "Google account unlinked.");
-	} catch (error) {
-		next(error);
-	}
-});
-
-authRouter.get("/logout", (req, res) => {
-	req.logout((error) => {
-		if (error) {
-			res.status(500).json({ error: "Something went wrong" });
-			return;
-		}
-
-		req.session.destroy((err) => {
-			if (err) {
-				res.status(500).json({ error: "Something went wrong" });
-				return;
-			}
-
-			res.status(204).send();
-		});
-	});
-});
 
 // Verify email
 // TODO: add a token to the email and use email api to send
 authRouter.post("/send-verification-email", requireAuth, async (req, res, next) => {
 	const { email } = req.body;
 	if (!email) {
-		sendErrorResponse(res, 400, "Email is required to verify");
-		return;
+		throw new BadRequestError("Email is required to verify")
 	}
 
 	try {

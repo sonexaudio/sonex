@@ -16,59 +16,59 @@ const publicRoutes = [
 ];
 
 const ProtectedRoute = ({ children }: PropsWithChildren) => {
-	const { user, loading, refetchUser } = useAuth();
+	const { user, loading } = useAuth();
 	const location = useLocation();
-	const { projects } = useProjects();
-	const [clients, setClients] = useState<Client[]>([]);
-	const [clientsLoading, setClientsLoading] = useState(false);
-	const [showOnboarding, setShowOnboarding] = useState(false);
+	// const { projects } = useProjects();
+	// const [clients, setClients] = useState<Client[]>([]);
+	// const [clientsLoading, setClientsLoading] = useState(false);
+	// const [showOnboarding, setShowOnboarding] = useState(false);
 
 	const isPublicAuthRoute = publicRoutes.includes(location.pathname);
 
-	useEffect(() => {
-		const fetchClients = async () => {
-			setClientsLoading(true);
-			try {
-				const { data: { data } } = await api.get("/clients");
-				setClients(data.clients || []);
-			} catch (e) {
-				setClients([]);
-			} finally {
-				setClientsLoading(false);
-			}
-		};
-		if (user && !clientsLoading) fetchClients();
-	}, [user]);
+	// useEffect(() => {
+	// 	const fetchClients = async () => {
+	// 		setClientsLoading(true);
+	// 		try {
+	// 			const { data: { data } } = await api.get("/clients");
+	// 			setClients(data.clients || []);
+	// 		} catch (e) {
+	// 			setClients([]);
+	// 		} finally {
+	// 			setClientsLoading(false);
+	// 		}
+	// 	};
+	// 	if (user && !clientsLoading) fetchClients();
+	// }, [user]);
 
 
-	useEffect(() => {
-		const prompt = localStorage.getItem("promptForOnboarding");
-		const shouldShow = !location.pathname.includes("/settings") &&
-			(!user?.isOnboarded || !!prompt);
-		setShowOnboarding(shouldShow);
-	}, [user, location.pathname]);
+	// useEffect(() => {
+	// 	const prompt = localStorage.getItem("promptForOnboarding");
+	// 	const shouldShow = !location.pathname.includes("/settings") &&
+	// 		(!user?.isOnboarded || !!prompt);
+	// 	setShowOnboarding(shouldShow);
+	// }, [user, location.pathname]);
 
 	// remove promptForOnboarding from local storage if user is onboarded
-	useEffect(() => {
-		if (user?.isOnboarded) {
-			localStorage.removeItem("promptForOnboarding");
-		}
-	}, [user]);
+	// useEffect(() => {
+	// 	if (user?.isOnboarded) {
+	// 		localStorage.removeItem("promptForOnboarding");
+	// 	}
+	// }, [user]);
 
-	const handleOnboardingComplete = async () => {
-		if (!user?.isOnboarded) {
-			// Check if user is verified, has a connected account, has at least one project, and has at least one client
-			if (!user?.isVerified || !user?.isConnectedToStripe || projects.length === 0 || clients.length === 0) {
-				localStorage.setItem("promptForOnboarding", "true");
-			}
-			else {
-				await api.put(`/users/${user?.id}`, { isOnboarded: true });
-				localStorage.removeItem("promptForOnboarding");
-				await refetchUser();
-			}
-		}
-		setShowOnboarding(false);
-	};
+	// const handleOnboardingComplete = async () => {
+	// 	if (!user?.isOnboarded) {
+	// 		// Check if user is verified, has a connected account, has at least one project, and has at least one client
+	// 		if (!user?.isVerified || !user?.isConnectedToStripe || projects.length === 0 || clients.length === 0) {
+	// 			localStorage.setItem("promptForOnboarding", "true");
+	// 		}
+	// 		else {
+	// 			await api.put(`/users/${user?.id}`, { isOnboarded: true });
+	// 			localStorage.removeItem("promptForOnboarding");
+	// 			await refetchUser();
+	// 		}
+	// 	}
+	// 	setShowOnboarding(false);
+	// };
 
 	if (loading) return <p>Loading...</p>; // TODO: create nice loader
 
@@ -90,7 +90,7 @@ const ProtectedRoute = ({ children }: PropsWithChildren) => {
 	}
 
 	return <>
-		{user && showOnboarding && (
+		{/* {user && showOnboarding && (
 			<OnboardingDialog
 				open={showOnboarding}
 				user={user}
@@ -98,7 +98,7 @@ const ProtectedRoute = ({ children }: PropsWithChildren) => {
 				clients={clients}
 				onComplete={handleOnboardingComplete}
 			/>
-		)}
+		)} */}
 		{children}
 	</>;
 };

@@ -1,8 +1,21 @@
-export interface User {
+import type { BetterFetchError } from "better-auth/react";
+import type { Subscription } from "../../context/SubscriptionProvider";
+import type { SonexActivity } from "../../hooks/useActivities";
+import type { Transaction } from "../../hooks/useTransactions";
+
+export interface AuthUser {
 	id: string;
+	email: string;
+	name: string;
+	image?: string | null;
+	emailVerified: boolean;
+	createdAt: Date | undefined;
+	updatedAt: Date | undefined;
+}
+
+export interface User extends AuthUser {
 	firstName: string;
 	lastName: string;
-	email: string;
 	googleId: string;
 	avatarUrl?: string | null;
 	storageUsed: number;
@@ -23,18 +36,19 @@ export interface User {
 	gracePeriodExpiresAt: string;
 	resetPasswordToken: string;
 	resetTokenExpiresAt: string;
-
-	createdAt?: string;
-	updatedAt?: string;
+	activities: SonexActivity[];
+	transactions: Transaction[];
+	subscriptions: Subscription[];
 }
 
 export interface AuthContextType {
-	user: User | null;
+	user: AuthUser | null;
 	loading: boolean;
 	loginWithEmail: (email: string, password: string) => Promise<void>;
 	loginWithGoogle: () => Promise<void>;
 	unlinkGoogleAccount: () => Promise<void>;
-	signup: (data: Record<string, string>) => Promise<void>;
+	signup: (data: { email: string; password: string; name: string; }) => Promise<void>;
 	logout: () => Promise<void>;
-	refetchUser: () => Promise<void>;
+	refetchUser: () => void;
+	error: BetterFetchError | null;
 }

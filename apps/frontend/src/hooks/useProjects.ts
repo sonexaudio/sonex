@@ -6,6 +6,7 @@ import {
 	updateProject,
 } from "./query-functions/projects";
 import type { Project } from "../types/projects";
+import { useAuth } from "./useAuth";
 
 type ProjectQueryParams = {
 	page?: number;
@@ -19,11 +20,13 @@ type ProjectQueryParams = {
 
 export default function useProjects(params?: ProjectQueryParams) {
 	const queryClient = useQueryClient();
+	const { user } = useAuth()
 
 	// Get all projects
 	const projectsQuery = useQuery({
 		queryKey: ["projects", params],
 		queryFn: () => fetchProjects(params),
+		enabled: !!user
 	});
 
 	// Create a new project

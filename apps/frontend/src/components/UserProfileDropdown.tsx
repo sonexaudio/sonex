@@ -18,10 +18,10 @@ const UserProfileDropdown = () => {
                     <div className="text-sm flex items-center gap-2">
                         <Avatar>
                             <AvatarImage src={user?.avatarUrl as string} />
-                            <AvatarFallback>{user.firstName[0]}</AvatarFallback>
+                            <AvatarFallback>{user.name[0]}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                            <span>{user?.firstName} {user?.lastName}</span>
+                            <span>{user?.name}</span>
                             <span className="text-xs text-muted-foreground">{user?.email}</span>
                         </div>
                     </div>
