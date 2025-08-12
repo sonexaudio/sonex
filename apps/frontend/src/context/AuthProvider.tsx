@@ -2,7 +2,6 @@ import { createContext, useState, type ReactNode } from "react";
 
 import api from "../lib/axios";
 import { useNavigate } from "react-router";
-import type { AxiosError } from "axios";
 import type { AuthContextType } from "../types/users";
 import { authClient } from "../lib/client-auth";
 import type { BetterFetchError } from "better-auth/react";
@@ -86,10 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 					toast.error(ctx.error.message);
 				},
 				onSuccess: async () => {
-					// await authClient.emailOtp.sendVerificationOtp({
-					// 	email: data.email,
-					// 	type: "email-verification",
-					// });
 					setSubmitSuccessful(true);
 				},
 			},

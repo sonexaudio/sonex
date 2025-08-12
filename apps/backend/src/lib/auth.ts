@@ -4,7 +4,8 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import config from "../config";
 import { sendEmail } from "../utils/send-email";
-
+import fs from "fs";
+import path from "path"
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
@@ -27,10 +28,8 @@ export const auth = betterAuth({
             await sendEmail({
                 to: user.email,
                 subject: "Reset your password",
-                meta: {
-                    description: "Please click the link below to reset your password.",
-                    link: url,
-                }
+                template: "",
+                variables: {}
             });
         }
     },
@@ -38,21 +37,6 @@ export const auth = betterAuth({
         sendOnSignUp: true,
         expiresIn: 60 * 60, // 1 hour,
         autoSignInAfterVerification: true,
-        sendVerificationEmail: async ({ user, url }) => {
-            const link = new URL(url);
-
-            link.searchParams.set("callbackURL", `${config.frontendUrl}/auth/verify`);
-
-            await sendEmail({
-                to: user.email,
-                subject: "Verify your email",
-                meta: {
-                    description: "Please click the link below to verify your email address.",
-                    link: String(link),
-                },
-            });
-
-        },
     },
     trustedOrigins: [
         config.frontendUrl
@@ -63,10 +47,8 @@ export const auth = betterAuth({
                 await sendEmail({
                     to: email,
                     subject: "Your magic link",
-                    meta: {
-                        description: "Please click the link below to sign in.",
-                        link: url,
-                    },
+                    template: "",
+                    variables: {}
                 });
             }
         }),
@@ -77,24 +59,30 @@ export const auth = betterAuth({
             allowedAttempts: 5, // allow 5 attempts before invalidating
             sendVerificationOTP: async ({ email, otp, type }) => {
                 switch (type) {
-                    case "email-verification":
+                    case "email-verification": {
+                        const template = fs.readFileSync(path.join(__dirname, "../../emails/VerificationEmail.mjml"), "utf-8");
+
+                        const verificationLink = `${config.frontendUrl}/auth/verify?otp=${otp}`
+
                         await sendEmail({
                             to: email,
                             subject: "Verify your email",
-                            meta: {
-                                description: `Please provide this code \`${otp}\` to verify your email address.`,
-                                link: `${config.frontendUrl}/auth/verify?otp=${otp}`,
+                            template,
+                            variables: {
+                                otp,
+                                email,
+                                verificationLink
                             }
                         });
-                        break;
+                        return;
+                    }
+
                     case "forget-password":
                         await sendEmail({
                             to: email,
                             subject: "Reset your password",
-                            meta: {
-                                description: `Please provide this code to reset your password. ${otp}`,
-                                link: `${config.frontendUrl}/auth/reset-password?otp=${otp}`,
-                            }
+                            template: "",
+                            variables: {}
                         });
                 }
             }

@@ -1,0 +1,122 @@
+<mjml>
+    <mj-head>
+        <mj-title>Complete Your Signup</mj-title>
+        <mj-preview>
+            Use the provided verification code to complete your signup.
+        </mj-preview>
+        <mj-attributes>
+            <mj-all font-family="Arial, sans-serif" />
+            <mj-text font-size="16px" />
+        </mj-attributes>
+    </mj-head>
+    <mj-body background-color="#f3f4f6">
+        <!-- Header -->
+        <mj-section background-color="#ffffff" border-radius="8px 8px 0 0" padding="40px 40px 20px">
+            <mj-column>
+                <mj-text font-size="28px" color="#111827" font-weight="bold" align="center" padding-bottom="16px">
+                    Complete Your Sonex Signup
+                </mj-text>
+                <mj-text color="#4B5563" align="center">
+                    We have received a request for you to verify your email. Enter the verification code below to activate your account
+                </mj-text>
+            </mj-column>
+        </mj-section>
+
+        <!-- OTP label -->
+        <mj-section background-color="#ffffff" padding="0px 40px 0px">
+            <mj-column>
+                <mj-text font-size="14px" color="#4B5563" align="center" padding-top="32px" padding-bottom="16px">
+                    Your one-time verification code is:
+                </mj-text>
+            </mj-column>
+        </mj-section>
+
+        <!-- OTP Code -->
+        <mj-section background-color="#F9FAFB" border="2px solid #E5E7EB" border-radius="8px" padding="24px" text-align="center">
+            <mj-column>
+                <mj-text font-size="36px" font-weight="bold" color="#111827" font-family="monospace" letter-spacing="8px" align="center">
+                    {{otp}}
+                </mj-text>
+            </mj-column>
+        </mj-section>
+
+        <!-- OTP Expiration  -->
+        <mj-section background-color="#ffffff" padding="0px 40px 0px">
+            <mj-column>
+                <mj-text font-size="14px" color="#6B7280" align="center" padding-top="16px">
+                    <em>This code will expire in 5 minutes.</em>
+                </mj-text>
+            </mj-column>
+        </mj-section>
+
+        <!-- Instructions -->
+        <mj-section background-color="#ffffff" padding="32px 40px 20px">
+            <mj-column>
+                <mj-text font-size="16px" color="#374151" padding-bottom="16px">
+                    <strong>How to complete verification:</strong>
+                </mj-text>
+                <mj-text>
+                    1. Copy the 6-digit code above
+                </mj-text>
+                <mj-text>
+                    2. Return to the signup page
+                </mj-text>
+                <mj-text padding-bottom="16px">
+                    3. Paste the code in the verification field
+                </mj-text>
+            </mj-column>
+        </mj-section>
+
+        <!-- Divider -->
+        <mj-section background-color="#ffffff" padding="0px 40px 0px">
+            <mj-column>
+                <mj-divider border-color="#E5E7EB" padding-top="32px" padding-bottom="32px" />
+            </mj-column>
+        </mj-section>
+
+        <!-- Re-Verification -->
+        <mj-section background-color="#ffffff" padding="0px 40px 20px">
+            <mj-column>
+                <mj-text color="#374151" align="center" padding-bottom="16px">
+                    <strong>Need help?</strong>
+                </mj-text>
+                <mj-text font-size="14px" color="#4B5563" align="center" padding-bottom="16px">
+                    If you're having trouble or the code has expired, you can request a new verification code.
+                </mj-text>
+                <mj-button href="{{verificationLink}}" background-color="#fcef15" color="#111827" font-size="14px" font-weight="bold" border-radius="6px" padding="12px 24px">
+                    Send New Verification Code
+                </mj-button>
+            </mj-column>
+        </mj-section>
+
+        <!-- Security Notice -->
+        <mj-section background-color="#FEF3C7" border="1px solid #FCD34D" border-radius="6px" padding="16px">
+            <mj-column>
+                <mj-text font-size="14px" color="#92400E" padding-bottom="8px">
+                <strong>Security Notice:</strong>
+                </mj-text>
+                <mj-text font-size="13px" color="#B45309">
+                Never share this code with anyone. Our team will never ask for your verification code via email or phone.
+                </mj-text>
+            </mj-column>
+        </mj-section>
+
+        <!-- Footer -->
+        <mj-section background-color="#ffffff" border-radius="0 0 8px 8px" padding="32px 40px">
+            <mj-column>
+                <mj-text font-size="12px" color="#6B7280" align="center">
+                This email was sent to {{email}}
+                </mj-text>
+                <mj-text font-size="12px" color="#6B7280" align="center">
+                If you didn't request this verification, please ignore this email.
+                </mj-text>
+                <mj-text font-size="12px" color="#9CA3AF" align="center">
+                123 Main Street, Suite 100, Tallahassee, FL 32301
+                </mj-text>
+                <mj-text font-size="12px" color="#9CA3AF" align="center">
+                © {{currentYear}} Your Company Name. All rights reserved.
+                </mj-text>
+            </mj-column>
+        </mj-section>
+    </mj-body>
+</mjml>
