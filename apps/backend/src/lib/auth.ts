@@ -25,17 +25,26 @@ export const auth = betterAuth({
         autoSignIn: false,
 
         sendResetPassword: async ({ user, url }) => {
+            const template = fs.readFileSync(path.join(__dirname, "../../emails/ResetPasswordEmail.mjml"), "utf-8");
+
+            const firstName = user.name.split(" ")[0];
+            const email = user.email
+
             await sendEmail({
                 to: user.email,
                 subject: "Reset your password",
-                template: "",
-                variables: {}
+                template,
+                variables: {
+                    firstName,
+                    url,
+                    email
+                }
             });
         }
     },
     emailVerification: {
         sendOnSignUp: true,
-        expiresIn: 60 * 60, // 1 hour,
+        expiresIn: 60 * 5, // 5 min,
         autoSignInAfterVerification: true,
     },
     trustedOrigins: [
@@ -55,6 +64,7 @@ export const auth = betterAuth({
 
         emailOTP({
             overrideDefaultEmailVerification: true,
+            expiresIn: 60 * 5, // 5 min
             sendVerificationOnSignUp: true,
             allowedAttempts: 5, // allow 5 attempts before invalidating
             sendVerificationOTP: async ({ email, otp, type }) => {
@@ -62,7 +72,7 @@ export const auth = betterAuth({
                     case "email-verification": {
                         const template = fs.readFileSync(path.join(__dirname, "../../emails/VerificationEmail.mjml"), "utf-8");
 
-                        const verificationLink = `${config.frontendUrl}/auth/verify?otp=${otp}`
+                        const verificationLink = `${config.frontendUrl}/auth/verify`
 
                         await sendEmail({
                             to: email,
@@ -74,16 +84,9 @@ export const auth = betterAuth({
                                 verificationLink
                             }
                         });
+
                         return;
                     }
-
-                    case "forget-password":
-                        await sendEmail({
-                            to: email,
-                            subject: "Reset your password",
-                            template: "",
-                            variables: {}
-                        });
                 }
             }
         })

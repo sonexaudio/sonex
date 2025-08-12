@@ -6,7 +6,7 @@
         </mj-preview>
         <mj-attributes>
             <mj-all font-family="Arial, sans-serif" />
-            <mj-text font-size="16px" />
+            <mj-text font-size="16px" line-height="1.5" />
         </mj-attributes>
     </mj-head>
     <mj-body background-color="#f3f4f6">
@@ -114,7 +114,7 @@
                 123 Main Street, Suite 100, Tallahassee, FL 32301
                 </mj-text>
                 <mj-text font-size="12px" color="#9CA3AF" align="center">
-                © {{currentYear}} Your Company Name. All rights reserved.
+                © {{currentYear}} 8iVisions. All rights reserved.
                 </mj-text>
             </mj-column>
         </mj-section>
