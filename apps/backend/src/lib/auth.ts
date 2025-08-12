@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { magicLink } from "better-auth/plugins";
+import { magicLink, emailOTP } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import config from "../config";
@@ -22,6 +22,7 @@ export const auth = betterAuth({
         minPasswordLength: 8,
         requireEmailVerification: true,
         autoSignIn: false,
+
         sendResetPassword: async ({ user, url }) => {
             await sendEmail({
                 to: user.email,
@@ -51,7 +52,7 @@ export const auth = betterAuth({
                 },
             });
 
-        }
+        },
     },
     trustedOrigins: [
         config.frontendUrl
@@ -67,6 +68,35 @@ export const auth = betterAuth({
                         link: url,
                     },
                 });
+            }
+        }),
+
+        emailOTP({
+            overrideDefaultEmailVerification: true,
+            sendVerificationOnSignUp: true,
+            allowedAttempts: 5, // allow 5 attempts before invalidating
+            sendVerificationOTP: async ({ email, otp, type }) => {
+                switch (type) {
+                    case "email-verification":
+                        await sendEmail({
+                            to: email,
+                            subject: "Verify your email",
+                            meta: {
+                                description: `Please provide this code \`${otp}\` to verify your email address.`,
+                                link: `${config.frontendUrl}/auth/verify?otp=${otp}`,
+                            }
+                        });
+                        break;
+                    case "forget-password":
+                        await sendEmail({
+                            to: email,
+                            subject: "Reset your password",
+                            meta: {
+                                description: `Please provide this code to reset your password. ${otp}`,
+                                link: `${config.frontendUrl}/auth/reset-password?otp=${otp}`,
+                            }
+                        });
+                }
             }
         })
     ]

@@ -23,7 +23,6 @@ const loginFormSchema = z.object({
 const LoginForm = () => {
 	const { loginWithEmail } = useAuth();
 	const location = useLocation();
-	const navigate = useNavigate();
 
 	const redirectPath = location.state?.from || "/";
 
@@ -37,7 +36,7 @@ const LoginForm = () => {
 
 	async function onSubmit(values: z.infer<typeof loginFormSchema>) {
 		const { email, password } = values;
-		await loginWithEmail(email, password);
+		await loginWithEmail({ email, password, redirectTo: redirectPath });
 	}
 
 	const returningFromReset: boolean | undefined = location.state?.fromReset;
@@ -53,6 +52,13 @@ const LoginForm = () => {
 
 			{location.state?.message && (
 				<AuthState type="error" message={location.state?.message} />
+			)}
+
+			{location.state?.from === "signup" && (
+				<AuthState
+					type="success"
+					message="Account created successfully! You may now log in."
+				/>
 			)}
 
 			<Card className="z-50 w-full">

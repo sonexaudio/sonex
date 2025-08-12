@@ -1,6 +1,7 @@
 import { useAuth } from "../../hooks/useAuth";
-import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
+import React, { useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { Card, CardContent } from "../../components/ui/card";
 
 import { Input } from "../../components/ui/input";
@@ -18,6 +19,13 @@ import {
 } from "../../components/ui/form";
 import { toast } from "sonner";
 import AuthState from "../../components/auth/AuthState";
+import {
+	InputOTP,
+	InputOTPGroup,
+	InputOTPSeparator,
+	InputOTPSlot,
+} from "../../components/ui/input-otp";
+import { authClient } from "../../lib/client-auth";
 
 const signupFormSchema = z
 	.object({
@@ -38,7 +46,9 @@ const signupFormSchema = z
 	});
 
 const SignupForm = () => {
-	const { signup, error, isSubmitting } = useAuth();
+	const { signup, error, isSubmitting, submitSuccessful, verifyOTP } = useAuth();
+	const [otp, setOtp] = useState("");
+	const [searchParams, setSearchParams] = useSearchParams();
 
 	const form = useForm<z.infer<typeof signupFormSchema>>({
 		resolver: zodResolver(signupFormSchema),
@@ -56,18 +66,67 @@ const SignupForm = () => {
 
 		const name = `${firstName} ${lastName}`;
 
-		await signup({ email, name, password });
+		try {
+			setSearchParams({ signupEmail: email });
+			await signup({ email, name, password });
+		} catch (error) {
+			toast.error("Failed to create account");
+		}
+	}
+
+	async function handleOTPSubmit() {
+		const otpEmail = searchParams.get("signupEmail");
+		console.log("OTP EMAIL:", otpEmail);
+		if (!otpEmail) {
+			alert("Please enter your email first.");
+			return;
+		}
+
+		await verifyOTP({ email: otpEmail, otp });
+	}
+
+	if (submitSuccessful) {
+		return (
+			<div className="space-y-8">
+				<AuthState
+					message="Account created successfully! Check your email to provide your one-time password."
+					type="success"
+				/>
+
+				<div>
+					<InputOTP
+						maxLength={6}
+						pattern={REGEXP_ONLY_DIGITS}
+						value={otp}
+						onChange={(value) => setOtp(value)}
+					>
+						<InputOTPGroup>
+							<InputOTPSlot index={0} />
+							<InputOTPSlot index={1} />
+							<InputOTPSlot index={2} />
+						</InputOTPGroup>
+						<InputOTPSeparator />
+						<InputOTPGroup>
+							<InputOTPSlot index={3} />
+							<InputOTPSlot index={4} />
+							<InputOTPSlot index={5} />
+						</InputOTPGroup>
+					</InputOTP>
+				</div>
+
+				{otp.length === 6 && (
+					<div>
+						<Button onClick={handleOTPSubmit}>Verify</Button>
+					</div>
+				)}
+			</div>
+		);
 	}
 
 	return (
 		<Card className="z-50 w-full max-w-md">
 			<CardContent>
-				{error && (
-					<AuthState message={error.message} type="error" />
-				)}
-				{isSubmitting && (
-					<AuthState message="Account created successfully! Check your email for a verification link." type="success" />
-				)}
+				{error && <AuthState message={error.message} type="error" />}
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 						<div className="grid gap-4">
@@ -168,9 +227,7 @@ const SignupForm = () => {
 							<Button
 								type="submit"
 								className="w-full"
-								disabled={
-									isSubmitting || !form.formState.isValid
-								}
+								disabled={isSubmitting || !form.formState.isValid}
 							>
 								{isSubmitting ? "Creating Account..." : "Create Account"}
 							</Button>

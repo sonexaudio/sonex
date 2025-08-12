@@ -18,11 +18,13 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 
 export function AuthProvider({ children }: { children: ReactNode; }) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [submitSuccessful, setSubmitSuccessful] = useState(false);
+
 	const { data: session, isPending, error, refetch } = authClient.useSession();
 
 	const navigate = useNavigate();
 
-	const loginWithEmail = async (email: string, password: string) => {
+	const loginWithEmail = async ({ email, password, redirectTo }: { email: string, password: string, redirectTo?: string; }) => {
 		const { data: success, error } = await authClient.signIn.email(
 			{
 				email,
@@ -41,6 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 				},
 				onSuccess: () => {
 					toast("Welcome back!");
+
+					if (redirectTo && redirectTo !== "signup") {
+						navigate(redirectTo);
+						return;
+					}
+
 					navigate("/overview");
 				},
 			},
@@ -69,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 			{
 				onRequest: () => {
 					setIsSubmitting(true);
+					setSubmitSuccessful(false);
 				},
 				onResponse: () => {
 					setIsSubmitting(false);
@@ -77,11 +86,11 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 					toast.error(ctx.error.message);
 				},
 				onSuccess: async () => {
-					await authClient.sendVerificationEmail({
-						email: data.email,
-						callbackURL: `${import.meta.env.VITE_FRONTEND_URL}/auth/verify`,
-					});
-
+					// await authClient.emailOtp.sendVerificationOtp({
+					// 	email: data.email,
+					// 	type: "email-verification",
+					// });
+					setSubmitSuccessful(true);
 				},
 			},
 		);
@@ -92,6 +101,26 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 
 		return success;
 	};
+
+	const verifyOTP = async ({ email, otp }: { email: string, otp: string; }) => {
+		await authClient.emailOtp.verifyEmail({
+			email,
+			otp,
+			fetchOptions: {
+				onRequest: () => {
+					setIsSubmitting(true);
+				},
+				onError: (ctx) => {
+					setIsSubmitting(false);
+					toast.error(ctx.error.message);
+				},
+				onSuccess: async () => {
+					toast.success("OTP verified successfully!");
+					setTimeout(() => navigate("/login", { state: { from: "signup" } }), 2000);
+				}
+			}
+		});
+	}
 
 	const unlinkGoogleAccount = async () => {
 		try {
@@ -127,6 +156,8 @@ export function AuthProvider({ children }: { children: ReactNode; }) {
 		refetchUser: refetch,
 		error: error ? (error as BetterFetchError) : null,
 		isSubmitting,
+		submitSuccessful,
+		verifyOTP
 	};
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

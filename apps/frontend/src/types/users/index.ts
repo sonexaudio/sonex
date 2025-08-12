@@ -45,7 +45,11 @@ export interface AuthContextType {
 	user: AuthUser | null;
 	session: UserSession | null;
 	loading: boolean;
-	loginWithEmail: (email: string, password: string) => Promise<{
+	loginWithEmail: ({
+		email,
+		password,
+		redirectTo,
+	}: { email: string; password: string; redirectTo?: string; }) => Promise<{
 		redirect: boolean;
 		token: string;
 		url: string | undefined;
@@ -61,33 +65,41 @@ export interface AuthContextType {
 	}>;
 	loginWithGoogle: () => Promise<void>;
 	unlinkGoogleAccount: () => Promise<void>;
-	signup: (data: { email: string; password: string; name: string; }) => Promise<NonNullable<{
-		token: null;
-		user: {
-			id: string;
-			email: string;
-			name: string;
-			image: string | null | undefined;
-			emailVerified: boolean;
-			createdAt: Date;
-			updatedAt: Date;
-		};
-	} | {
-		token: string;
-		user: {
-			id: string;
-			email: string;
-			name: string;
-			image: string | null | undefined;
-			emailVerified: boolean;
-			createdAt: Date;
-			updatedAt: Date;
-		};
-	}> | undefined>;
+	signup: (data: { email: string; password: string; name: string; }) => Promise<
+		| NonNullable<
+			| {
+				token: null;
+				user: {
+					id: string;
+					email: string;
+					name: string;
+					image: string | null | undefined;
+					emailVerified: boolean;
+					createdAt: Date;
+					updatedAt: Date;
+				};
+			}
+			| {
+				token: string;
+				user: {
+					id: string;
+					email: string;
+					name: string;
+					image: string | null | undefined;
+					emailVerified: boolean;
+					createdAt: Date;
+					updatedAt: Date;
+				};
+			}
+		>
+		| undefined
+	>;
 	logout: () => Promise<void>;
 	refetchUser: () => void;
-	error: BetterFetchError | null;
+	error: BetterFetchError | Error | string | null;
 	isSubmitting: boolean;
+	submitSuccessful: boolean;
+	verifyOTP: (data: { email: string; otp: string; }) => Promise<void>;
 }
 
 export interface UserSession {
