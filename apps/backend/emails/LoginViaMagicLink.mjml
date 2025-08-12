@@ -1,0 +1,49 @@
+<mjml>
+    <mj-head>
+        <mj-title>Log in to Sonex</mj-title>
+        <mj-attributes>
+             <mj-text font-family="Arial" font-size="16px" line-height="1.5" />
+        </mj-attributes>
+    </mj-head>
+    <mj-body>
+        <mj-section>
+            <mj-column>
+                <mj-text font-size="18px" font-weight="bold">
+                    Magic link sign-in request
+                </mj-text>
+                <mj-text>
+                    You asked us to send you a magic link to sign in to your Sonex account.
+                </mj-text>
+                <mj-button href="{{url}}" align="left" background-color="#fcef15" color="#111111" padding="4px 24px 4px" font-weight="bold" font-size="16px" font-family="Arial" border-radius="5px">
+                    Sign in to Sonex
+                </mj-button>
+                <mj-text padding-bottom="24px" font-size="14px" color="#4B5563">
+                    <strong>Confirming this request</strong> will securely log you in using <strong>{{email}}</strong>
+                </mj-text>
+                <mj-text font-size="14px" color="#4B5563" align="center">
+                    The above link is a magic link only meant for you to login without needing your password. Please don't share it with anyone. For your security, this link expires in 12 hours.
+                </mj-text>
+            </mj-column>
+        </mj-section>
+        <mj-section>
+            <mj-column>
+                <mj-text font-size="14px" color="#4B5563" align="center">
+                    If you did not request this, you can ignore this email, or <a href="{{resetPasswordUrl}}">send us a reset password request</a> if you feel your account has been compromised.
+                </mj-text>
+            </mj-column>
+        </mj-section>
+        <mj-section background-color="#ffffff" border-radius="0 0 8px 8px" padding="32px 40px">
+            <mj-column>
+                <mj-text font-size="12px" color="#6B7280" align="center">
+                This email was sent to {{email}}
+                </mj-text>
+                <mj-text font-size="12px" color="#9CA3AF" align="center">
+                123 Main Street, Suite 100, Tallahassee, FL 32301
+                </mj-text>
+                <mj-text font-size="12px" color="#9CA3AF" align="center">
+                © {{currentYear}} 8iVisions. All rights reserved.
+                </mj-text>
+            </mj-column>
+        </mj-section>
+    </mj-body>
+</mjml>

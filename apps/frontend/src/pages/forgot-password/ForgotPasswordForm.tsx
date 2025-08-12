@@ -54,7 +54,7 @@ const ForgotPasswordForm = () => {
 			</div>
 
 			<Button type="submit" disabled={isPending}>
-				Resend Verification Email
+				Reset My Password
 			</Button>
 		</form>
 	);

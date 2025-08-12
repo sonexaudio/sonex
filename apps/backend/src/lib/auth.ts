@@ -52,12 +52,21 @@ export const auth = betterAuth({
     ],
     plugins: [
         magicLink({
+            expiresIn: 60 * 60 * 12, // 12 hours
             sendMagicLink: async ({ email, url }) => {
+                const template = fs.readFileSync(path.join(__dirname, "../../emails/LoginViaMagicLink.mjml"), "utf-8");
+
+                const resetPasswordUrl = `${config.frontendUrl}/forgot-password`;
+
                 await sendEmail({
                     to: email,
                     subject: "Your magic link",
-                    template: "",
-                    variables: {}
+                    template,
+                    variables: {
+                        url,
+                        email,
+                        resetPasswordUrl
+                    }
                 });
             }
         }),
@@ -72,7 +81,7 @@ export const auth = betterAuth({
                     case "email-verification": {
                         const template = fs.readFileSync(path.join(__dirname, "../../emails/VerificationEmail.mjml"), "utf-8");
 
-                        const verificationLink = `${config.frontendUrl}/auth/verify`
+                        const verificationLink = `${config.frontendUrl}/forgot-password`;
 
                         await sendEmail({
                             to: email,
